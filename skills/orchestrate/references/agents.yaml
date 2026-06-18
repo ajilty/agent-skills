@@ -63,6 +63,14 @@ hooks:
     applies_to: [implementer]
     intent: "Deny branch create/switch and commits that move HEAD off the assigned worktree-agent branch."
     fail_closed: true
+  prod_apply_gate:
+    event: subagent-start          # actuator only; wire BEFORE writer_writeahead so a denied dispatch leaves no trace
+    applies_to: [actuator]
+    intent: >-
+      Pre-apply consequence gate (SKILL §6b). Deny the actuator dispatch if any
+      prod-level mutation target (PROD_TARGETS — includes undeclared/unknown ->
+      prod, fail-closed) lacks an operator ack marker; journal 'gate-blocked'.
+    fail_closed: true
   writer_writeahead:
     event: subagent-start          # CC/Codex: SubagentStart (matcher=implementer); OpenCode: subagent-invoke
     applies_to: [implementer, actuator]
@@ -122,6 +130,7 @@ conventions:
   metrics_from_ledger: true              # metrics are derived by replaying board.jsonl (no separate sink)
   adr_dir:      "docs/adr"               # judgment memory: TRACKED ADRs (ADR-0003), never under .agents/ or harness memory
   adr_index:    "docs/adr/INDEX.md"      # Planner reads this at intake; capture/supersede via runtime/adr.sh
+  clarification_skills: [grill-with-docs, grill-me, brainstorming, inline]  # intake ambiguity; router-context, first present wins (ADR-0004)
 
 # --- Resume / durability (apply "contracts are the bus" to the ROUTER itself) -
 # /orchestrate is the single entry point. On invocation it auto-detects: open

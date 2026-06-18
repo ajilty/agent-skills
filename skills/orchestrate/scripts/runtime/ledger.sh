@@ -90,5 +90,9 @@ case "$cmd" in
 
   lease-check)   key="${1:?key}"; [ -f "$LEASES/$(enc "$key")" ] && exit 4 || exit 0 ;;
 
-  *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground}" >&2; exit 64 ;;
+  ack)   # operator confirms a prod-level mutation target for a ticket (pre-apply gate, §8)
+    tk="${1:?ticket}"; key="${2:?key}"; m="$ROOT/tickets/$tk/ack-$(enc "$key")"
+    mkdir -p "$(dirname "$m")"; : > "$m" ;;
+
+  *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground|lease-{key,acquire,release,check}|ack}" >&2; exit 64 ;;
 esac

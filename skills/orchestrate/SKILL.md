@@ -186,6 +186,23 @@ are overridable conversationally in-session.
 
 ---
 
+## 2b. Intake clarification (ambiguity-gated, router-owned sequencing)
+
+The loop attempts intake autonomously; a clear goal of any altitude proceeds
+without pausing. Clarification fires **only when the Planner cannot sign off** —
+open `#UNKNOWN`s block the spec. Then, in the **router's own context** (only the
+router talks to the operator), invoke the configured clarification skill, scoped
+to those `#UNKNOWN`s — not an open-ended interview.
+
+**Router owns sequencing** (ADR-0004): invoke a sub-skill for the clarification it
+produces, then **ignore its built-in next-step handoff** and return to this loop.
+The skill is bound per deployment in preference order (`clarification_skills` in
+`agents.yaml`), defaulting to grill-with-docs → grill-me → brainstorming → inline
+Q&A, using whichever is present. An irreducible call surfaces as `DECISION_FORK`
+(§3b), not clarification.
+
+---
+
 ## 3. Routing tables (the only thing the router decides)
 
 Dispatch is `column × label → persona`. The router maps enums; it never
@@ -368,6 +385,23 @@ Implementer task (edit + commit manifests → reviewed diff) and a dependent
 Actuator task (`depends_on` the diff task) that applies to the leased target. The
 reviewable change is gated as a diff before the live mutation. Pure-ops goals (no
 source) skip the Implementer.
+
+## 6b. Pre-apply consequence gate (prod safety)
+
+Distinct from intake clarification (§2b): that gates on *ambiguity*; this gates on
+*consequence*, at **execution time**, right before the Actuator mutates a target.
+
+- The Planner tags each mutation target with a `consequence` (`prod | safe`);
+  **undeclared/unknown is treated as `prod`** (fail-closed).
+- Before dispatching the Actuator, the router collects every prod-level target
+  into `PROD_TARGETS` and **pauses for operator ack**, showing the planned action
+  and the already-reviewed diff. On ack it records `ledger.sh ack <ticket> <key>`.
+- Enforcement floor: the `prod_apply_gate` hook (SubagentStart, actuator;
+  fail-closed) denies the dispatch if any `PROD_TARGETS` key lacks its ack marker
+  and journals `gate-blocked` — wired **before** the write-ahead hook so a denied
+  dispatch never journals a `dispatched` or takes a lease. `safe` targets proceed
+  autonomously. Independent of the deferred harness prod-classifier, which may
+  later set the flag.
 
 ---
 
