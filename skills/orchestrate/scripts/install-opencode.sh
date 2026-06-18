@@ -15,7 +15,7 @@ esac; done
 
 case "$SCOPE" in
   user)    DEST="${OVERRIDE:-${XDG_CONFIG_HOME:-$HOME/.config}/opencode}"; BRAIN_DIR="$DEST" ;;
-  project) DEST="${OVERRIDE:-$PWD/.opencode}"; BRAIN_DIR="$PWD" ;;
+  project) DEST="${OVERRIDE:-$PWD/.opencode}"; BRAIN_DIR="${OVERRIDE:-$PWD}" ;;   # honor --dir (don't pollute repo root)
   *) echo "scope must be user|project" >&2; exit 64 ;;
 esac
 command -v yq >/dev/null || { echo "FATAL: yq (v4, mikefarah) required." >&2; exit 1; }
@@ -33,7 +33,7 @@ body() { awk 'f==2{print} /^---[[:space:]]*$/{f++}' "$1"; }
 
 mkdir -p "$AGENTS_DEST" "$PLUGIN_DEST" "$RUNTIME"
 cp -r "$SKILL_DIR/scripts/runtime/." "$RUNTIME/"
-chmod +x "$RUNTIME"/ledger.sh "$RUNTIME"/hooks/*.sh
+chmod +x "$RUNTIME"/*.sh "$RUNTIME"/hooks/*.sh
 { echo "<!-- orchestrate router brain (generated) -->"; cat "$SKILL_DIR/SKILL.md"; } > "$BRAIN_DIR/AGENTS.orchestrate.md"
 
 for p in $(yq '.personas | keys | .[]' "$AGENTS"); do
@@ -60,7 +60,7 @@ export const orchestrate = async () => ({
   // Write-ahead for the writer (deterministic): runs before an implementer subagent.
   // The script self-guards on persona=implementer. Confirm the event name for your
   // OpenCode version; if subagent-start isn't exposed, the orchestrator does this in-loop.
-  "subagent.start": async () => sh(\`\${RT}/hooks/on-writer-dispatch.sh\`),
+  "subagent.start": async () => { sh(\`\${RT}/hooks/gate-prod-apply.sh\`); sh(\`\${RT}/hooks/on-writer-dispatch.sh\`); },
   // Automatic compaction recovery: reground + inject authoritative board; halt if ambiguous.
   // Wire to your OpenCode compaction/session-restored event; session.start is the fallback.
   "session.start": async () => sh(\`\${RT}/hooks/on-compaction.sh\`),
@@ -75,6 +75,10 @@ OpenCode install complete ($SCOPE scope).
   plugin    -> $PLUGIN_DEST/orchestrate.ts   (auto-loads; calls the runtime)
   runtime   -> $RUNTIME/ (ledger.sh + hooks)
   brain     -> $BRAIN_DIR/AGENTS.orchestrate.md
+
+Actuator credential confinement is ADVISORY (ADR-0002): scope the actuator lane's
+creds to its leased targets in your deployment; serialization (the lease) is the
+only guaranteed layer.
 
 Set HELDOUT_ROOT and ASSIGNED_BRANCH in the env OpenCode runs under. No config
 file — run /orchestrate to start or resume; compaction recovers via the plugin's

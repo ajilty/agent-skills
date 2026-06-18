@@ -16,7 +16,7 @@ esac; done
 
 case "$SCOPE" in
   user)    DEST="${OVERRIDE:-${CODEX_HOME:-$HOME/.codex}}"; BRAIN_DIR="$DEST" ;;
-  project) DEST="${OVERRIDE:-$PWD/.codex}"; BRAIN_DIR="$PWD" ;;   # AGENTS.md lives at repo root
+  project) DEST="${OVERRIDE:-$PWD/.codex}"; BRAIN_DIR="${OVERRIDE:-$PWD}" ;;   # honor --dir (don't pollute repo root on smoke installs)
   *) echo "scope must be user|project" >&2; exit 64 ;;
 esac
 command -v yq >/dev/null || { echo "FATAL: yq (v4, mikefarah) required." >&2; exit 1; }
@@ -29,7 +29,7 @@ body() { awk 'f==2{print} /^---[[:space:]]*$/{f++}' "$1"; }
 
 mkdir -p "$AGENTS_DEST" "$DEST/orchestrate-runtime"
 cp -r "$SKILL_DIR/scripts/runtime/." "$DEST/orchestrate-runtime/"
-chmod +x "$DEST"/orchestrate-runtime/ledger.sh "$DEST"/orchestrate-runtime/hooks/*.sh
+chmod +x "$DEST"/orchestrate-runtime/*.sh "$DEST"/orchestrate-runtime/hooks/*.sh
 { echo "<!-- orchestrate router brain (generated) -->"; cat "$SKILL_DIR/SKILL.md"; } > "$BRAIN_DIR/AGENTS.orchestrate.md"
 
 for p in $(yq '.personas | keys | .[]' "$AGENTS"); do
@@ -57,9 +57,11 @@ Add to ${DEST}/config.toml (or project .codex/config.toml):
   [[hooks.PreToolUse.hooks]]
   type = "command"; command = "$HOOKS/keep-on-branch.sh"
 
-  # Write-ahead for the writer (must be deterministic):
+  # Pre-apply consequence gate (actuator; BEFORE write-ahead) + write-ahead (both writers):
   [[hooks.SubagentStart]]
-  matcher = "implementer"
+  matcher = "implementer|actuator"
+  [[hooks.SubagentStart.hooks]]
+  type = "command"; command = "$HOOKS/gate-prod-apply.sh"
   [[hooks.SubagentStart.hooks]]
   type = "command"; command = "$HOOKS/on-writer-dispatch.sh"
 
@@ -67,6 +69,10 @@ Add to ${DEST}/config.toml (or project .codex/config.toml):
   [[hooks.PostCompact]]
   [[hooks.PostCompact.hooks]]
   type = "command"; command = "$HOOKS/on-compaction.sh"
+
+Actuator credential confinement is ADVISORY (ADR-0002): scope the actuator lane's
+creds to its leased targets in your deployment; serialization (the lease) is the
+only guaranteed layer — the skill cannot enforce "no creds for an unleased target".
 
 No config file. Set ORCHESTRATE_WEB_MCP to your web/doc MCP (default "$WEB_MCP")
 and HELDOUT_ROOT, then run /orchestrate to start or resume. Compaction recovers

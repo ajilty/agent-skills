@@ -35,7 +35,7 @@ mkdir -p "$SKILLS_DEST" "$AGENTS_DEST"
 cp "$SKILL_DIR/SKILL.md" "$SKILLS_DEST/SKILL.md"
 cp -r "$SKILL_DIR/references" "$SKILLS_DEST/"
 cp -r "$SKILL_DIR/scripts/runtime" "$SKILLS_DEST/"      # ledger + hooks travel with the skill
-chmod +x "$SKILLS_DEST"/runtime/ledger.sh "$SKILLS_DEST"/runtime/hooks/*.sh
+chmod +x "$SKILLS_DEST"/runtime/*.sh "$SKILLS_DEST"/runtime/hooks/*.sh
 
 for p in $(yq '.personas | keys | .[]' "$AGENTS"); do
   desc="$(yq ".personas.$p.description" "$AGENTS")"
@@ -48,7 +48,7 @@ cat <<EOF
 
 Claude Code install complete ($SCOPE scope).
   skill     -> $SKILLS_DEST/SKILL.md
-  subagents -> $AGENTS_DEST/{researcher,planner,implementer,verifier}.md
+  subagents -> $AGENTS_DEST/{researcher,planner,implementer,verifier,actuator}.md
   runtime   -> $SKILLS_DEST/runtime/ (ledger.sh + enforcement & lifecycle hooks)
 
 Add to $DEST/settings.json (two enforcement hooks + write-ahead + compaction recovery):
@@ -56,11 +56,16 @@ Add to $DEST/settings.json (two enforcement hooks + write-ahead + compaction rec
     "PreToolUse": [ { "matcher": "Read|Bash", "hooks": [
         { "type": "command", "command": "$HOOKS/deny-heldout-read.sh" },
         { "type": "command", "command": "$HOOKS/keep-on-branch.sh" } ] } ],
-    "SubagentStart": [ { "matcher": "implementer", "hooks": [
+    "SubagentStart": [ { "matcher": "implementer|actuator", "hooks": [
+        { "type": "command", "command": "$HOOKS/gate-prod-apply.sh" },
         { "type": "command", "command": "$HOOKS/on-writer-dispatch.sh" } ] } ],
     "SessionStart": [ { "matcher": "compact", "hooks": [
         { "type": "command", "command": "$HOOKS/on-compaction.sh" } ] } ]
   }
+
+Actuator credential confinement is ADVISORY (ADR-0002): scope the actuator lane's
+creds to its leased targets in your deployment; serialization (the lease) is the
+only guaranteed layer — the skill cannot enforce "no creds for an unleased target".
 
 No config file. Export HELDOUT_ROOT, then run /orchestrate in a repo to start or
 to resume an interrupted session. Compaction recovers automatically (the
