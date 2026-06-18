@@ -40,6 +40,10 @@ goal: ...
 tasks:                       # ordered
   - id: T1
     surface: shared-file | independent
+    depends_on: [ ]          # task ids that must complete first (e.g. apply-after-diff)
+    mutation_targets:        # every live target this task changes; [] for read/diff-only
+      - key: <kind>:<scope>  # e.g. tfstate:prod/network, k8s:clusterB/app, db:orders
+        consequence: prod | safe   # undeclared/unknown is treated as prod (fail-closed)
     ...
 assumptions:
   - #ASSUMPTION(...) kind: gospel | hypothesis
@@ -77,7 +81,15 @@ parallel_groups:
         symbols_checked: [SharedType, SHARED_CONFIG, shared_fn()]
         result: none-shared
         evidence: "grep -rn '<symbol>' across both globs → no cross-hits"
+      mutation_targets_disjoint:              # checkable: no target key shared across groups
+        keys_checked: [tfstate:prod/network, k8s:clusterB/app]
+        result: none-shared
 ```
+
+Disjointness must hold over **mutation targets** as well as files: two tasks with
+disjoint file globs that both apply to `tfstate:prod/network` are **not**
+independent. A target with no declared `consequence` is treated as `prod`. If you
+cannot show target disjointness, mark the group serial.
 
 You assert independence; you do not get to assert it without evidence. "These
 files look unrelated" is not a backing. If you cannot produce the grep evidence,
