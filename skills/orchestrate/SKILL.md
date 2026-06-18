@@ -419,9 +419,13 @@ the held-out suite. Conventions, not hope:
 - Held-out tests live **outside the Implementer's readable working tree** — a
   sibling path the working branch does not track (e.g. `$HELDOUT_ROOT/<repo>/`),
   set via the `HELDOUT_ROOT` env var.
-- Defense-in-depth: a fail-closed `PreToolUse` read-deny hook blocks any
-  Implementer file read resolving under `$HELDOUT_ROOT`. (Minimal hook in the
-  Enforcement appendix.) If the hook can't evaluate the path, it **denies**.
+- Defense-in-depth: a `PreToolUse` read-deny hook blocks a **writer's**
+  (implementer/actuator) file read resolving under `$HELDOUT_ROOT`. The hook
+  self-guards on persona (the Verifier and router must read the oracle, so they
+  pass) and allows when `$HELDOUT_ROOT` is unset — the **load-bearing** boundary
+  is the filesystem isolation, with this read-deny as the secondary layer. A hook
+  must never break the session, so it allows rather than denies on a path it
+  can't evaluate (e.g. a Bash call) — the filesystem boundary still holds.
 - The Verifier is handed `$HELDOUT_ROOT/<repo>/` only at dispatch and runs it
   there; it reports visible-vs-held-out divergence. The divergence is review
   finding 11.2's number — it is only meaningful because the Implementer never saw
@@ -592,8 +596,9 @@ scope. Three constraints need a fail-closed harness hook, and these are
 **generated per harness** by `scripts/install-<harness>.sh` (shell for Claude
 Code and Codex, a TypeScript plugin for OpenCode) rather than hand-wired here:
 
-- **held-out read-deny** — deny Implementer reads resolving under `$HELDOUT_ROOT`
-  (and deny on an unresolvable path); the anti-reward-hacking guarantee (§7).
+- **held-out read-deny** — deny **writer** reads resolving under `$HELDOUT_ROOT`
+  (persona-guarded; allows when unset; never errors); secondary layer behind the
+  filesystem isolation (§7).
 - **write-scope** — deny Planner writes outside the spec/ADR artifact (§1).
 - **branch-guard** — deny branch create/switch and off-branch commits so the
   Implementer stays on its assigned `worktree-agent-*` branch (§9b).

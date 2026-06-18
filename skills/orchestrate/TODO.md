@@ -21,6 +21,18 @@ fresh-context Verifier) — validated on its own construction.
 
 ## High priority
 
+- **Verify the harness exposes subagent identity to `PreToolUse` hooks.** The
+  enforcement hooks (held-out read-deny, branch-guard) now self-guard on persona
+  (`PERSONA`/`CLAUDE_AGENT_TYPE`) so they don't break the router/other personas.
+  But if Claude Code does NOT set the subagent type for a subagent's `PreToolUse`
+  hook calls, those guards make the hooks a **no-op for subagents too** — i.e. the
+  held-out/branch enforcement wouldn't actually fire on the implementer. Confirm
+  the env CC passes to subagent hook calls; if persona isn't available, scope the
+  hooks per-agent or use a different signal. (The capability allowlists + the
+  filesystem held-out isolation still hold regardless — this is about the hook
+  layer's effectiveness.) Surfaced live: bare hooks crashed the session because
+  they assumed env that the main router never sets.
+
 - **Codex / OpenCode `/orchestrate` command parity.** Claude Code emits a
   `commands/orchestrate.md` slash command; the other two harnesses don't yet.
   Add a Codex prompt (`~/.codex/prompts/orchestrate.md`) and an OpenCode command

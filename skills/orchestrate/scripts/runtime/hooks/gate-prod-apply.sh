@@ -6,11 +6,11 @@
 # SubagentStart is NON-blocking on shell harnesses, so the block must live here at
 # tool-use; the dispatch-time ledger hygiene (no false dispatched/lease trace when
 # unacked) is in on-writer-dispatch.sh. Non-actuator personas are a no-op.
-set -euo pipefail
+set -uo pipefail
 RT="$(cd "$(dirname "$0")/.." && pwd)"
 persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"
-[ "$persona" = actuator ] || exit 0
-t="${TICKET:?}"; ts="$(date -u +%FT%TZ)"
+[ "$persona" = actuator ] || { echo '{"decision":"allow"}'; exit 0; }
+t="${TICKET:-}"; ts="$(date -u +%FT%TZ)"
 blocked=0
 for key in ${PROD_TARGETS:-}; do
   m=".agents/runs/orchestrate/tickets/$t/ack-$(bash "$RT/ledger.sh" lease-key "$key")"
@@ -23,4 +23,4 @@ if [ "$blocked" = 1 ]; then
   echo '{"decision":"deny","reason":"pre-apply consequence gate: prod target requires operator ack"}'
   exit 1
 fi
-exit 0
+echo '{"decision":"allow"}'; exit 0
