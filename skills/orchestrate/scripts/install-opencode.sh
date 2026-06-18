@@ -55,12 +55,12 @@ export const orchestrate = async () => ({
     process.env.RESOLVED_PATH = String(input?.args?.path ?? input?.args?.filePath ?? "");
     process.env.TOOL_INPUT = String(input?.args?.command ?? "");
     if (["read","grep","glob"].includes(tool)) sh(\`\${RT}/hooks/deny-heldout-read.sh\`);
-    if (tool === "bash") sh(\`\${RT}/hooks/keep-on-branch.sh\`);
+    if (tool === "bash") { sh(\`\${RT}/hooks/keep-on-branch.sh\`); sh(\`\${RT}/hooks/gate-prod-apply.sh\`); }  // gate is the hard floor at tool-use
   },
   // Write-ahead for the writer (deterministic): runs before an implementer subagent.
   // The script self-guards on persona=implementer. Confirm the event name for your
   // OpenCode version; if subagent-start isn't exposed, the orchestrator does this in-loop.
-  "subagent.start": async () => { sh(\`\${RT}/hooks/gate-prod-apply.sh\`); sh(\`\${RT}/hooks/on-writer-dispatch.sh\`); },
+  "subagent.start": async () => sh(\`\${RT}/hooks/on-writer-dispatch.sh\`),
   // Automatic compaction recovery: reground + inject authoritative board; halt if ambiguous.
   // Wire to your OpenCode compaction/session-restored event; session.start is the fallback.
   "session.start": async () => sh(\`\${RT}/hooks/on-compaction.sh\`),

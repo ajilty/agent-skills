@@ -16,6 +16,18 @@ if [ "$persona" = implementer ]; then
   lease=".agents/runs/orchestrate/tickets/$t/lease"; mkdir -p "$(dirname "$lease")"
   printf '{"dispatch_id":"%s","session":"%s","pid":%s,"ts":"%s"}\n' "$d" "${SESSION_ID:-?}" "$$" "$ts" > "$lease"
 else
+  # Pre-apply consequence gate, ledger half (SKILL §6b): if a prod-level target
+  # lacks an operator ack, leave NO trace — do not journal `dispatched` or take a
+  # lease (a false trace would poison the next reground into a HALT). The HARD
+  # block on the Actuator's commands is gate-prod-apply.sh wired at PreToolUse,
+  # because SubagentStart is non-blocking on shell harnesses.
+  for key in ${PROD_TARGETS:-}; do
+    if [ ! -f ".agents/runs/orchestrate/tickets/$t/ack-$(bash "$RT/ledger.sh" lease-key "$key")" ]; then
+      bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"gate-blocked\",\"persona\":\"actuator\",\"key\":\"$key\"}"
+      echo '{"decision":"deny","reason":"pre-apply consequence gate: prod target requires operator ack"}'
+      exit 1
+    fi
+  done
   bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"dispatched\",\"persona\":\"actuator\",\"dispatch_id\":\"$d\"}"
   # Acquire a lease per declared target. A failed acquire (exit 4 = held by
   # another lane) must NOT be silently swallowed: journal it and deny the

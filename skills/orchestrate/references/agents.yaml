@@ -64,12 +64,13 @@ hooks:
     intent: "Deny branch create/switch and commits that move HEAD off the assigned worktree-agent branch."
     fail_closed: true
   prod_apply_gate:
-    event: subagent-start          # actuator only; wire BEFORE writer_writeahead so a denied dispatch leaves no trace
+    event: pre-tool-use            # actuator Bash; SubagentStart is NON-blocking on shell harnesses, so the hard block lives here at tool-use
     applies_to: [actuator]
     intent: >-
-      Pre-apply consequence gate (SKILL §6b). Deny the actuator dispatch if any
-      prod-level mutation target (PROD_TARGETS — includes undeclared/unknown ->
-      prod, fail-closed) lacks an operator ack marker; journal 'gate-blocked'.
+      Pre-apply consequence gate (SKILL §6b), the hard floor: deny the actuator's
+      commands while any prod-level mutation target (PROD_TARGETS — undeclared/
+      unknown -> prod, fail-closed) lacks an operator ack. The ledger half lives in
+      on-writer-dispatch.sh, which leaves no dispatched/lease trace when unacked.
     fail_closed: true
   writer_writeahead:
     event: subagent-start          # CC/Codex: SubagentStart (matcher=implementer); OpenCode: subagent-invoke

@@ -443,5 +443,7 @@ wiring (`--dir` honored, gate-before-write-ahead, advisory credential scoping).
 
 Carried forward as deferred-with-ticket (from the P1 whole-branch review): lease
 acquire atomicity (TOCTOU → `mkdir`/`set -C` hardening), `TARGETS` comma-split,
-and lease-key JSON escaping. Serialization is guaranteed; credential confinement
-is advisory (ADR-0002).
+and lease-key JSON escaping. The `decision` board event and ADR capture are
+documented router loop-steps with no code writer yet (like other in-loop appends)
+— ticketed so they don't rot into dead prose. Serialization is guaranteed;
+credential confinement is advisory (ADR-0002).

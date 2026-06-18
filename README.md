@@ -79,8 +79,9 @@ context pre-exists:
 
 - **Guaranteed:** capability subtraction per persona (compiled to native tool
   allowlists), single-writer over *mutation targets* via deterministic leases,
-  fail-closed held-out read-deny, branch-guard, and the pre-apply consequence
-  gate (prod-tagged targets require operator ack).
+  fail-closed held-out read-deny, branch-guard, and the pre-apply consequence gate
+  (a `PreToolUse` floor denies the Actuator's commands until a prod-tagged target
+  is acked — on Claude Code / Codex via hooks, on OpenCode via its plugin).
 - **Advisory (deployment responsibility):** credential confinement of the Actuator
   to its leased targets, and any live-environment/network boundary — the skill
   states these but cannot enforce them in every harness (ADR-0002, §8).

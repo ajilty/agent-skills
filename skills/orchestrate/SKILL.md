@@ -396,12 +396,18 @@ Distinct from intake clarification (§2b): that gates on *ambiguity*; this gates
 - Before dispatching the Actuator, the router collects every prod-level target
   into `PROD_TARGETS` and **pauses for operator ack**, showing the planned action
   and the already-reviewed diff. On ack it records `ledger.sh ack <ticket> <key>`.
-- Enforcement floor: the `prod_apply_gate` hook (SubagentStart, actuator;
-  fail-closed) denies the dispatch if any `PROD_TARGETS` key lacks its ack marker
-  and journals `gate-blocked` — wired **before** the write-ahead hook so a denied
-  dispatch never journals a `dispatched` or takes a lease. `safe` targets proceed
-  autonomously. Independent of the deferred harness prod-classifier, which may
-  later set the flag.
+- Enforcement is **two-layer**, because `SubagentStart` is **non-blocking** on
+  shell harnesses (a deny there is ignored and its hooks run in parallel):
+  1. **Hard floor —** `gate-prod-apply.sh` at **`PreToolUse`** denies the
+     Actuator's commands while any `PROD_TARGETS` key lacks its ack marker, so the
+     apply cannot run. Fail-closed and coarse by design: it blocks *all* the
+     Actuator's commands until ack, so there is no command-parsing to evade.
+  2. **Ledger hygiene —** `on-writer-dispatch.sh` (SubagentStart), when a target
+     is unacked, journals `gate-blocked` and leaves **no `dispatched`/lease
+     trace**, so a blocked dispatch can't poison the next reground into a HALT.
+
+  `safe` targets proceed autonomously. Independent of the deferred harness
+  prod-classifier, which may later set the flag.
 
 ---
 

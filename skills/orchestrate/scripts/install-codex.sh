@@ -56,12 +56,12 @@ Add to ${DEST}/config.toml (or project .codex/config.toml):
   type = "command"; command = "$HOOKS/deny-heldout-read.sh"
   [[hooks.PreToolUse.hooks]]
   type = "command"; command = "$HOOKS/keep-on-branch.sh"
+  [[hooks.PreToolUse.hooks]]
+  type = "command"; command = "$HOOKS/gate-prod-apply.sh"   # pre-apply gate hard floor (PreToolUse blocks; SubagentStart does not)
 
-  # Pre-apply consequence gate (actuator; BEFORE write-ahead) + write-ahead (both writers):
+  # Write-ahead for both writers (deterministic ledger + lease; the gate's ledger half lives inside it):
   [[hooks.SubagentStart]]
   matcher = "implementer|actuator"
-  [[hooks.SubagentStart.hooks]]
-  type = "command"; command = "$HOOKS/gate-prod-apply.sh"
   [[hooks.SubagentStart.hooks]]
   type = "command"; command = "$HOOKS/on-writer-dispatch.sh"
 

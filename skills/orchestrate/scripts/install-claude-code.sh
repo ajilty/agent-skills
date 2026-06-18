@@ -55,9 +55,9 @@ Add to $DEST/settings.json (two enforcement hooks + write-ahead + compaction rec
   "hooks": {
     "PreToolUse": [ { "matcher": "Read|Bash", "hooks": [
         { "type": "command", "command": "$HOOKS/deny-heldout-read.sh" },
-        { "type": "command", "command": "$HOOKS/keep-on-branch.sh" } ] } ],
+        { "type": "command", "command": "$HOOKS/keep-on-branch.sh" },
+        { "type": "command", "command": "$HOOKS/gate-prod-apply.sh" } ] } ],
     "SubagentStart": [ { "matcher": "implementer|actuator", "hooks": [
-        { "type": "command", "command": "$HOOKS/gate-prod-apply.sh" },
         { "type": "command", "command": "$HOOKS/on-writer-dispatch.sh" } ] } ],
     "SessionStart": [ { "matcher": "compact", "hooks": [
         { "type": "command", "command": "$HOOKS/on-compaction.sh" } ] } ]

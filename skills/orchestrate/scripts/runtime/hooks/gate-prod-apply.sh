@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# SubagentStart (actuator): pre-apply consequence gate (SKILL §8). Deny the
-# dispatch if any prod-level mutation target lacks an operator ack. Fail-closed:
-# the router populates PROD_TARGETS with every prod AND undeclared/unknown target,
-# so an unacked consequential apply cannot proceed. Wire this BEFORE the
-# write-ahead hook so a denied dispatch never journals a `dispatched` or takes a
-# lease. Non-actuator personas are a no-op.
+# PreToolUse (actuator, Bash): pre-apply consequence gate (SKILL §6b), the hard
+# floor. Deny the actuator's commands while any prod-level mutation target
+# (PROD_TARGETS — the router includes every prod AND undeclared/unknown target,
+# fail-closed) lacks an operator ack, so a consequential apply cannot run.
+# SubagentStart is NON-blocking on shell harnesses, so the block must live here at
+# tool-use; the dispatch-time ledger hygiene (no false dispatched/lease trace when
+# unacked) is in on-writer-dispatch.sh. Non-actuator personas are a no-op.
 set -euo pipefail
 RT="$(cd "$(dirname "$0")/.." && pwd)"
 persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"

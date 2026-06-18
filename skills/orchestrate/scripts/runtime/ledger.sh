@@ -90,7 +90,7 @@ case "$cmd" in
 
   lease-check)   key="${1:?key}"; [ -f "$LEASES/$(enc "$key")" ] && exit 4 || exit 0 ;;
 
-  ack)   # operator confirms a prod-level mutation target for a ticket (pre-apply gate, §8)
+  ack)   # operator confirms a prod-level mutation target for a ticket (pre-apply gate, SKILL §6b)
     tk="${1:?ticket}"; key="${2:?key}"; m="$ROOT/tickets/$tk/ack-$(enc "$key")"
     mkdir -p "$(dirname "$m")"; : > "$m" ;;
 
