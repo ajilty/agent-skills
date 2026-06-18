@@ -1,0 +1,16 @@
+{
+  "name": "ajilty-agent-skills",
+  "description": "Homegrown agentic tooling for Claude Code.",
+  "owner": {
+    "name": "ajilty",
+    "email": "github@ajilty.com"
+  },
+  "plugins": [
+    {
+      "name": "orchestrate",
+      "description": "Standing operator loop with capability-subtracted personas and fail-closed safety guarantees.",
+      "source": "./plugins/orchestrate",
+      "author": { "name": "ajilty", "email": "github@ajilty.com" }
+    }
+  ]
+}

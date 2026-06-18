@@ -1,0 +1,13 @@
+{
+  "name": "orchestrate",
+  "version": "0.1.0",
+  "description": "Standing operator loop: feed goals of any altitude; capability-subtracted personas execute with single-writer, held-out-oracle, and pre-apply-gate guarantees, surviving interruption and remembering judgment across goals.",
+  "author": {
+    "name": "ajilty",
+    "email": "github@ajilty.com"
+  },
+  "homepage": "https://github.com/ajilty/agent-skills",
+  "repository": "https://github.com/ajilty/agent-skills",
+  "license": "MIT",
+  "keywords": ["orchestration", "subagents", "capability-subtraction", "ops", "workflow"]
+}
