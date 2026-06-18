@@ -1,4 +1,4 @@
-R="$(cd "$(dirname "$0")/../scripts/runtime" && pwd)/ledger.sh"
+R="$HERE/../scripts/runtime/ledger.sh"
 d="$(mktemp_repo)"; cd "$d"
 # encoding: only '/' is encoded
 assert_eq "$(bash "$R" lease-key 'k8s:clusterB/app')" 'k8s:clusterB%2Fapp' "lease-key encodes slash"

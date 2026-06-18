@@ -1,4 +1,4 @@
-R="$(cd "$(dirname "$0")/../scripts/runtime" && pwd)/ledger.sh"
+R="$HERE/../scripts/runtime/ledger.sh"
 d="$(mktemp_repo)"; cd "$d"
 # a lease whose ticket never reached 'done' -> reground HALTs (exit 3) and names it
 bash "$R" lease-acquire T9 'db:orders-primary'
