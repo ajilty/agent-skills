@@ -29,6 +29,13 @@ fresh-context Verifier) — validated on its own construction.
 
 ## Medium
 
+- **Installer should emit `${CLAUDE_PROJECT_DIR}`-relative hook paths.** It prints
+  absolute hook commands today, so the hooks block is machine-specific and must go
+  in `settings.local.json` (untracked), not a shared/tracked `settings.json`. Using
+  `${CLAUDE_PROJECT_DIR}/...` (and Codex/OpenCode equivalents) would let the hook
+  wiring be committed and portable across machines.
+
+
 - **Lease acquire atomicity (TOCTOU).** `ledger.sh lease-acquire` is
   check-then-write; two concurrent acquires of a free target could both win.
   Replace with an atomic claim (`mkdir` lockdir, or `set -C`/noclobber `O_EXCL`).
