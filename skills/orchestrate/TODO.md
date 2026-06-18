@@ -21,17 +21,32 @@ fresh-context Verifier) — validated on its own construction.
 
 ## High priority
 
-- **Verify the harness exposes subagent identity to `PreToolUse` hooks.** The
-  enforcement hooks (held-out read-deny, branch-guard) now self-guard on persona
-  (`PERSONA`/`CLAUDE_AGENT_TYPE`) so they don't break the router/other personas.
-  But if Claude Code does NOT set the subagent type for a subagent's `PreToolUse`
-  hook calls, those guards make the hooks a **no-op for subagents too** — i.e. the
-  held-out/branch enforcement wouldn't actually fire on the implementer. Confirm
-  the env CC passes to subagent hook calls; if persona isn't available, scope the
-  hooks per-agent or use a different signal. (The capability allowlists + the
-  filesystem held-out isolation still hold regardless — this is about the hook
-  layer's effectiveness.) Surfaced live: bare hooks crashed the session because
-  they assumed env that the main router never sets.
+- **Hooks must read Claude Code's stdin JSON, not env vars — enforcement is
+  currently HOLLOW under CC.** [Confirmed against the CC hooks docs.] CC delivers
+  the hook payload on **stdin** (`tool_name`, `tool_input`, `session_id`, `cwd`,
+  and inside a subagent `agent_id`/`agent_type`). There is **no `CLAUDE_AGENT_TYPE`
+  env var** (only `$CLAUDE_EFFORT`). Our hooks read `PERSONA`/`RESOLVED_PATH`/
+  `TOOL_INPUT` env, which CC never sets → the PreToolUse hooks (held-out,
+  branch-guard, prod-gate) always hit the "not a writer" path and **allow** — they
+  no-op under CC (safe, but not enforcing). Fix: parse stdin JSON
+  (`agent_type` for persona, `tool_input.command` for Bash, `tool_input.file_path`
+  for Read), keeping the env reads as the Codex/OpenCode fallback. Match
+  `agent_type` against the agent's frontmatter `name`.
+  - **Per-dispatch context is the harder half (ADR-worthy).** The prod-gate needs
+    `PROD_TARGETS` and branch-guard needs `ASSIGNED_BRANCH` *per dispatch* — set by
+    the router as env, but CC subagent hooks receive only the stdin payload, not
+    router-set env. So the hooks must read orchestrate's **on-disk artifacts**
+    (the ticket spec's `mutation_targets`/`consequence`, the assigned branch)
+    keyed by `agent_id`/`cwd` — "disk is the source of truth" applied to the hook
+    layer. With this: held-out works once stdin-parsed (HELDOUT_ROOT is
+    session-global); gate + off-branch-commit need the disk lookup.
+  - **Still holds regardless of the hook layer:** capability allowlists (native CC
+    per-agent `tools:`) and the filesystem held-out isolation — the load-bearing
+    guarantees never depended on these hooks.
+  - History: the env-var assumption first crashed the session (bare `${VAR:?}`),
+    then (after the exit-code fix) was found to silently no-op. The generalized
+    `test_hooks_safety.sh` floor catches the crash class; making enforcement real
+    needs the stdin-parse + disk-lookup above.
 
 - **Codex / OpenCode `/orchestrate` command parity.** Claude Code emits a
   `commands/orchestrate.md` slash command; the other two harnesses don't yet.
