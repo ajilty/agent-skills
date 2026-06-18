@@ -58,6 +58,17 @@ case "$cmd" in
       done < <(git worktree list --porcelain 2>/dev/null | awk '
         /^worktree /{p=$2} /^branch /{b=$2; sub("refs/heads/","",b); print p"\t"b}')
     fi
+    # (c) open target leases: any lease whose ticket never reached 'done'
+    if [ -d "$LEASES" ]; then
+      for f in "$LEASES"/*; do
+        [ -e "$f" ] || continue
+        lt="$(val "$(cat "$f")" ticket)"; lk="$(val "$(cat "$f")" key)"
+        done_evt=0
+        if [ -f "$LEDGER" ]; then grep -q "\"ticket\":\"$lt\".*\"event\":\"done\"" "$LEDGER" && done_evt=1; fi
+        [ "$done_evt" = 1 ] && continue
+        echo "OPEN LEASE $lk ticket=$lt -> release or reconcile before re-dispatch"; ambiguous=1; printed=1
+      done
+    fi
     [ "$printed" = 0 ] && echo "board: no open lanes"
     [ "$ambiguous" = 1 ] && { echo "REGROUND: ambiguous writer lane(s) -> HALT for human re-attach"; exit 3; }
     echo "REGROUND: clean" ;;
