@@ -9,6 +9,8 @@
 #                                       # exit 0 = clean/empty, exit 3 = ambiguous writer -> HALT
 set -euo pipefail
 ROOT=".agents/runs/orchestrate"; LEDGER="$ROOT/board.jsonl"
+LEASES="$ROOT/leases"
+enc(){ printf '%s' "$1" | sed 's#/#%2F#g'; }   # only '/' needs encoding on Linux
 val() { sed -n "s/.*\"$2\":\"\([^\"]*\)\".*/\1/p" <<< "$1"; }
 
 cmd="${1:-}"; shift || true
@@ -59,6 +61,21 @@ case "$cmd" in
     [ "$printed" = 0 ] && echo "board: no open lanes"
     [ "$ambiguous" = 1 ] && { echo "REGROUND: ambiguous writer lane(s) -> HALT for human re-attach"; exit 3; }
     echo "REGROUND: clean" ;;
+
+  lease-key) printf '%s\n' "$(enc "${1:?key}")" ;;
+
+  lease-acquire)   # exit 0 if free or self-owned, 4 if held by another ticket
+    tk="${1:?ticket}"; key="${2:?key}"; f="$LEASES/$(enc "$key")"
+    mkdir -p "$LEASES"
+    if [ -f "$f" ]; then
+      owner="$(val "$(cat "$f")" ticket)"
+      [ "$owner" = "$tk" ] && exit 0 || exit 4
+    fi
+    printf '{"key":"%s","ticket":"%s","ts":"%s"}\n' "$key" "$tk" "$(date -u +%FT%TZ)" > "$f" ;;
+
+  lease-release) key="${1:?key}"; rm -f "$LEASES/$(enc "$key")" ;;
+
+  lease-check)   key="${1:?key}"; [ -f "$LEASES/$(enc "$key")" ] && exit 4 || exit 0 ;;
 
   *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground}" >&2; exit 64 ;;
 esac
