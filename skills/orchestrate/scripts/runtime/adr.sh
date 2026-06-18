@@ -70,10 +70,17 @@ case "$cmd" in
       for f in "$ADRDIR"/[0-9]*.md; do
         [ -e "$f" ] || continue
         base="$(basename "$f")"; num="${base%%-*}"
-        title="$(grep -m1 '^# ' "$f" | sed 's/^#[[:space:]]*//')"; [ -z "$title" ] && title="$base"
-        if grep -qi 'supersed' "$f"; then
-          status="$(grep -m1 -oiE 'superseded by [0-9A-Za-z-]+' "$f")"; [ -z "$status" ] && status="superseded"
-        else status="active"; fi
+        title="$(grep -m1 '^# ' "$f" 2>/dev/null | sed 's/^#[[:space:]]*//' || true)"; [ -z "$title" ] && title="$base"
+        # Status comes ONLY from a status line (`_Status:` or frontmatter `status:`),
+        # never arbitrary body prose. Guard every substitution so set -e/pipefail
+        # cannot abort the rebuild mid-loop and silently truncate the index.
+        sline="$(grep -m1 -iE '^_?status:' "$f" 2>/dev/null || true)"
+        case "$sline" in
+          *[Ss]upersed*)
+            status="$(printf '%s' "$sline" | grep -oiE 'superseded by [0-9A-Za-z-]+' || true)"
+            [ -z "$status" ] && status="superseded" ;;
+          *) status="active" ;;
+        esac
         printf '| [%s](%s) | %s | %s |\n' "$num" "$base" "$title" "$status"
       done
     } > "$INDEX" ;;

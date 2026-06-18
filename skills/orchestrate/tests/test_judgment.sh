@@ -18,8 +18,13 @@ printf '# First decision\n\n_Status: active_\n' > docs/adr/0001-first.md
 printf '# Second decision\n\n_Status: superseded by 0003_\n' > docs/adr/0002-second.md
 # an ADR an EXTERNAL tool wrote: conformant name, no _Status_ line
 printf '# Third by another tool\n\ncontext only, no status line\n' > docs/adr/0003-third.md
-bash "$A" reindex
+# an ACTIVE ADR whose BODY mentions "supersede" in prose must not trip set -e or be mis-statused
+printf '# Fourth decision\n\nthis references the supersede flow in prose but is itself active\n' > docs/adr/0004-fourth.md
+bash "$A" reindex; rc=$?
+assert_eq "$rc" "0" "reindex survives body-prose 'supersede' (no set -e abort / truncation)"
 assert_file docs/adr/INDEX.md
+grep -q '0004-fourth.md' docs/adr/INDEX.md && pass || fail "reindex did not truncate (0004 present)"
+awk '/0004-fourth/' docs/adr/INDEX.md | grep -qi 'active' && pass || fail "body-prose 'supersede' ADR stays active"
 grep -q '0001-first.md' docs/adr/INDEX.md && pass || fail "reindex includes 0001"
 grep -q 'First decision'  docs/adr/INDEX.md && pass || fail "reindex pulls the title from the file"
 grep -q '0003-third.md'   docs/adr/INDEX.md && pass || fail "reindex picks up externally-authored ADR"

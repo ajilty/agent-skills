@@ -103,7 +103,8 @@ before Execution.
 
 ## Judgment memory (read the decision index first)
 
-Before planning, read `docs/adr/INDEX.md` — the cross-goal decision record
+Before planning, run `adr.sh reindex` (so ADRs written by any conformant tool are
+included), then read `docs/adr/INDEX.md` — the cross-goal decision record
 (ADR-0003: in-repo and tracked, never harness memory). Do **not** re-litigate a
 decision whose status is `active`; treat it as a `TRUSTED` constraint and plan
 within it. If the work-item contradicts an active decision, do not silently
