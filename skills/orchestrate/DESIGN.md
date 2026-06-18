@@ -446,4 +446,5 @@ acquire atomicity (TOCTOU → `mkdir`/`set -C` hardening), `TARGETS` comma-split
 and lease-key JSON escaping. The `decision` board event and ADR capture are
 documented router loop-steps with no code writer yet (like other in-loop appends)
 — ticketed so they don't rot into dead prose. Serialization is guaranteed;
-credential confinement is advisory (ADR-0002).
+credential confinement is advisory (ADR-0002). Full backlog + priorities:
+`TODO.md`.
