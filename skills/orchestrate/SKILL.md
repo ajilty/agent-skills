@@ -393,9 +393,14 @@ Distinct from intake clarification (§2b): that gates on *ambiguity*; this gates
 
 - The Planner tags each mutation target with a `consequence` (`prod | safe`);
   **undeclared/unknown is treated as `prod`** (fail-closed).
-- Before dispatching the Actuator, the router collects every prod-level target
-  into `PROD_TARGETS` and **pauses for operator ack**, showing the planned action
-  and the already-reviewed diff. On ack it records `ledger.sh ack <ticket> <key>`.
+- Before dispatching the Actuator, the router writes the per-dispatch context to
+  the on-disk **active-writer record** (`ledger.sh writer-ctx set <ticket> actuator
+  <branch> <prod-targets…>`) and **pauses for operator ack**, showing the planned
+  action and the already-reviewed diff. On ack it records `ledger.sh ack <ticket>
+  <key>`; on lane close it runs `ledger.sh writer-ctx clear`. The hooks read this
+  record because **CC passes no router env to subagent hooks** (ADR-0006); env is
+  the Codex/OpenCode fallback. The same record carries `assigned_branch` for the
+  branch-guard.
 - Enforcement is **two-layer**, because `SubagentStart` is **non-blocking** on
   shell harnesses (a deny there is ignored and its hooks run in parallel):
   1. **Hard floor —** `gate-prod-apply.sh` at **`PreToolUse`** denies the

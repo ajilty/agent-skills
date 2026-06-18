@@ -54,6 +54,21 @@ fresh-context Verifier) — validated on its own construction.
   so the typed entry point works everywhere. (`SKILL.md` is already the shared
   brain; these are thin wrappers.)
 
+## Part-2 follow-ups (verifier-flagged, non-blocking)
+
+- **`reground` should detect/clear a dangling `active-writer.json`.** If the router
+  crashes after `writer-ctx set` + `ack` but before `clear`, a later dispatch made
+  without a fresh `set` reads the stale, already-acked record and is allowed
+  without a fresh ack. reground is currently unaware of the record. Make reground
+  surface/clear a dangling active-writer (prod-safety defense-in-depth; today the
+  only protection is router loop discipline — set before every dispatch, clear on
+  close).
+- **active-writer `persona` field is written but never read.** Either use it as a
+  cross-check (gate verifies `record.persona == actuator` before applying its
+  prod_targets) or drop the field. Benign under single-writer; currently dead.
+- **Add a test for `writer-ctx set` overwriting an existing record** — the
+  per-dispatch refresh is the actual staleness mitigation and is itself untested.
+
 ## Medium
 
 - **Installer should emit `${CLAUDE_PROJECT_DIR}`-relative hook paths.** It prints

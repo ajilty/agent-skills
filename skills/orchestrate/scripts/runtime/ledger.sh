@@ -98,5 +98,20 @@ case "$cmd" in
     tk="${1:?ticket}"; fid="${2:?fork_id}"; adr="${3:-}"; mkdir -p "$ROOT"
     printf '{"ts":"%s","ticket":"%s","event":"decision","fork_id":"%s","adr":"%s"}\n' "$(date -u +%FT%TZ)" "$tk" "$fid" "$adr" >> "$LEDGER" ;;
 
-  *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground|lease-{key,acquire,release,check}|ack|decision <ticket> <fork_id> [adr]}" >&2; exit 64 ;;
+  writer-ctx)  # per-dispatch enforcement context (ADR-0006): the router writes this
+               # BEFORE dispatching a writer; the hooks read it (CC passes no router
+               # env to subagent hooks). Line format -> no jq needed. Single active
+               # writer (single-writer rail), cleared on lane close.
+    sub="${1:-}"; shift || true; f="$ROOT/active-writer.json"
+    case "$sub" in
+      set)   # set <ticket> <persona> <assigned_branch> [prod_target...]
+        wt="${1:?ticket}"; wp="${2:?persona}"; wb="${3:-}"; pt="${*:4}"; mkdir -p "$ROOT"
+        printf 'ticket=%s\npersona=%s\nassigned_branch=%s\nprod_targets=%s\nts=%s\n' \
+          "$wt" "$wp" "$wb" "$pt" "$(date -u +%FT%TZ)" > "$f" ;;
+      get)   k="${1:?key}"; [ -f "$f" ] || exit 0; sed -n "s/^$k=//p" "$f" ;;
+      clear) rm -f "$f" ;;
+      *) echo "usage: ledger.sh writer-ctx set <ticket> <persona> <branch> [prod...] | get <key> | clear" >&2; exit 64 ;;
+    esac ;;
+
+  *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground|lease-{key,acquire,release,check}|ack|decision <ticket> <fork_id> [adr]|writer-ctx set|get|clear}" >&2; exit 64 ;;
 esac

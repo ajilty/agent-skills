@@ -16,9 +16,12 @@ in=""; [ -t 0 ] || in="$(cat 2>/dev/null || true)"
 J(){ [ -n "$in" ] && command -v jq >/dev/null 2>&1 && printf '%s' "$in" | jq -r "$1 // empty" 2>/dev/null || true; }
 persona="$(J .agent_type)"; [ -n "$persona" ] || persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"
 [ "$persona" = actuator ] || exit 0
-t="${TICKET:-}"; ts="$(date -u +%FT%TZ)"
+# per-dispatch context: env (Codex/OpenCode) first, else the on-disk active-writer
+# record the router wrote at dispatch (ADR-0006 — CC passes no router env to hooks).
+t="${TICKET:-$(bash "$RT/ledger.sh" writer-ctx get ticket)}"; ts="$(date -u +%FT%TZ)"
+pts="${PROD_TARGETS:-$(bash "$RT/ledger.sh" writer-ctx get prod_targets)}"
 blocked=0; bkey=""
-for key in ${PROD_TARGETS:-}; do
+for key in $pts; do
   m=".agents/runs/orchestrate/tickets/$t/ack-$(bash "$RT/ledger.sh" lease-key "$key")"
   if [ ! -f "$m" ]; then
     bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"gate-blocked\",\"persona\":\"actuator\",\"key\":\"$key\"}"

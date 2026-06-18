@@ -11,3 +11,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0003](0003-judgment-memory-in-repo-not-harness.md) | Judgment memory is in-repo and tracked, never harness memory | active |
 | [0004](0004-router-owns-sequencing.md) | Router owns sequencing; sub-skills are invoked for work, not control flow | active |
 | [0005](0005-filesystem-two-axis-split.md) | Filesystem two-axis split — tracked docs/ vs gitignored .agents/ | active |
+| [0006](0006-per-dispatch-context-via-on-disk-active-writer.md) | Per-dispatch enforcement context via an on-disk active-writer record | active |

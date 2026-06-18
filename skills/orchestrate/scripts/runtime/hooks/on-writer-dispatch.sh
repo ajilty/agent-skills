@@ -13,7 +13,7 @@ in=""; [ -t 0 ] || in="$(cat 2>/dev/null || true)"
 J(){ [ -n "$in" ] && command -v jq >/dev/null 2>&1 && printf '%s' "$in" | jq -r "$1 // empty" 2>/dev/null || true; }
 persona="$(J .agent_type)"; [ -n "$persona" ] || persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"
 case "$persona" in implementer|actuator) ;; *) exit 0 ;; esac
-ts="$(date -u +%FT%TZ)"; t="${TICKET:-}"; d="${DISPATCH_ID:-$RANDOM}"
+ts="$(date -u +%FT%TZ)"; t="${TICKET:-$(bash "$RT/ledger.sh" writer-ctx get ticket)}"; d="${DISPATCH_ID:-$RANDOM}"
 [ -n "$t" ] || exit 0    # no ticket context -> nothing to write-ahead
 
 if [ "$persona" = implementer ]; then
@@ -26,7 +26,8 @@ fi
 
 # actuator: ledger hygiene for the pre-apply gate — if a prod-level target lacks an
 # operator ack, leave NO trace (no dispatched/lease) so reground isn't poisoned.
-for key in ${PROD_TARGETS:-}; do
+pts="${PROD_TARGETS:-$(bash "$RT/ledger.sh" writer-ctx get prod_targets)}"
+for key in $pts; do
   [ -f ".agents/runs/orchestrate/tickets/$t/ack-$(bash "$RT/ledger.sh" lease-key "$key")" ] || {
     bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"gate-blocked\",\"persona\":\"actuator\",\"key\":\"$key\"}"
     exit 0
