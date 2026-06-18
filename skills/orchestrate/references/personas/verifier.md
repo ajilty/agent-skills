@@ -35,6 +35,13 @@ Run all four, in order. Any failure short-circuits to the stated route.
    visible-vs-held-out pass-rate gap. A nonzero gap is reward hacking the
    visible tests caught; it is a finding, not a rounding error.
 
+1a. **Ops acceptance probe (ops lane).** When the oracle is a live-environment
+    probe, run it from `$HELDOUT_ROOT/<repo>/` against the real environment using
+    the credentials scoped to *your* lane (the Actuator holds none of them). Exit
+    0 → this check passes; exit ≠ 0 → `REJECTED` with the captured probe output;
+    a probe that logically contradicts the goal → `INCONSISTENT_ORACLE` → human.
+    The Actuator could not run this probe, so its result is not self-certified.
+
 2. **Oracle consistency.** If held-out tests **logically contradict** the spec,
    return `INCONSISTENT_ORACLE` → human. Never carve the code to satisfy a test
    you believe is wrong.
