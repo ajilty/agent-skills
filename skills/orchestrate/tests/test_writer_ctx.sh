@@ -43,4 +43,9 @@ case "$out" in *"active-writer ticket=TZ"*) pass;; *) fail "reground names the d
 bash "$RT/ledger.sh" writer-ctx clear
 out="$(bash "$RT/ledger.sh" reground 2>&1)"; code=$?
 assert_eq "$code" "0" "after writer-ctx clear -> reground clean (exit 0)"
+# an empty/malformed active-writer.json still HALTs (set -e safe; existence drives it)
+: > .agents/runs/orchestrate/active-writer.json
+out="$(bash "$RT/ledger.sh" reground 2>&1)"; code=$?
+assert_eq "$code" "3" "empty active-writer.json still HALTs (set -e safe)"
+rm -f .agents/runs/orchestrate/active-writer.json
 cd /; rm -rf "$d"
