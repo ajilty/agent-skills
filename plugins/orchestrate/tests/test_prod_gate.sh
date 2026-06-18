@@ -1,4 +1,4 @@
-RT="$HERE/../scripts/runtime"
+RT="$HERE/../skills/orchestrate/runtime"
 GATE="$RT/hooks/gate-prod-apply.sh"
 d="$(mktemp_repo)"; cd "$d"
 # a prod-level target with no operator ack -> gate DENIES (exit 2, CC block) + journals gate-blocked

@@ -1,4 +1,4 @@
-A="$HERE/../scripts/runtime/adr.sh"
+A="$HERE/../skills/orchestrate/runtime/adr.sh"
 d="$(mktemp_repo)"; cd "$d"
 mkdir -p docs/adr
 # next on an empty adr dir -> 0001

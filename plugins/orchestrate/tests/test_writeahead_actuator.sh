@@ -1,4 +1,4 @@
-RT="$HERE/../scripts/runtime"
+RT="$HERE/../skills/orchestrate/runtime"
 d="$(mktemp_repo)"; cd "$d"
 PERSONA=actuator TICKET=T3 TARGETS='k8s:clusterB/app db:orders' DISPATCH_ID=d1 \
   bash "$RT/hooks/on-writer-dispatch.sh"

@@ -4,7 +4,7 @@
 #   user (default): ~/.config/opencode    project: ./.opencode
 set -euo pipefail
 
-SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../skills/orchestrate" && pwd)"
 AGENTS="$SKILL_DIR/references/agents.yaml"
 SCOPE=user; OVERRIDE=""
 while [ $# -gt 0 ]; do case "$1" in
@@ -32,7 +32,7 @@ oc_tools() { local p="$1" read web write run rd=false gp=false gl=false wf=false
 body() { awk 'f==2{print} /^---[[:space:]]*$/{f++}' "$1"; }
 
 mkdir -p "$AGENTS_DEST" "$PLUGIN_DEST" "$RUNTIME"
-cp -r "$SKILL_DIR/scripts/runtime/." "$RUNTIME/"
+cp -r "$SKILL_DIR/runtime/." "$RUNTIME/"
 chmod +x "$RUNTIME"/*.sh "$RUNTIME"/hooks/*.sh
 { echo "<!-- orchestrate router brain (generated) -->"; cat "$SKILL_DIR/SKILL.md"; } > "$BRAIN_DIR/AGENTS.orchestrate.md"
 

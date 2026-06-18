@@ -1,5 +1,5 @@
-R="$HERE/../scripts/runtime/ledger.sh"
-A="$HERE/../scripts/runtime/adr.sh"
+R="$HERE/../skills/orchestrate/runtime/ledger.sh"
+A="$HERE/../skills/orchestrate/runtime/adr.sh"
 
 # --- decision-event writer (capture half of judgment memory, SKILL §11) ---
 d="$(mktemp_repo)"; cd "$d"

@@ -1,4 +1,4 @@
-R="$HERE/../scripts/runtime/ledger.sh"
+R="$HERE/../skills/orchestrate/runtime/ledger.sh"
 d="$(mktemp_repo)"; cd "$d"
 # encoding: only '/' is encoded
 assert_eq "$(bash "$R" lease-key 'k8s:clusterB/app')" 'k8s:clusterB%2Fapp' "lease-key encodes slash"

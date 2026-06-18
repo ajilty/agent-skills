@@ -4,7 +4,7 @@
 #   user (default): ~/.codex (or $CODEX_HOME)    project: ./.codex
 set -euo pipefail
 
-SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../skills/orchestrate" && pwd)"
 AGENTS="$SKILL_DIR/references/agents.yaml"
 WEB_MCP="${ORCHESTRATE_WEB_MCP:-web}"
 SCOPE=user; OVERRIDE=""
@@ -28,7 +28,7 @@ codex_sandbox() { local p="$1" w r; w="$(yq ".personas.$p.capabilities.write" "$
 body() { awk 'f==2{print} /^---[[:space:]]*$/{f++}' "$1"; }
 
 mkdir -p "$AGENTS_DEST" "$DEST/orchestrate-runtime"
-cp -r "$SKILL_DIR/scripts/runtime/." "$DEST/orchestrate-runtime/"
+cp -r "$SKILL_DIR/runtime/." "$DEST/orchestrate-runtime/"
 chmod +x "$DEST"/orchestrate-runtime/*.sh "$DEST"/orchestrate-runtime/hooks/*.sh
 { echo "<!-- orchestrate router brain (generated) -->"; cat "$SKILL_DIR/SKILL.md"; } > "$BRAIN_DIR/AGENTS.orchestrate.md"
 

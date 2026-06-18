@@ -1,4 +1,4 @@
-RT="$HERE/../scripts/runtime"
+RT="$HERE/../skills/orchestrate/runtime"
 GATE="$RT/hooks/gate-prod-apply.sh"
 KOB="$RT/hooks/keep-on-branch.sh"
 d="$(mktemp_repo)"; cd "$d"

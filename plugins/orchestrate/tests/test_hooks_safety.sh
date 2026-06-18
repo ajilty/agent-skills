@@ -1,4 +1,4 @@
-RT="$HERE/../scripts/runtime/hooks"
+RT="$HERE/../skills/orchestrate/runtime/hooks"
 # Claude Code PreToolUse contract: ALLOW = exit 0 with NO stdout; DENY = exit 2
 # (reason on stderr). Emitting decision JSON trips CC's hook-output validation, so
 # allow paths must be stdout-silent. These tests lock that contract + the rule that
