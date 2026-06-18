@@ -435,5 +435,13 @@ exactly what makes it portable.
 The standing-operator-loop extension (Actuator persona, mutation-target leasing,
 ops lane, judgment memory, clarification + pre-apply gate) is specified in
 `docs/specs/2026-06-18-orchestrate-standing-operator-loop.md` with decisions in
-`docs/adr/`. P1 (this milestone) lands the Actuator, target leasing, and the ops
-lane.
+`docs/adr/`. All four phases are landed: **P1** Actuator + mutation-target
+leasing + ops lane; **P2** judgment memory (`runtime/adr.sh`, recall/capture/
+supersede); **P3** ambiguity-gated clarification (router-owned sequencing) +
+pre-apply consequence gate (`gate-prod-apply.sh`); **P4** per-harness installer
+wiring (`--dir` honored, gate-before-write-ahead, advisory credential scoping).
+
+Carried forward as deferred-with-ticket (from the P1 whole-branch review): lease
+acquire atomicity (TOCTOU → `mkdir`/`set -C` hardening), `TARGETS` comma-split,
+and lease-key JSON escaping. Serialization is guaranteed; credential confinement
+is advisory (ADR-0002).
