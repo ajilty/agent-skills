@@ -33,3 +33,7 @@ accepted
   -writer assumptions).
 - The router writing/clearing the record is loop discipline (like the other
   in-loop ledger appends), via `ledger.sh writer-ctx set|clear`.
+- `reground` HALTs on a dangling record (a writer that didn't cleanly close),
+  forcing reconcile (`writer-ctx clear`) so a stale, already-acked record can't
+  bypass the gate on a later dispatch. It does not auto-clear — at compaction the
+  record may belong to a live writer.

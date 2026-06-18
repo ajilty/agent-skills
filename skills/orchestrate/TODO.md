@@ -54,20 +54,17 @@ fresh-context Verifier) — validated on its own construction.
   so the typed entry point works everywhere. (`SKILL.md` is already the shared
   brain; these are thin wrappers.)
 
-## Part-2 follow-ups (verifier-flagged, non-blocking)
+## Part-2 follow-ups (verifier-flagged)
 
-- **`reground` should detect/clear a dangling `active-writer.json`.** If the router
-  crashes after `writer-ctx set` + `ack` but before `clear`, a later dispatch made
-  without a fresh `set` reads the stale, already-acked record and is allowed
-  without a fresh ack. reground is currently unaware of the record. Make reground
-  surface/clear a dangling active-writer (prod-safety defense-in-depth; today the
-  only protection is router loop discipline — set before every dispatch, clear on
-  close).
-- **active-writer `persona` field is written but never read.** Either use it as a
-  cross-check (gate verifies `record.persona == actuator` before applying its
+- ✅ **DONE — `reground` HALTs on a dangling `active-writer.json`.** reground block
+  (d) surfaces a leftover record (router crashed between `writer-ctx set` and
+  `clear`) as an ambiguous in-flight writer → HALT (exit 3); the operator/router
+  clears it on reconcile. Chose HALT over auto-clear because at compaction the
+  record may belong to a live writer. Closes the stale-ack gate-bypass window.
+- ✅ **DONE — overwrite test** for `writer-ctx set` (the per-dispatch refresh).
+- **active-writer `persona` field is written but never read** (minor). Either use
+  it as a gate cross-check (`record.persona == actuator` before applying its
   prod_targets) or drop the field. Benign under single-writer; currently dead.
-- **Add a test for `writer-ctx set` overwriting an existing record** — the
-  per-dispatch refresh is the actual staleness mitigation and is itself untested.
 
 ## Medium
 

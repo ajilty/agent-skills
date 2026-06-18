@@ -528,8 +528,8 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 **Files:**
 - Create: `plugins/orchestrate/README.md`
-- Create: `docs/adr/0006-plugin-is-generated-distribution-of-agents-yaml.md`
-- Create: `docs/adr/0007-subdir-plugin-monorepo-over-repo-root.md`
+- Create: `docs/adr/0007-plugin-is-generated-distribution-of-agents-yaml.md` (0006 is taken — `0006-per-dispatch-context-via-on-disk-active-writer.md`)
+- Create: `docs/adr/0008-subdir-plugin-monorepo-over-repo-root.md`
 - Modify: `README.md` (repo root), `CONTEXT.md`, `docs/adr/INDEX.md`, `plugins/orchestrate/TODO.md`
 - Modify: any file with a stale `skills/orchestrate/...` path reference
 
@@ -573,7 +573,7 @@ Create `plugins/orchestrate/README.md` covering: what the plugin is, the marketp
 
 - [ ] **Step 4: Write the two ADRs and reindex**
 
-Create `docs/adr/0006-plugin-is-generated-distribution-of-agents-yaml.md`:
+Create `docs/adr/0007-plugin-is-generated-distribution-of-agents-yaml.md`:
 ```markdown
 # Plugin packaging is a generated distribution of the agents.yaml contract
 
@@ -594,7 +594,7 @@ A drift-guard unit check enforces committed == fresh build. yq is build-time
 only; the installed plugin needs git + coreutils.
 ```
 
-Create `docs/adr/0007-subdir-plugin-monorepo-over-repo-root.md`:
+Create `docs/adr/0008-subdir-plugin-monorepo-over-repo-root.md`:
 ```markdown
 # Subdir-plugin monorepo over repo-root-as-plugin
 

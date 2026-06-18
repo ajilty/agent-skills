@@ -71,6 +71,18 @@ case "$cmd" in
         echo "OPEN LEASE $lk ticket=$lt -> release or reconcile before re-dispatch"; ambiguous=1; printed=1
       done
     fi
+    # (d) dangling active-writer record (ADR-0006): a writer that did not cleanly
+    #     close (router crashed between writer-ctx set and clear). A stale record
+    #     can let a later dispatch read an already-acked context and bypass the
+    #     pre-apply gate, so treat it as an ambiguous in-flight writer and HALT for
+    #     reconcile (the operator/router clears it via `writer-ctx clear`). We do
+    #     NOT auto-clear: at compaction the record may belong to a live writer.
+    if [ -f "$ROOT/active-writer.json" ]; then
+      awt="$(sed -n 's/^ticket=//p' "$ROOT/active-writer.json")"
+      awp="$(sed -n 's/^persona=//p' "$ROOT/active-writer.json")"
+      echo "OPEN WRITER   active-writer ticket=$awt persona=$awp -> reconcile (ledger.sh writer-ctx clear) before re-dispatch"
+      ambiguous=1; printed=1
+    fi
     [ "$printed" = 0 ] && echo "board: no open lanes"
     [ "$ambiguous" = 1 ] && { echo "REGROUND: ambiguous writer lane(s) -> HALT for human re-attach"; exit 3; }
     echo "REGROUND: clean" ;;
