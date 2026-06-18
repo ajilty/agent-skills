@@ -429,3 +429,11 @@ The throughline of every iteration was the same pair of moves: **push state to
 disk, and state principles rather than specifics.** The result is a skill that
 reads as if written by someone who has never seen your environment — which is
 exactly what makes it portable.
+
+## 17. Standing operator loop (extension)
+
+The standing-operator-loop extension (Actuator persona, mutation-target leasing,
+ops lane, judgment memory, clarification + pre-apply gate) is specified in
+`docs/specs/2026-06-18-orchestrate-standing-operator-loop.md` with decisions in
+`docs/adr/`. P1 (this milestone) lands the Actuator, target leasing, and the ops
+lane.
