@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
 # PreToolUse (actuator, Bash): pre-apply consequence gate (SKILL §6b), the hard
-# floor — deny the actuator's commands while any prod-level mutation target
-# (PROD_TARGETS; the router includes every prod AND undeclared/unknown target,
-# fail-closed) lacks an operator ack.
+# floor — deny the actuator's commands while any prod-level mutation target lacks
+# an operator ack.
 #
-# Hook contract (Claude Code): ALLOW = exit 0 with NO stdout; DENY = journal
-# gate-blocked + reason on stderr + exit 2 (decision JSON fails CC hook-output
-# validation; exit 2 is the real "block", exit 1 would let the tool proceed).
-# Non-actuator personas are a no-op. Never errors.
+# Input source: persona from Claude Code's stdin JSON (agent_type), env fallback.
+# Contract: ALLOW = exit 0 no stdout; DENY = journal gate-blocked + stderr + exit 2.
+#
+# NOTE: PROD_TARGETS/TICKET are per-dispatch context. CC does not pass router-set
+# env to subagent hooks, so under CC these come up empty and the gate cannot yet
+# enforce — it must read them from on-disk ticket state keyed by agent_id (TODO,
+# part 2). Persona detection is correct now; the disk lookup makes it enforce.
 set -uo pipefail
 RT="$(cd "$(dirname "$0")/.." && pwd)"
-persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"
+in=""; [ -t 0 ] || in="$(cat 2>/dev/null || true)"
+J(){ [ -n "$in" ] && command -v jq >/dev/null 2>&1 && printf '%s' "$in" | jq -r "$1 // empty" 2>/dev/null || true; }
+persona="$(J .agent_type)"; [ -n "$persona" ] || persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"
 [ "$persona" = actuator ] || exit 0
 t="${TICKET:-}"; ts="$(date -u +%FT%TZ)"
 blocked=0; bkey=""

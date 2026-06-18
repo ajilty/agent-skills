@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 # PreToolUse (Bash): keep the IMPLEMENTER on its assigned worktree-agent branch.
 #
-# Hook contract (Claude Code): ALLOW = exit 0 with NO stdout; DENY = reason on
-# stderr + exit 2 (decision JSON fails CC hook-output validation). Never errors:
-#  - self-guard on persona (only the implementer is constrained),
-#  - off-branch commit check only when ASSIGNED_BRANCH is set (else allow).
+# Input source: parse Claude Code's stdin JSON (tool_input.command, agent_type);
+# fall back to env for Codex/OpenCode. Contract: ALLOW = exit 0 no stdout; DENY =
+# stderr + exit 2. Self-guards; never errors.
+#
+# NOTE: the off-branch-commit check needs the per-dispatch ASSIGNED_BRANCH, which
+# CC does not pass to subagent hooks via env — until that reads from on-disk ticket
+# state (see TODO), only branch create/switch is enforced under CC.
 set -uo pipefail
-persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"
+in=""; [ -t 0 ] || in="$(cat 2>/dev/null || true)"
+J(){ [ -n "$in" ] && command -v jq >/dev/null 2>&1 && printf '%s' "$in" | jq -r "$1 // empty" 2>/dev/null || true; }
+persona="$(J .agent_type)"; [ -n "$persona" ] || persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"
 [ "$persona" = implementer ] || exit 0
-cmd="${TOOL_INPUT:-${CODEX_TOOL_INPUT:-}}"
+cmd="$(J .tool_input.command)"; [ -n "$cmd" ] || cmd="${TOOL_INPUT:-${CODEX_TOOL_INPUT:-}}"
 case "$cmd" in
   *"git checkout -b"*|*"git switch -c"*|*"git branch "*)
     echo "orchestrate: branch is router-owned (SKILL §9b)" >&2; exit 2 ;;

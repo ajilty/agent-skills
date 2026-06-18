@@ -31,6 +31,42 @@ assert_eq "$o" "" "gate: silent stdout on allow"
 PERSONA=actuator TICKET= PROD_TARGETS= bash "$RT/gate-prod-apply.sh" >/dev/null 2>&1; rc=$?
 assert_eq "$rc" "0" "gate: exit 0 for actuator with no ticket/targets (no :? abort)"
 
+# --- stdin (Claude Code) path: identity + tool input arrive as stdin JSON ---
+if command -v jq >/dev/null 2>&1; then
+  printf '{"agent_type":"implementer","tool_name":"Read","tool_input":{"file_path":"/tmp/ho/secret"}}' \
+    | HELDOUT_ROOT=/tmp/ho bash "$RT/deny-heldout-read.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "2" "deny-heldout: denies writer via stdin agent_type+file_path (CC path)"
+  printf '{"agent_type":"verifier","tool_input":{"file_path":"/tmp/ho/probe"}}' \
+    | HELDOUT_ROOT=/tmp/ho bash "$RT/deny-heldout-read.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "0" "deny-heldout: allows non-writer via stdin (CC path)"
+  printf '{"agent_type":"implementer","tool_name":"Bash","tool_input":{"command":"git checkout -b x"}}' \
+    | bash "$RT/keep-on-branch.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "2" "keep-on-branch: denies implementer branch-create via stdin (CC path)"
+  printf '{"tool_name":"Bash","tool_input":{"command":"git checkout -b x"}}' \
+    | bash "$RT/keep-on-branch.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "0" "keep-on-branch: allows main session (no agent_type) via stdin (CC path)"
+  printf '{"agent_type":"actuator","tool_input":{"command":"terraform apply"}}' \
+    | bash "$RT/gate-prod-apply.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "0" "gate: detects actuator via stdin; no prod targets -> allow"
+  # stdin DENY path is stderr-only: empty stdout even when it blocks (else "Invalid input")
+  o="$(printf '{"agent_type":"implementer","tool_input":{"file_path":"/tmp/ho/x"}}' | HELDOUT_ROOT=/tmp/ho bash "$RT/deny-heldout-read.sh" 2>/dev/null)"
+  assert_eq "$o" "" "deny-heldout: empty stdout on stdin DENY (stderr-only)"
+  # stdin identity takes PRECEDENCE over env: agent_type=verifier beats PERSONA=implementer -> allow
+  printf '{"agent_type":"verifier","tool_input":{"file_path":"/tmp/ho/x"}}' \
+    | PERSONA=implementer HELDOUT_ROOT=/tmp/ho RESOLVED_PATH=/tmp/ho/x bash "$RT/deny-heldout-read.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "0" "deny-heldout: stdin agent_type overrides env PERSONA"
+else
+  echo "(skip stdin/CC-path hook tests: jq absent)"
+fi
+# malformed JSON on stdin must degrade safely (no crash) — clean env -> allow
+printf 'not json{' | bash "$RT/deny-heldout-read.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "deny-heldout: malformed stdin JSON degrades to allow (no crash)"
+# no hang on EOF stdin (the [ -t 0 ] guard) — bounded by timeout
+if command -v timeout >/dev/null 2>&1; then
+  timeout 5 bash "$RT/deny-heldout-read.sh" </dev/null >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "0" "deny-heldout: no hang on EOF stdin (exit 0 within timeout)"
+fi
+
 # --- GENERALIZED session-safety floor: EVERY hook must exit 0 when fired with no
 # orchestrate context env (the real "main router runs a tool" condition that broke
 # the session). Auto-covers any hook added later. ---

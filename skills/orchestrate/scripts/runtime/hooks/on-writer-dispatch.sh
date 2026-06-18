@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 # SubagentStart (writers): write-ahead 'dispatched' + lease BEFORE the writer runs,
 # so a just-dispatched writer that left no dirty worktree is still visible to
-# reground. SubagentStart is NON-blocking and its output is not a decision, so this
-# does ledger side-effects only and ALWAYS exits 0 — it never emits decision JSON
-# and never :? aborts. The hard enforcement lives in the PreToolUse hooks.
+# reground. SubagentStart is NON-blocking and its stdout is not a decision, so this
+# does ledger side-effects only and ALWAYS exits 0 — never decision JSON, never aborts.
+#
+# Input source: persona from Claude Code's stdin JSON (agent_type), env fallback.
+# NOTE: TICKET/TARGETS/PROD_TARGETS are per-dispatch context not passed to CC
+# subagent hooks via env (TODO part 2: read from on-disk ticket state by agent_id).
 set -uo pipefail
 RT="$(cd "$(dirname "$0")/.." && pwd)"
-persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"
-case "$persona" in implementer|actuator) ;; *) exit 0 ;; esac   # writers only
+in=""; [ -t 0 ] || in="$(cat 2>/dev/null || true)"
+J(){ [ -n "$in" ] && command -v jq >/dev/null 2>&1 && printf '%s' "$in" | jq -r "$1 // empty" 2>/dev/null || true; }
+persona="$(J .agent_type)"; [ -n "$persona" ] || persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"
+case "$persona" in implementer|actuator) ;; *) exit 0 ;; esac
 ts="$(date -u +%FT%TZ)"; t="${TICKET:-}"; d="${DISPATCH_ID:-$RANDOM}"
 [ -n "$t" ] || exit 0    # no ticket context -> nothing to write-ahead
 
@@ -20,8 +25,7 @@ if [ "$persona" = implementer ]; then
 fi
 
 # actuator: ledger hygiene for the pre-apply gate — if a prod-level target lacks an
-# operator ack, leave NO trace (no dispatched/lease) so reground isn't poisoned;
-# the actual block is gate-prod-apply.sh at PreToolUse.
+# operator ack, leave NO trace (no dispatched/lease) so reground isn't poisoned.
 for key in ${PROD_TARGETS:-}; do
   [ -f ".agents/runs/orchestrate/tickets/$t/ack-$(bash "$RT/ledger.sh" lease-key "$key")" ] || {
     bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"gate-blocked\",\"persona\":\"actuator\",\"key\":\"$key\"}"
@@ -29,9 +33,6 @@ for key in ${PROD_TARGETS:-}; do
   }
 done
 bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"dispatched\",\"persona\":\"actuator\",\"dispatch_id\":\"$d\"}"
-# Acquire a lease per declared target; a failed acquire (held by another lane) is
-# journaled (observability) — serialization is enforced by the router's pre-dispatch
-# lease-check, not by this non-blocking hook.
 for key in ${TARGETS:-}; do
   bash "$RT/ledger.sh" lease-acquire "$t" "$key" || \
     bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"lease-conflict\",\"persona\":\"actuator\",\"key\":\"$key\"}"
