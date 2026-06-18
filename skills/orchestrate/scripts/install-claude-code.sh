@@ -36,6 +36,8 @@ cp "$SKILL_DIR/SKILL.md" "$SKILLS_DEST/SKILL.md"
 cp -r "$SKILL_DIR/references" "$SKILLS_DEST/"
 cp -r "$SKILL_DIR/scripts/runtime" "$SKILLS_DEST/"      # ledger + hooks travel with the skill
 chmod +x "$SKILLS_DEST"/runtime/*.sh "$SKILLS_DEST"/runtime/hooks/*.sh
+mkdir -p "$DEST/commands"                               # /orchestrate slash-command entry point (thin wrapper; brain stays in SKILL.md)
+cp "$SKILL_DIR/commands/orchestrate.md" "$DEST/commands/orchestrate.md"
 
 for p in $(yq '.personas | keys | .[]' "$AGENTS"); do
   desc="$(yq ".personas.$p.description" "$AGENTS")"
@@ -49,7 +51,8 @@ cat <<EOF
 Claude Code install complete ($SCOPE scope).
   skill     -> $SKILLS_DEST/SKILL.md
   subagents -> $AGENTS_DEST/{researcher,planner,implementer,verifier,actuator}.md
-  runtime   -> $SKILLS_DEST/runtime/ (ledger.sh + enforcement & lifecycle hooks)
+  runtime   -> $SKILLS_DEST/runtime/ (ledger.sh + adr.sh + enforcement & lifecycle hooks)
+  command   -> $DEST/commands/orchestrate.md   (type /orchestrate <goal>, or /orchestrate to resume)
 
 Add to $DEST/settings.json (two enforcement hooks + write-ahead + compaction recovery):
   "hooks": {

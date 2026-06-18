@@ -45,8 +45,38 @@ case "$cmd" in
 
   supersede)
     num="${1:?num}"; by="${2:?by}"
-    [ -f "$INDEX" ] || { echo "no INDEX at $INDEX" >&2; exit 2; }
-    sed -i -E "/\| \[$num\]/ s/\| active \|/| superseded by $by |/" "$INDEX" ;;
+    # Mark the ADR file (the source of truth, so reindex stays consistent)...
+    for f in "$ADRDIR/$num"-*.md; do
+      [ -e "$f" ] || continue
+      if grep -qi '^_status:' "$f"; then
+        sed -i -E "s/^_[Ss]tatus:.*/_Status: superseded by ${by}_/" "$f"
+      else
+        printf '\n_Status: superseded by %s_\n' "$by" >> "$f"
+      fi
+    done
+    # ...and flip the index row in place if present (reindex would reproduce this).
+    [ -f "$INDEX" ] && sed -i -E "/\| \[$num\]/ s/\| active \|/| superseded by $by |/" "$INDEX"
+    : ;;
 
-  *) echo "usage: adr.sh {next|add <slug> <title>|supersede <NNNN> <byNNNN>}" >&2; exit 64 ;;
+  reindex)   # rebuild INDEX.md from docs/adr/*.md (files = source of truth), so ADRs
+             # written by ANY tool (e.g. grill-with-docs) are recalled at intake.
+    mkdir -p "$ADRDIR"
+    { echo "# Decision Index"; echo
+      echo "Rebuilt from docs/adr/*.md by \`adr.sh reindex\`. The Planner reads this at"
+      echo "intake and does not re-litigate an active decision; a goal contradicting one"
+      echo "raises a DECISION_FORK citing it (supersede flow)."; echo
+      echo "| ADR | Decision | Status |"
+      echo "|-----|----------|--------|"
+      for f in "$ADRDIR"/[0-9]*.md; do
+        [ -e "$f" ] || continue
+        base="$(basename "$f")"; num="${base%%-*}"
+        title="$(grep -m1 '^# ' "$f" | sed 's/^#[[:space:]]*//')"; [ -z "$title" ] && title="$base"
+        if grep -qi 'supersed' "$f"; then
+          status="$(grep -m1 -oiE 'superseded by [0-9A-Za-z-]+' "$f")"; [ -z "$status" ] && status="superseded"
+        else status="active"; fi
+        printf '| [%s](%s) | %s | %s |\n' "$num" "$base" "$title" "$status"
+      done
+    } > "$INDEX" ;;
+
+  *) echo "usage: adr.sh {next|add <slug> <title>|supersede <NNNN> <byNNNN>|reindex}" >&2; exit 64 ;;
 esac

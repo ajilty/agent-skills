@@ -36,9 +36,11 @@ branch-guard, the pre-apply gate + write-ahead on `SubagentStart`, and
 compaction-recovery). Paste those in, then export `HELDOUT_ROOT` (the path where
 held-out tests / live-probe oracles live, outside the writer's tree).
 
-> Entry point: today `orchestrate` is invoked as a **skill** (the compiled
-> `SKILL.md` router brain). A thin `/orchestrate` slash-command wrapper is not yet
-> shipped — add one if you want that literal invocation.
+> Entry point: the Claude Code installer emits a `/orchestrate` slash-command
+> (`commands/orchestrate.md`) — type `/orchestrate <goal>` to start, or
+> `/orchestrate` with no args to resume. It's a thin wrapper; the router brain
+> stays in the `orchestrate` skill's `SKILL.md`. Codex (`~/.codex/prompts/`) and
+> OpenCode command equivalents are a follow-up.
 
 ## Use
 

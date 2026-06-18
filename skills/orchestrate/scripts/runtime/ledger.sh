@@ -94,5 +94,9 @@ case "$cmd" in
     tk="${1:?ticket}"; key="${2:?key}"; m="$ROOT/tickets/$tk/ack-$(enc "$key")"
     mkdir -p "$(dirname "$m")"; : > "$m" ;;
 
-  *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground|lease-{key,acquire,release,check}|ack}" >&2; exit 64 ;;
+  decision)   # record a resolved DECISION_FORK to the board (judgment-memory capture, SKILL §11)
+    tk="${1:?ticket}"; fid="${2:?fork_id}"; adr="${3:-}"; mkdir -p "$ROOT"
+    printf '{"ts":"%s","ticket":"%s","event":"decision","fork_id":"%s","adr":"%s"}\n' "$(date -u +%FT%TZ)" "$tk" "$fid" "$adr" >> "$LEDGER" ;;
+
+  *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground|lease-{key,acquire,release,check}|ack|decision <ticket> <fork_id> [adr]}" >&2; exit 64 ;;
 esac
