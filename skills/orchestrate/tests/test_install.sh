@@ -17,4 +17,14 @@ o="/tmp/p4oc.$$"; rm -rf "$o"; bash "$SK/scripts/install-opencode.sh" --scope pr
 assert_file "$o/agent/actuator.md"
 assert_no_file "AGENTS.orchestrate.md"
 rm -rf "$o"
+# symlink-vendored layout: DEST/skills/orchestrate resolves to the source
+# (.claude/skills -> ../.agents/skills). The CC installer must NOT self-copy/error.
+o="/tmp/p4sym.$$"; rm -rf "$o"; mkdir -p "$o/.agents/skills" "$o/.claude"
+/usr/bin/cp -r "$SK" "$o/.agents/skills/orchestrate"
+ln -s ../.agents/skills "$o/.claude/skills"
+( cd "$o" && bash .agents/skills/orchestrate/scripts/install-claude-code.sh --scope project >/dev/null 2>&1 )
+assert_eq "$?" "0" "CC installer survives .claude/skills->.agents/skills symlink (no self-copy)"
+assert_file "$o/.claude/agents/actuator.md"
+assert_file "$o/.claude/commands/orchestrate.md"
+rm -rf "$o"
 cd /; rm -rf "$d"

@@ -21,7 +21,6 @@ esac
 command -v yq >/dev/null || { echo "FATAL: yq (v4, mikefarah) required." >&2; exit 1; }
 
 SKILLS_DEST="$DEST/skills/orchestrate"; AGENTS_DEST="$DEST/agents"
-HOOKS="$SKILLS_DEST/runtime/hooks"
 
 cc_tools() { local p="$1" t=()
   [ "$(yq ".personas.$p.capabilities.read" "$AGENTS")" = true ] && t+=(Read Grep Glob)
@@ -32,10 +31,20 @@ cc_tools() { local p="$1" t=()
 body() { awk 'f==2{print} /^---[[:space:]]*$/{f++}' "$1"; }
 
 mkdir -p "$SKILLS_DEST" "$AGENTS_DEST"
-cp "$SKILL_DIR/SKILL.md" "$SKILLS_DEST/SKILL.md"
-cp -r "$SKILL_DIR/references" "$SKILLS_DEST/"
-cp -r "$SKILL_DIR/scripts/runtime" "$SKILLS_DEST/"      # ledger + hooks travel with the skill
-chmod +x "$SKILLS_DEST"/runtime/*.sh "$SKILLS_DEST"/runtime/hooks/*.sh
+# Skip the payload copy when DEST/skills/orchestrate already resolves to the source
+# — e.g. a repo where .claude/skills is a symlink to the vendored skill tree.
+# Copying onto itself errors, and the in-place skill keeps its scripts/runtime/ layout.
+if [ "$(cd "$SKILL_DIR" && pwd -P)" = "$(cd "$SKILLS_DEST" && pwd -P)" ]; then
+  echo "  skill already in place at $SKILLS_DEST (resolves to source); skipping payload copy"
+  RUNTIME="$SKILL_DIR/scripts/runtime"
+else
+  cp "$SKILL_DIR/SKILL.md" "$SKILLS_DEST/SKILL.md"
+  cp -r "$SKILL_DIR/references" "$SKILLS_DEST/"
+  cp -r "$SKILL_DIR/scripts/runtime" "$SKILLS_DEST/"     # ledger + hooks travel with the skill
+  RUNTIME="$SKILLS_DEST/runtime"
+fi
+chmod +x "$RUNTIME"/*.sh "$RUNTIME"/hooks/*.sh
+HOOKS="$RUNTIME/hooks"
 mkdir -p "$DEST/commands"                               # /orchestrate slash-command entry point (thin wrapper; brain stays in SKILL.md)
 cp "$SKILL_DIR/commands/orchestrate.md" "$DEST/commands/orchestrate.md"
 
@@ -51,7 +60,7 @@ cat <<EOF
 Claude Code install complete ($SCOPE scope).
   skill     -> $SKILLS_DEST/SKILL.md
   subagents -> $AGENTS_DEST/{researcher,planner,implementer,verifier,actuator}.md
-  runtime   -> $SKILLS_DEST/runtime/ (ledger.sh + adr.sh + enforcement & lifecycle hooks)
+  runtime   -> $RUNTIME/ (ledger.sh + adr.sh + enforcement & lifecycle hooks)
   command   -> $DEST/commands/orchestrate.md   (type /orchestrate <goal>, or /orchestrate to resume)
 
 Add to $DEST/settings.json (two enforcement hooks + write-ahead + compaction recovery):
