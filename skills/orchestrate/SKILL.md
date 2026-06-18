@@ -516,6 +516,30 @@ guess. A paused board beats a wrong one. Full algorithm and event schema:
 
 ---
 
+## 11. Judgment memory (cross-goal decisions)
+
+Durability §10 keeps the *router's* state across a single run. Judgment memory
+keeps **decisions across goals** — so a later goal doesn't re-litigate a settled
+one. It is **in-repo and tracked, never harness memory** (ADR-0003): it travels
+with the repo to the next clone, user, and harness.
+
+- **Home.** `docs/adr/` records + `docs/adr/INDEX.md` (one line per decision), on
+  the tracked `docs/` axis (ADR-0005), maintained by `runtime/adr.sh`
+  (`next` | `add` | `supersede`).
+- **Recall (intake).** Before planning, the Planner reads the index and treats an
+  `active` decision as a `TRUSTED` constraint — it does not re-decide it.
+- **Capture (fork resolution).** When a `DECISION_FORK` is resolved, append a
+  `decision` event to the ledger (complete machine record), and **promote** to a
+  tracked ADR only those meeting the bar (hard-to-reverse + surprising + real
+  trade-off), **operator-gated**: the loop proposes a pre-filled ADR via
+  `adr.sh add`, and the operator accepts / edits / declines.
+- **Supersede.** A goal that contradicts an `active` ADR raises a `DECISION_FORK`
+  citing it; the resolution flips the old record (`adr.sh supersede <NNNN> <by>`)
+  and captures the new one. The §0 provenance rule still binds: an ADR whose
+  justification traces to `UNTRUSTED` content is invalid.
+
+---
+
 ## Enforcement appendix (where the tool allowlist isn't enough)
 
 Capability subtraction is the portable, load-bearing control, declared in

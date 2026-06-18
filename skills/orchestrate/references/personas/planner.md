@@ -101,6 +101,16 @@ No open `#UNKNOWN`. Every hypothesis has a verify-at-impl check. Oracle present.
 Decisions trace to trusted-origin reasons. Then hand to Verifier (plan-mode)
 before Execution.
 
+## Judgment memory (read the decision index first)
+
+Before planning, read `docs/adr/INDEX.md` — the cross-goal decision record
+(ADR-0003: in-repo and tracked, never harness memory). Do **not** re-litigate a
+decision whose status is `active`; treat it as a `TRUSTED` constraint and plan
+within it. If the work-item contradicts an active decision, do not silently
+override it — emit `DECISION_FORK` citing that ADR so the operator can supersede
+it. A resolved fork is captured as a new ADR (operator-gated), so the next goal
+inherits the judgment instead of re-deriving it.
+
 ## When the call isn't yours
 
 If planning surfaces an irreducible architectural or credential fork — competing

@@ -25,6 +25,8 @@ drives** (loop steps in SKILL.md, not background hooks):
 {"ts","ticket","event":"returned","persona","status"}
 {"ts","ticket","event":"verdict","verdict"}                             # APPROVED|REJECTED|INCONSISTENT_ORACLE
 {"ts","ticket","event":"fork","state":"halted","fork_id"}
+{"ts","ticket","event":"decision","fork_id","adr"}                      # fork resolved -> judgment memory (adr set iff promoted, §11)
+{"ts","ticket","event":"lease-conflict","persona","key"}               # actuator denied: mutation target held by another lane
 {"ts","ticket","event":"lane","state":"open|closed","branch"}
 {"ts","ticket","event":"done"}
 ```

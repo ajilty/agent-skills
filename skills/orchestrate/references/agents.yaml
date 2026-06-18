@@ -120,6 +120,8 @@ conventions:
     merge_glob: "worktree-agent-*"       # enumerate deterministically; never guess
     path: ".agents/worktrees/${ticket}-${persona}"  # configurable; some prefer a sibling-of-repo path
   metrics_from_ledger: true              # metrics are derived by replaying board.jsonl (no separate sink)
+  adr_dir:      "docs/adr"               # judgment memory: TRACKED ADRs (ADR-0003), never under .agents/ or harness memory
+  adr_index:    "docs/adr/INDEX.md"      # Planner reads this at intake; capture/supersede via runtime/adr.sh
 
 # --- Resume / durability (apply "contracts are the bus" to the ROUTER itself) -
 # /orchestrate is the single entry point. On invocation it auto-detects: open
