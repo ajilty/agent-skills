@@ -530,6 +530,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 - Create: `plugins/orchestrate/README.md`
 - Create: `docs/adr/0007-plugin-is-generated-distribution-of-agents-yaml.md` (0006 is taken — `0006-per-dispatch-context-via-on-disk-active-writer.md`)
 - Create: `docs/adr/0008-subdir-plugin-monorepo-over-repo-root.md`
+- Create: `.github/workflows/tests.yml` (CI — runs the suite incl. the drift guard on push/PR)
 - Modify: `README.md` (repo root), `CONTEXT.md`, `docs/adr/INDEX.md`, `plugins/orchestrate/TODO.md`
 - Modify: any file with a stale `skills/orchestrate/...` path reference
 
@@ -623,11 +624,37 @@ If `adr.sh reindex` targets a different ADR root, add the two rows to `docs/adr/
 
 In `plugins/orchestrate/TODO.md`: mark the "installer should emit `${CLAUDE_PROJECT_DIR}`-relative hook paths" item DONE (the plugin uses `${CLAUDE_PLUGIN_ROOT}`); mark the "Codex/OpenCode `/orchestrate` command parity" item as still open; add an out-of-scope section capturing the deferred items from spec §2 (other-harness plugin manifests, seed-dir/image rollout, official-directory submission).
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Add the CI workflow (makes the drift guard real for any clone/PR)**
+
+Create `.github/workflows/tests.yml`:
+```yaml
+name: tests
+on: [push, pull_request]
+jobs:
+  orchestrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install yq (v4, mikefarah)
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
+      - name: Run orchestrate suite (unit + drift guard + allowlist + manifest)
+        run: bash plugins/orchestrate/tests/run.sh
+```
+
+Verify locally that the suite the workflow invokes is green:
+```bash
+cd /var/home/ajilty/gits/github.com/ajilty/agent-skills/plugins/orchestrate && bash tests/run.sh
+```
+Expected: `FAIL=0`.
+
+- [ ] **Step 7: Commit**
 
 ```bash
 git add -A
-git commit -m "docs: marketplace install flow, plugin README, ADR-0006/0007, TODO + path refs
+git commit -m "docs+ci: marketplace install flow, plugin README, ADR-0007/0008, CI workflow, TODO + path refs
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
