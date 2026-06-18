@@ -1,0 +1,5 @@
+# Machine / control state (ADR-0005: two-axis split — tracked docs/ vs gitignored .agents/)
+.agents/
+
+# Harness-managed worktrees / local state
+.claude/worktrees/
