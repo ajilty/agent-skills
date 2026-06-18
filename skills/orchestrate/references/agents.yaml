@@ -37,6 +37,11 @@ personas:
     description: "Fresh-context adversarial review. Runs the held-out suite + goal/provenance/downstream-breakage checks. Read-only; may run tests."
     capabilities: { read: true,  write: none,       run: tests-only,  web: false }
     # fresh context; may run the held-out suite, may not write or edit tests.
+  actuator:
+    body: personas/actuator.md
+    description: "The single writer for downstream live-environment mutations (terraform/kubectl/db). run + target-scoped creds; edits no source. The ops-lane writer."
+    capabilities: { read: true,  write: none,      run: full,        web: false }
+    # writes live state via run, not source via write; creds scoped to leased targets (P4).
 
 # --- Hooks the installer must materialize (the floor + two narrow resume hooks) -
 # The orchestrator drives the loop and appends most ledger events in-loop. Only
@@ -60,7 +65,7 @@ hooks:
     fail_closed: true
   writer_writeahead:
     event: subagent-start          # CC/Codex: SubagentStart (matcher=implementer); OpenCode: subagent-invoke
-    applies_to: [implementer]
+    applies_to: [implementer, actuator]
     intent: >-
       Deterministically append the write-ahead 'dispatched' event + take the lease
       BEFORE the writer runs. This one must be a hook, not loop discipline: a
