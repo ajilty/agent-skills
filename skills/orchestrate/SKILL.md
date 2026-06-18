@@ -352,7 +352,11 @@ Before dispatching any writer (Implementer **or** Actuator), the router:
 3. Dispatches; the `writer_writeahead` hook acquires the per-target leases as a
    write-ahead (so a just-dispatched Actuator that left no dirty worktree is still
    visible to reground).
-4. On lane close, releases the leases (`ledger.sh lease-release <key>`).
+4. On lane close, releases the leases (`ledger.sh lease-release <key>`). As a
+   backstop, `ledger.sh reground` reconciles leftover leases: it releases any
+   whose ticket reached `done`, and HALTs (fail-closed) on a lease whose ticket
+   never did (a crashed/in-flight writer) — so a leaked lease can never silently
+   block a later lane on the same target.
 
 Serialization via the lease is **deterministic and guaranteed**. Credential
 confinement to leased targets is **best-effort/advisory** (ADR-0002) and is wired

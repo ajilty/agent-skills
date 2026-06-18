@@ -58,14 +58,16 @@ case "$cmd" in
       done < <(git worktree list --porcelain 2>/dev/null | awk '
         /^worktree /{p=$2} /^branch /{b=$2; sub("refs/heads/","",b); print p"\t"b}')
     fi
-    # (c) open target leases: any lease whose ticket never reached 'done'
+    # (c) target leases: reconcile — release a done ticket's lease (so it can't
+    #     block a later ticket on the same target); HALT on a lease whose ticket
+    #     never reached 'done' (crashed/in-flight), fail-closed.
     if [ -d "$LEASES" ]; then
       for f in "$LEASES"/*; do
         [ -e "$f" ] || continue
         lt="$(val "$(cat "$f")" ticket)"; lk="$(val "$(cat "$f")" key)"
         done_evt=0
         if [ -f "$LEDGER" ]; then grep -q "\"ticket\":\"$lt\".*\"event\":\"done\"" "$LEDGER" && done_evt=1; fi
-        [ "$done_evt" = 1 ] && continue
+        [ "$done_evt" = 1 ] && { rm -f "$f"; continue; }   # reconcile: release the done ticket's lease
         echo "OPEN LEASE $lk ticket=$lt -> release or reconcile before re-dispatch"; ambiguous=1; printed=1
       done
     fi

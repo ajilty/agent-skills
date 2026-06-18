@@ -17,5 +17,19 @@ if [ "$persona" = implementer ]; then
   printf '{"dispatch_id":"%s","session":"%s","pid":%s,"ts":"%s"}\n' "$d" "${SESSION_ID:-?}" "$$" "$ts" > "$lease"
 else
   bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"dispatched\",\"persona\":\"actuator\",\"dispatch_id\":\"$d\"}"
-  for key in ${TARGETS:-}; do bash "$RT/ledger.sh" lease-acquire "$t" "$key" || true; done
+  # Acquire a lease per declared target. A failed acquire (exit 4 = held by
+  # another lane) must NOT be silently swallowed: journal it and deny the
+  # dispatch, so the Actuator never proceeds against a target it does not hold
+  # (this protects the one guaranteed layer in ADR-0002 — serialization).
+  conflict=0
+  for key in ${TARGETS:-}; do
+    if ! bash "$RT/ledger.sh" lease-acquire "$t" "$key"; then
+      bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"lease-conflict\",\"persona\":\"actuator\",\"key\":\"$key\"}"
+      conflict=1
+    fi
+  done
+  if [ "$conflict" = 1 ]; then
+    echo '{"decision":"deny","reason":"mutation target lease held by another lane"}'
+    exit 1
+  fi
 fi

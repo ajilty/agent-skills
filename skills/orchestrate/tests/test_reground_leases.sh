@@ -9,4 +9,5 @@ case "$out" in *"OPEN LEASE db:orders-primary"*) pass;; *) fail "reground names 
 bash "$R" append '{"ticket":"T9","event":"done"}'
 out="$(bash "$R" reground 2>&1)"; code=$?
 assert_eq "$code" "0" "done ticket -> lease not open"
+assert_no_file ".agents/runs/orchestrate/leases/db:orders-primary"   # reground RELEASED the done ticket's lease
 cd /; rm -rf "$d"
