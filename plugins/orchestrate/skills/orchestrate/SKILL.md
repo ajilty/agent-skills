@@ -12,11 +12,12 @@ description: >-
   with /orchestrate in a repo — to start work, and to resume an interrupted
   session. No config file; compaction recovers automatically.
 compatibility: >-
-  Harness-agnostic. The scripts/install-<harness>.sh generators require yq (v4,
-  mikefarah) and git, and write generated subagents + fail-closed hooks into the
-  target harness's config dir ($CLAUDE_CONFIG_DIR / $CODEX_HOME /
-  $XDG_CONFIG_HOME/opencode). Runtime expects $HELDOUT_ROOT (and $ASSIGNED_BRANCH
-  per worktree). No network access required.
+  Harness-agnostic. The plugin-root generators in ../../scripts/ require yq (v4,
+  mikefarah) and git: install-codex.sh / install-opencode.sh write generated
+  subagents + fail-closed hooks into the target harness's config dir ($CODEX_HOME /
+  $XDG_CONFIG_HOME/opencode), while build.sh emits Claude Code's committed plugin
+  artifacts (agents/ + hooks/hooks.json, which auto-register). Runtime expects
+  $HELDOUT_ROOT (and $ASSIGNED_BRANCH per worktree). No network access required.
 ---
 
 # Orchestrate — routing brain (the dumb router)
@@ -41,10 +42,11 @@ demand:
   enums, or the hook declarations. It is the source of truth the installers compile.
 - `references/personas/<name>.md` — a persona's full **role body** (discipline,
   output contract, tags). Read the one for the persona you're dispatching.
-- `scripts/install-<harness>.sh` — the **generators** that compile the contract
-  into Claude Code / Codex / OpenCode native subagents + fail-closed hooks. Run
-  the one for your harness to install; read it to see the capability→enforcement
-  mapping for that harness.
+- `../../scripts/` (plugin root) — the **generators** that compile the contract
+  into native subagents + fail-closed hooks: `install-codex.sh` /
+  `install-opencode.sh` for those harnesses, and `build.sh` for Claude Code (whose
+  output — committed `agents/` + `hooks/hooks.json` — ships with the plugin). Read
+  the one for your harness to see its capability→enforcement mapping.
 - `references/resume.md` — how the **router's own state** survives interruption
   and compaction (the durable ledger, leases, the reconstruct-then-reconcile
   protocol, and the derived retry budget). Read it before acting on any board you
@@ -129,7 +131,7 @@ origin. See `references/personas/researcher.md` and §4 below.
 Dispatch by routing table (§3). Each persona's **role body** lives in
 `references/personas/*.md`, and its **capabilities** (read/write/run/web) are
 declared harness-neutrally in `references/agents.yaml`. Neither file hard-codes a
-harness's tool names: the `scripts/install-<harness>.sh` generators compile the
+harness's tool names: the `../../scripts/` generators compile the
 capability matrix into each harness's native enforcement (Claude Code `tools:`
 allowlist, Codex `sandbox_mode` + MCP scope, OpenCode per-agent allow/deny).
 Summary of who may write:
@@ -598,8 +600,9 @@ with the repo to the next clone, user, and harness.
 Capability subtraction is the portable, load-bearing control, declared in
 `references/agents.yaml`. But it expresses *what* a persona may do, not *path*
 scope. Three constraints need a fail-closed harness hook, and these are
-**generated per harness** by `scripts/install-<harness>.sh` (shell for Claude
-Code and Codex, a TypeScript plugin for OpenCode) rather than hand-wired here:
+**generated per harness** by the `../../scripts/` generators (`build.sh` for Claude
+Code, `install-codex.sh` for Codex, a TypeScript plugin via `install-opencode.sh`
+for OpenCode) rather than hand-wired here:
 
 - **held-out read-deny** — deny **writer** reads resolving under `$HELDOUT_ROOT`
   (persona-guarded; allows when unset; never errors); secondary layer behind the

@@ -102,6 +102,24 @@ fresh-context Verifier) — validated on its own construction.
   `_Status: active_`; hand-authored ADRs use `## Status` / no status line. Cosmetic
   (supersede/reindex key on the status line, not the format), but worth aligning.
 
+## Plugin-validation follow-ups (Task 8, 2026-06-18)
+
+- **Confirm the `SubagentStart` hook event against current Claude Code docs.** The
+  plugin-validator flagged that `SubagentStart` is not in CC's documented event list
+  (PreToolUse/PostToolUse/UserPromptSubmit/Notification/Stop/SubagentStop/PreCompact/
+  SessionStart/SessionEnd). This is **pre-existing** (the retired install-claude-code.sh
+  used the same event); the write-ahead `on-writer-dispatch.sh` may not fire under CC.
+  Confirm in the live smoke test (Task 8 Step 5); if unsupported, move the write-ahead
+  into `PreToolUse` on the writer `Task`, or rename/drop the event. Capability
+  allowlists + held-out isolation are unaffected (they don't depend on this hook).
+- **Stale `scripts/install-<harness>.sh` path in internal comments.** Persona bodies
+  (`references/personas/*.md`) and `references/agents.yaml` still say
+  `scripts/install-<harness>.sh`; after the relocate, generators live at
+  `../../scripts/` (plugin root) and Claude Code uses `build.sh`, not an install
+  script. SKILL.md's navigation refs were fixed; these authoring comments are
+  low-value (editing persona bodies forces a `build.sh` rebuild). Fix on the next
+  `build.sh` touch.
+
 ## Watch (acceptable as-is, but depends on loop discipline)
 
 - **`decision` event + ADR capture are router loop-steps, not hooks.** Like
