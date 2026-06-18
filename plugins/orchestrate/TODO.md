@@ -1,7 +1,8 @@
 # orchestrate — backlog (open items)
 
 What to pick up next, captured so we don't lose the thread. As of 2026-06-18.
-All landed work is on `main`; tests: `skills/orchestrate/tests/run.sh` (56/56).
+Prior phases landed on `main`; the plugin packaging is on `feat/orchestrate-plugin`.
+Tests: `tests/run.sh` (113/113).
 
 ## Process lesson — do this every batch (not optional)
 
@@ -48,8 +49,8 @@ fresh-context Verifier) — validated on its own construction.
     `test_hooks_safety.sh` floor catches the crash class; making enforcement real
     needs the stdin-parse + disk-lookup above.
 
-- **Codex / OpenCode `/orchestrate` command parity.** Claude Code emits a
-  `commands/orchestrate.md` slash command; the other two harnesses don't yet.
+- **Codex / OpenCode command parity (still open).** The Claude Code plugin ships
+  `commands/start.md` → `/orchestrate:start`; the other two harnesses don't yet.
   Add a Codex prompt (`~/.codex/prompts/orchestrate.md`) and an OpenCode command
   so the typed entry point works everywhere. (`SKILL.md` is already the shared
   brain; these are thin wrappers.)
@@ -68,11 +69,11 @@ fresh-context Verifier) — validated on its own construction.
 
 ## Medium
 
-- **Installer should emit `${CLAUDE_PROJECT_DIR}`-relative hook paths.** It prints
-  absolute hook commands today, so the hooks block is machine-specific and must go
-  in `settings.local.json` (untracked), not a shared/tracked `settings.json`. Using
-  `${CLAUDE_PROJECT_DIR}/...` (and Codex/OpenCode equivalents) would let the hook
-  wiring be committed and portable across machines.
+- ✅ **DONE — portable hook paths (Claude Code).** The plugin auto-registers hooks
+  via `hooks/hooks.json` with `${CLAUDE_PLUGIN_ROOT}`-relative commands — machine-
+  independent and committed, no `settings.json`/`settings.local.json` snippet to
+  paste. The Codex/OpenCode installers still print absolute paths in their config
+  snippets (their `${...}` equivalents remain a follow-up for those harnesses).
 
 
 - **Lease acquire atomicity (TOCTOU).** `ledger.sh lease-acquire` is
@@ -108,6 +109,15 @@ fresh-context Verifier) — validated on its own construction.
   callables: `ledger.sh decision`, `adr.sh add`), not enforced by a hook — because
   fork-resolution is operator-interactive. Acceptable, but if judgment memory ever
   fails to accumulate, this is the first place to look (the router skipped the step).
+
+## Out of scope (plugin packaging v1 — deferred, spec §2)
+
+- **Other-harness plugin manifests** (`.codex-plugin`, `.cursor-plugin`,
+  `gemini-extension.json`, `.opencode`). Their schemas are unverified against
+  current docs; Codex/OpenCode keep their existing `install-*.sh` installers
+  untouched (ADR-0001 compile-per-harness model stays per harness).
+- **Seed-dir / container / managed-image rollout** (`CLAUDE_CODE_PLUGIN_SEED_DIR`).
+- **Official-directory submission** to `anthropics/claude-plugins-official`.
 
 ## Not skill work (operational)
 

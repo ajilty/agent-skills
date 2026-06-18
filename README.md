@@ -6,8 +6,9 @@ operator loop you feed goals of any altitude (from "bump the conn limit" to
 and executes them with enforced discipline, survives interruption, remembers its
 judgment across goals, and gates consequential actions before they touch prod.
 
-- The reusable skill lives at [`skills/orchestrate/`](skills/orchestrate/).
-- Design rationale: [`skills/orchestrate/DESIGN.md`](skills/orchestrate/DESIGN.md) ·
+- The plugin lives at [`plugins/orchestrate/`](plugins/orchestrate/); its skill brain
+  (SKILL.md, references, runtime) is at [`plugins/orchestrate/skills/orchestrate/`](plugins/orchestrate/skills/orchestrate/).
+- Design rationale: [`plugins/orchestrate/DESIGN.md`](plugins/orchestrate/DESIGN.md) ·
   spec: [`docs/specs/`](docs/specs/) · decisions: [`docs/adr/`](docs/adr/) ·
   glossary: [`CONTEXT.md`](CONTEXT.md).
 
@@ -17,30 +18,26 @@ judgment across goals, and gates consequential actions before they touch prod.
 
 ## Install
 
-`orchestrate` is harness-neutral source here; you compile it into your harness
-with the matching installer (one capability contract → native enforcement):
+`orchestrate` ships as a Claude Code plugin from this repo's self-marketplace:
 
-```bash
-# Claude Code  → ~/.claude (skill + subagents + a settings.json hooks snippet it prints)
-skills/orchestrate/scripts/install-claude-code.sh --scope user
-#   or vendor into a single repo:  --scope project --dir <repo>/.claude
-
-# Codex        → ~/.codex
-skills/orchestrate/scripts/install-codex.sh --scope user
-# OpenCode     → ~/.config/opencode
-skills/orchestrate/scripts/install-opencode.sh --scope user
+```
+/plugin marketplace add ajilty/agent-skills
+/plugin install orchestrate@ajilty-agent-skills
 ```
 
-The installer prints the hooks to add to your harness config (held-out-deny,
-branch-guard, the pre-apply gate + write-ahead on `SubagentStart`, and
-compaction-recovery). Paste those in, then export `HELDOUT_ROOT` (the path where
-held-out tests / live-probe oracles live, outside the writer's tree).
+Then type `/orchestrate:start <goal>` to start, or `/orchestrate:start` (no args) to
+resume. Export `HELDOUT_ROOT` (held-out test / live-probe oracle root, outside the
+writer's tree) before running an ops or held-out lane. The hooks (held-out-deny,
+branch-guard, the pre-apply gate + write-ahead, compaction-recovery) auto-register
+with the plugin via `hooks/hooks.json` — no settings.json snippet to paste.
 
-> Entry point: the Claude Code installer emits a `/orchestrate` slash-command
-> (`commands/orchestrate.md`) — type `/orchestrate <goal>` to start, or
-> `/orchestrate` with no args to resume. It's a thin wrapper; the router brain
-> stays in the `orchestrate` skill's `SKILL.md`. Codex (`~/.codex/prompts/`) and
-> OpenCode command equivalents are a follow-up.
+Codex and OpenCode keep their compile-step installers (one harness-neutral
+capability contract → native enforcement):
+
+```
+plugins/orchestrate/scripts/install-codex.sh --scope user
+plugins/orchestrate/scripts/install-opencode.sh --scope user
+```
 
 ## Use
 
@@ -49,7 +46,7 @@ self-detecting: an empty ledger starts fresh, open lanes resume, and compaction
 recovers automatically.
 
 ```
-/orchestrate deploy app A on cluster B
+/orchestrate:start deploy app A on cluster B
 ```
 
 The loop: reground (always first) → intake (clarify only if ambiguous) →
@@ -59,7 +56,7 @@ discovered, defaulted, or set by env.
 
 ## Onboarding: new vs existing repos
 
-First run on either is just `/orchestrate <goal>`. The difference is how much
+First run on either is just `/orchestrate:start <goal>`. The difference is how much
 context pre-exists:
 
 | | New repo | Existing repo |
@@ -90,8 +87,8 @@ context pre-exists:
 
 ## Status
 
-Phases P1–P4 are landed (see [`DESIGN.md` §17](skills/orchestrate/DESIGN.md)).
+Phases P1–P4 are landed (see [`DESIGN.md` §17](plugins/orchestrate/DESIGN.md)).
 Carried forward as deferred-with-ticket from the P1 whole-branch review: lease
 acquire atomicity (TOCTOU → `mkdir`/`set -C` hardening), `TARGETS` comma-split,
-and lease-key JSON escaping. Tests: `skills/orchestrate/tests/run.sh` (zero
+and lease-key JSON escaping. Tests: `plugins/orchestrate/tests/run.sh` (zero
 dependencies).

@@ -1,0 +1,14 @@
+name: tests
+on: [push, pull_request]
+jobs:
+  orchestrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install yq (v4, mikefarah)
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
+      - name: Run orchestrate suite (unit + drift guard + allowlist + manifest)
+        run: bash plugins/orchestrate/tests/run.sh
