@@ -8,8 +8,14 @@
 set -euo pipefail
 RT="$(cd "$(dirname "$0")/.." && pwd)"
 persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"
-[ "$persona" = implementer ] || exit 0          # writer only; no-op for others
-ts="$(date -u +%FT%TZ)"; t="${TICKET:?}"; b="${ASSIGNED_BRANCH:-}"; d="${DISPATCH_ID:-$RANDOM}"
-bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"dispatched\",\"persona\":\"implementer\",\"branch\":\"$b\",\"dispatch_id\":\"$d\"}"
-lease=".agents/runs/orchestrate/tickets/$t/lease"; mkdir -p "$(dirname "$lease")"
-printf '{"dispatch_id":"%s","session":"%s","pid":%s,"ts":"%s"}\n' "$d" "${SESSION_ID:-?}" "$$" "$ts" > "$lease"
+case "$persona" in implementer|actuator) ;; *) exit 0 ;; esac   # writers only
+ts="$(date -u +%FT%TZ)"; t="${TICKET:?}"; d="${DISPATCH_ID:-$RANDOM}"
+if [ "$persona" = implementer ]; then
+  b="${ASSIGNED_BRANCH:-}"
+  bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"dispatched\",\"persona\":\"implementer\",\"branch\":\"$b\",\"dispatch_id\":\"$d\"}"
+  lease=".agents/runs/orchestrate/tickets/$t/lease"; mkdir -p "$(dirname "$lease")"
+  printf '{"dispatch_id":"%s","session":"%s","pid":%s,"ts":"%s"}\n' "$d" "${SESSION_ID:-?}" "$$" "$ts" > "$lease"
+else
+  bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"dispatched\",\"persona\":\"actuator\",\"dispatch_id\":\"$d\"}"
+  for key in ${TARGETS:-}; do bash "$RT/ledger.sh" lease-acquire "$t" "$key" || true; done
+fi
