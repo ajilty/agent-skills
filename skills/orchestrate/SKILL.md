@@ -139,6 +139,9 @@ Summary of who may write:
 - **Planner** — read + write-to-spec only; no web/run. Commits findings to a spec.
 - **Implementer** — the **only writer** for coupled code: write, run, git. No web.
 - **Verifier** — fresh context, read + run-tests only; no write/edit.
+- **Actuator** — the single writer for **live-environment** mutations (apply,
+  rollout, migrate): read + run + target-scoped creds. No web, no source edit.
+  The ops-lane writer; serialized by mutation-target lease, not worktree.
 
 (Board-reader / intake folds into the human at small scale; promote it to a
 persona only when intake volume recurs as a named bottleneck.)
@@ -331,6 +334,36 @@ The router permits parallel writers only if both checks pass; otherwise it
 > breaks downstream. The Verifier's outcome-mode therefore runs a
 > **downstream-breakage check** across all callers/dependents of every changed
 > symbol as the backstop for coupling that slipped the static checks.
+
+---
+
+## 6a. Mutation-target leasing (the writer rail, generalized)
+
+Single-writer is defined over **mutation targets**, not files. The working tree
+is one target; `tfstate:<workspace>`, `k8s:<ctx>/<ns>`, `db:<name>` are others.
+
+Before dispatching any writer (Implementer **or** Actuator), the router:
+
+1. Reads the task's declared `mutation_targets` from the signed spec. An
+   undeclared/undeterminable target is treated as `prod` consequence and **not**
+   eligible for parallel dispatch (fail-closed → serialize).
+2. For each target, runs `ledger.sh lease-check <key>`. If any is held by another
+   lane, the writer is **serialized** (queued), not dispatched in parallel.
+3. Dispatches; the `writer_writeahead` hook acquires the per-target leases as a
+   write-ahead (so a just-dispatched Actuator that left no dirty worktree is still
+   visible to reground).
+4. On lane close, releases the leases (`ledger.sh lease-release <key>`).
+
+Serialization via the lease is **deterministic and guaranteed**. Credential
+confinement to leased targets is **best-effort/advisory** (ADR-0002) and is wired
+per harness in P4; the reviewed diff and the Verifier's independent probe are the
+backstops.
+
+**Two-phase IaC.** A goal with infrastructure-as-code decomposes into an
+Implementer task (edit + commit manifests → reviewed diff) and a dependent
+Actuator task (`depends_on` the diff task) that applies to the leased target. The
+reviewable change is gated as a diff before the live mutation. Pure-ops goals (no
+source) skip the Implementer.
 
 ---
 
