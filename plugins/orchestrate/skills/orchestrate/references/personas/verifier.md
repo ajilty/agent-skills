@@ -8,7 +8,7 @@ description: >-
 ---
 
 <!-- Capabilities are declared in ../agents.yaml: read + run-tests only, no
-     write/edit. "Run is tests-only" is compiled by scripts/install-<harness>.sh;
+     write/edit. "Run is tests-only" is compiled by the per-harness generators (build.sh / install-*.sh);
      the held-out suite is handed to this persona only at dispatch. -->
 
 # Verifier

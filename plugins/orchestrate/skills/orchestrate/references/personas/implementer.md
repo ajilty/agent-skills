@@ -7,7 +7,7 @@ description: >-
 
 <!-- Capabilities are declared in ../agents.yaml. This persona is the only one
      granted write+run+git; the held-out read-deny and branch guard are compiled
-     into the harness by scripts/install-<harness>.sh as fail-closed hooks. -->
+     into the harness by the per-harness generators (build.sh / install-*.sh) as fail-closed hooks. -->
 
 # Implementer
 

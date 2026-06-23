@@ -1,8 +1,8 @@
 # orchestrate — backlog (open items)
 
-What to pick up next, captured so we don't lose the thread. As of 2026-06-18.
-Prior phases landed on `main`; the plugin packaging is on `feat/orchestrate-plugin`.
-Tests: `tests/run.sh` (113/113).
+What to pick up next, captured so we don't lose the thread. As of 2026-06-22.
+The orchestrate plugin (packaging + enforcement hooks) is merged to `main` and
+published via the repo's self-marketplace. Tests: `tests/run.sh` (155/155).
 
 ## Process lesson — do this every batch (not optional)
 
@@ -22,8 +22,11 @@ fresh-context Verifier) — validated on its own construction.
 
 ## High priority
 
-- **Hooks must read Claude Code's stdin JSON, not env vars — enforcement is
-  currently HOLLOW under CC.** [Confirmed against the CC hooks docs.] CC delivers
+- ✅ **DONE — Hooks read CC's stdin JSON (not env); PreToolUse enforcement is REAL
+  under CC.** Landed part-1 (03a3ced, stdin parse) + part-2 (40bcf5b, ADR-0006
+  on-disk active-writer record); the live smoke test (2026-06-19) confirmed all 3
+  PreToolUse hooks fire on a dispatched writer's Bash call. _Original problem (kept
+  for history):_ CC delivers
   the hook payload on **stdin** (`tool_name`, `tool_input`, `session_id`, `cwd`,
   and inside a subagent `agent_id`/`agent_type`). There is **no `CLAUDE_AGENT_TYPE`
   env var** (only `$CLAUDE_EFFORT`). Our hooks read `PERSONA`/`RESOLVED_PATH`/
@@ -124,21 +127,20 @@ fresh-context Verifier) — validated on its own construction.
 
 ## Plugin-validation follow-ups (Task 8, 2026-06-18)
 
-- **Confirm the `SubagentStart` hook event against current Claude Code docs.** The
-  plugin-validator flagged that `SubagentStart` is not in CC's documented event list
-  (PreToolUse/PostToolUse/UserPromptSubmit/Notification/Stop/SubagentStop/PreCompact/
-  SessionStart/SessionEnd). This is **pre-existing** (the retired install-claude-code.sh
-  used the same event); the write-ahead `on-writer-dispatch.sh` may not fire under CC.
-  Confirm in the live smoke test (Task 8 Step 5); if unsupported, move the write-ahead
-  into `PreToolUse` on the writer `Task`, or rename/drop the event. Capability
-  allowlists + held-out isolation are unaffected (they don't depend on this hook).
-- **Stale `scripts/install-<harness>.sh` path in internal comments.** Persona bodies
-  (`references/personas/*.md`) and `references/agents.yaml` still say
-  `scripts/install-<harness>.sh`; after the relocate, generators live at
-  `../../scripts/` (plugin root) and Claude Code uses `build.sh`, not an install
-  script. SKILL.md's navigation refs were fixed; these authoring comments are
-  low-value (editing persona bodies forces a `build.sh` rebuild). Fix on the next
-  `build.sh` touch.
+- ⚠️ **CONFIRMED (live test 2026-06-19) — `SubagentStart` does NOT fire under Claude
+  Code** (CC 2.1.181). A real subagent dispatch (`claude --plugin-dir … --debug`)
+  shows the 3 PreToolUse hooks firing on the writer's Bash call, but `SubagentStart`
+  never appears in the debug log — so the write-ahead `on-writer-dispatch.sh`
+  (deterministic `dispatched` event + lease) does **not** run via hook on CC.
+  **Not a safety hole:** the safety floors (capability allowlist, held-out deny,
+  branch guard, prod gate) all ride PreToolUse, which works. **Fix:** move the
+  write-ahead to a `PreToolUse` matcher on the writer `Task` dispatch, or have the
+  router do it in-loop (the installers' fallback comment already notes this).
+  Codex/OpenCode subagent-start event names still need confirming per harness.
+- ✅ **DONE — stale `scripts/install-<harness>.sh` refs in internal comments fixed.**
+  Persona bodies (`references/personas/*.md`) and `references/agents.yaml` now say
+  "the per-harness generators (build.sh / install-*.sh)" instead of a nonexistent
+  install script; `agents/` rebuilt so the compiled prompts match (drift green).
 
 ## Watch (acceptable as-is, but depends on loop discipline)
 
@@ -159,5 +161,7 @@ fresh-context Verifier) — validated on its own construction.
 
 ## Not skill work (operational)
 
-- The stack is committed locally on `main`; nothing pushed. Decide push/PR to the
-  public remote when ready.
+- The orchestrate plugin is merged to `main` and pushed to `origin`
+  (github.com/ajilty/agent-skills); installable in any repo via
+  `/plugin marketplace add ajilty/agent-skills` then
+  `/plugin install orchestrate@ajilty-agent-skills`.

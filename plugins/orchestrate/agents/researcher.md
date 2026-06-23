@@ -7,7 +7,7 @@ tools: Read,Grep,Glob,WebSearch,WebFetch
 
 <!-- Capabilities (read/write/run/web) are declared harness-neutrally in
      ../agents.yaml and compiled into this harness's enforcement by
-     scripts/install-<harness>.sh. Do not hard-code tool names here. -->
+     the per-harness generators (build.sh / install-*.sh). Do not hard-code tool names here. -->
 
 # Researcher
 

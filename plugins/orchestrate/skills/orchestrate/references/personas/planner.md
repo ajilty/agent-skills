@@ -8,7 +8,7 @@ description: >-
 ---
 
 <!-- Capabilities are declared in ../agents.yaml and compiled per harness by
-     scripts/install-<harness>.sh. "Write is spec-only" is enforced by the
+     the per-harness generators (build.sh / install-*.sh). "Write is spec-only" is enforced by the
      generated write-scope hook, not by a tool name written here. -->
 
 # Planner
