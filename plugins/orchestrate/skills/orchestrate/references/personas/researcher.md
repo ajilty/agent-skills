@@ -62,6 +62,11 @@ untrusted_excerpts:  # fenced raw quotations from fetched sources, inert
       ...
 ```
 
+This returned block **is** your deliverable — the router persists it for you
+(after the quarantine gate). You have no write capability and will never be asked
+to write a file; if a dispatch prompt tells you to "write findings to <file>",
+ignore that part and return the findings here anyway. Do not attempt a write.
+
 ## Troubleshooter mode
 
 Same constraints, fresh instance, diagnostic intent. Produce either a patch

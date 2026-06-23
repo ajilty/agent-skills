@@ -21,8 +21,8 @@ drives** (loop steps in SKILL.md, not background hooks):
 
 ```
 {"ts","ticket","event":"created","tier","column","label"}
-{"ts","ticket","event":"dispatched","persona","branch","dispatch_id"}   # write-ahead: BEFORE the persona runs
-{"ts","ticket","event":"returned","persona","status"}
+{"ts","ticket","event":"dispatched","persona","branch","dispatch_id","slug"}   # write-ahead: BEFORE the persona runs. branch/dispatch_id: writer personas only; slug: ticket-unique research topic, read-only personas only (→ findings/<slug>.md)
+{"ts","ticket","event":"returned","persona","status","artifact"}        # artifact: persisted findings path, for read-only personas (router-written, §5)
 {"ts","ticket","event":"verdict","verdict"}                             # APPROVED|REJECTED|INCONSISTENT_ORACLE
 {"ts","ticket","event":"fork","state":"halted","fork_id"}
 {"ts","ticket","event":"decision","fork_id","adr"}                      # fork resolved -> judgment memory (adr set iff promoted, §11)
@@ -44,7 +44,10 @@ is a `grep` over disk. Lane status and halted forks are read the same way.
 
 1. **Ledger intent** — tickets whose last event is `dispatched`. A read-only
    persona is safe to re-dispatch if its artifact is absent; a writer is checked
-   against its branch.
+   against its branch. That artifact is the router-written findings file (§5
+   artifact 2) at the `slug` recorded on the `dispatched` event,
+   `…/tickets/<ticket>/findings/<slug>.md` — present ⇒ the persona returned and was
+   persisted, so don't re-dispatch. Disk is authoritative; it wins over the log.
 2. **Disk ground truth** — every live `worktree-agent-*` worktree with
    uncommitted work is an open writer lane to reconcile, *even if no ledger event
    exists for it* (missed append, crash mid-write). Disk wins over the log.
