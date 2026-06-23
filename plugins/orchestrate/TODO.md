@@ -76,6 +76,15 @@ fresh-context Verifier) — validated on its own construction.
   snippets (their `${...}` equivalents remain a follow-up for those harnesses).
 
 
+- **Subagent instances must be well-named (descriptive, consistent pattern) —
+  especially under Claude Code; never the generic `general-purpose`.** Every
+  dispatched subagent should carry a clear, consistent label/type so the operator
+  can tell at a glance which lane/persona is running (e.g. `orchestrate:researcher`,
+  `verify:test-suite`) rather than an opaque `general-purpose`. The plugin's five
+  personas are already named; this convention must also cover any helper/verification
+  dispatches the loop or its tooling spawns. Define the naming pattern and apply it
+  wherever the router (or supporting scripts/workflows) dispatches a subagent.
+
 - **Lease acquire atomicity (TOCTOU).** `ledger.sh lease-acquire` is
   check-then-write; two concurrent acquires of a free target could both win.
   Replace with an atomic claim (`mkdir` lockdir, or `set -C`/noclobber `O_EXCL`).
