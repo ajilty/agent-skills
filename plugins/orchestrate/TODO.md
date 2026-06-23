@@ -85,6 +85,17 @@ fresh-context Verifier) — validated on its own construction.
   dispatches the loop or its tooling spawns. Define the naming pattern and apply it
   wherever the router (or supporting scripts/workflows) dispatches a subagent.
 
+- **Standard `/orchestrate:status` command — read-only board/WIP summary for
+  returning operators.** A slash command (sibling to `/orchestrate:start`) that
+  prints the current work-board at a glance *without dispatching or advancing any
+  lane*: open lanes + their persona/column, in-flight writer(s), halted
+  `DECISION_FORK`s / quarantines awaiting the operator, held leases, and anything
+  needing an ack/decision. Build on the existing `ledger.sh reground` + `board.jsonl`
+  primitives (read-only view, not the full loop). **Rationale:** the operator runs
+  many things at once and may have long gaps between check-ins — today re-grounding
+  means running the loop or reading the ledger by hand; a one-shot status view lets
+  them re-orient instantly. Mirror to Codex/OpenCode per the command-parity item.
+
 - **Lease acquire atomicity (TOCTOU).** `ledger.sh lease-acquire` is
   check-then-write; two concurrent acquires of a free target could both win.
   Replace with an atomic claim (`mkdir` lockdir, or `set -C`/noclobber `O_EXCL`).
