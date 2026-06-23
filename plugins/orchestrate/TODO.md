@@ -164,6 +164,12 @@ config, so a `claude` run inside a project still writes a project-scope `.claude
   real actuator prod mutation (hard-gate; skips on model-decline). **This eval caught
   the namespaced-`agent_type` bug** that left ALL hook enforcement hollow under the
   plugin (now fixed — git 355c153).
+- **Tier 3 writer-lane** (`test_writer_lane.sh`) — live, the proactive catch for the
+  harness-path class: on the stale-default-branch topology (origin/HEAD→stale master,
+  blank-slate current), helper-create the worktree → dispatch a real implementer to
+  work IN it (cd, not isolation:worktree) → commit to its worktree-agent-* branch →
+  merge clean. Asserts right base (current, not origin/HEAD), §9b branch, clean merge,
+  and shared checkout untouched. The test the worktree field failures kept slipping past.
 
 A containerized variant (Docker + pinned `claude` + version matrix) is a future
 hardening for fully-hermetic CI of Tiers 2/3; the local FS-isolated form is the
