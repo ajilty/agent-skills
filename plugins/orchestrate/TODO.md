@@ -204,6 +204,15 @@ Not yet built:
   **Interactive verification runbook (probes + results table):**
   `docs/issue-b-resume-registration-verification.md`.
 
+## Agent teams (CC) — deliberately NOT used (ADR-0012)
+
+CC's experimental "agent teams" (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) coordinates
+full teammate *sessions*, which would bypass orchestrate's subagent-scoped guarantees
+(capability subtraction + fail-closed hooks). Plain subagent dispatch needs no flag
+(verified). We stay subagent-based; the flag is intentionally absent from install/test
+settings. A teams-based variant would require re-establishing the guarantees first —
+see `docs/adr/0012-subagents-not-agent-teams.md`.
+
 ## Watch (acceptable as-is, but depends on loop discipline)
 
 - **`decision` event + ADR capture are router loop-steps, not hooks.** Like

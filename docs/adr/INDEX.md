@@ -17,3 +17,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0009](0009-clarification-returns-pass-quarantine.md) | Clarification-skill returns pass the quarantine gate | active |
 | [0010](0010-run-scope-denylist-not-allowlist.md) | Verifier run-scope is a best-effort mutation denylist, not an allowlist | active |
 | [0011](0011-writeahead-on-pretooluse-dispatch-not-subagentstart.md) | Writer write-ahead fires on PreToolUse of the dispatch tool, not SubagentStart | active |
+| [0012](0012-subagents-not-agent-teams.md) | Orchestrate dispatches capability-subtracted subagents, not agent-teams teammates | active |
