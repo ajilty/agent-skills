@@ -557,20 +557,32 @@ Implementer's to self-correct around.
 Symptom: isolation worktrees spawned from a stale base commit, and Implementers
 papered over it with `reset --hard` to a blank slate each time — recurring friction.
 
-A writer self-correcting for a stale base is a smell; the cure is correct
-creation. At worktree creation the router **fetches first** and branches from the
-*current* base ref, not a local commit:
+A writer self-correcting for a stale base is a smell; the cure is correct creation.
+**Do NOT rely on the harness's `isolation:worktree`** for writer lanes — it cuts from
+a stale local base and can resolve to the shared main checkout (the
+isolation-lands-on-main trap). The router creates worktrees **explicitly** via the
+runtime helper, which fetches first and branches from the *current* origin base:
 
 ```bash
-git fetch origin --prune
-git worktree add -b "$BRANCH" "$WT_PATH" "origin/$BASE_REF"
+WT="$(runtime/worktree.sh create "$ticket" "$persona" "$BASE_REF")"
+# = git fetch origin --prune; git worktree add -b worktree-agent-<ticket>-<persona> "$WT" "origin/$BASE_REF"
 ```
 
-Before each dispatch, a **staleness guard** checks the worktree's merge-base
-against `origin/$BASE_REF`; if behind, the router recreates (or rebases) the
-worktree rather than dispatching onto stale state. The Implementer should never
-need a blank-slate `reset --hard` to get a clean base — if it does, that's a
-staleness-guard miss, logged as operational friction (§8).
+Before each (re)dispatch, run the **staleness guard**; if behind, recreate from the
+fresh base — but the helper recreates ONLY when the worktree holds no work. A stale
+worktree with uncommitted changes or unmerged commits **HALTs (exit 3) for reconcile,
+never an auto-destroy** (the `reset --hard` data-loss lesson, ADR-0013):
+
+```bash
+runtime/worktree.sh staleness "$ticket" "$persona" "$BASE_REF" \
+  || WT="$(runtime/worktree.sh create "$ticket" "$persona" "$BASE_REF")"
+```
+
+The Implementer should never need a blank-slate `reset --hard` to get a clean base —
+if it does, that's a staleness-guard miss (§8). And working-tree-discarding git
+(`reset --hard`, `clean -f`, `checkout -f`) on the **shared/primary checkout** is
+refused outright by `guard-shared-checkout.sh` (ADR-0013), so a stray base-correction
+cannot eat unpushed commits when an agent lands on main.
 
 ### 9b. Branch names are router-owned (rough edge 2: branch drift)
 
