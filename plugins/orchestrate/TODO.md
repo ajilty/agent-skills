@@ -197,6 +197,8 @@ Not yet built:
   `/reload-plugins` is meant to re-register agents; (b) the minimal operator step
   (a fresh interactive session re-registers — their evidence #1; `/reload-plugins` did
   not) — verify interactively by an actual dispatch (can't be done headlessly).
+  **Interactive verification runbook (probes + results table):**
+  `docs/issue-b-resume-registration-verification.md`.
 
 ## Watch (acceptable as-is, but depends on loop discipline)
 
