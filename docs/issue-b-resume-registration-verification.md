@@ -1,5 +1,14 @@
 # Issue B — interactive verification runbook: `orchestrate:*` agents on resume
 
+> **VERDICT (2026-06-23): NOT reproducible on Claude Code 2.1.186.** The dispatch probe
+> returned `RESEARCHER_OK` on a fresh post-install session, after `/exit`, and in a
+> named/persisted (resumed) session; `/reload-plugins` showed the full 21 agents (no −5
+> drop). Combined with the headless suite (install→resume→dispatch + stale-settings all
+> pass), the plugin side is sound — the original 16/21 drop was likely a harness bug
+> since fixed, or a transient. **Treated as resolved/watch; not chasing an
+> orchestrate-side fix.** Re-run the steps below if it ever recurs (esp. on a different
+> CC version).
+
 **Goal:** confirm whether the plugin's five subagents (`orchestrate:actuator/implementer/
 planner/researcher/verifier`) stay dispatchable across an **interactive** resume, and
 which operator step (if any) re-registers them. This must be done interactively — it is

@@ -175,7 +175,11 @@ Not yet built:
   score outcomes vs the oracle and count safety violations. Safety = hard gate,
   quality = threshold/trend. Heaviest; needs fixture format + scoring runner + baseline.
 
-- **KNOWN-GAP / Issue B — `orchestrate:*` agent types don't survive resume/reload.**
+- ✅ **RESOLVED/WATCH — Issue B (`orchestrate:*` agents don't survive resume/reload).**
+  Not reproducible on CC 2.1.186: interactive probe returns RESEARCHER_OK on fresh +
+  post-`/exit` + resumed sessions, `/reload-plugins` shows the full 21 agents (no drop);
+  headless suite passes. Likely a since-fixed harness bug or transient. Runbook retained
+  to re-verify if it recurs. Original investigation below (kept for context):
   Observed (CC 2.1.x, interactive): the plugin's five agents register only at the
   first session-start after install; on resume they drop ("no longer available"), and
   `/reload-plugins` reloads skills+hooks but NOT agents (deltas 21→16 agents, 11→10
