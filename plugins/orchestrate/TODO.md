@@ -142,6 +142,27 @@ fresh-context Verifier) — validated on its own construction.
   "the per-harness generators (build.sh / install-*.sh)" instead of a nonexistent
   install script; `agents/` rebuilt so the compiled prompts match (drift green).
 
+## Testing coverage (tiers)
+
+Zero-dep bash suite (`tests/run.sh`, 171/171, CI) covers: runtime logic (A);
+generation/contract — allowlist, drift, hook-path, contract-parity, manifest (B);
+**dependency/reference integrity** — persona `body:` existence + SKILL/persona
+nav-ref resolution (`test_integrity.sh`); and **installer smoke** — all 5 personas +
+codex sandbox_mode mapping (`test_install.sh`). All hermetic, no `claude`/API.
+
+Remaining tiers (not yet built):
+- **Tier 2 — containerized plugin-install smoke.** Docker image with a pinned
+  `claude` CLI running `plugin validate` + `marketplace add` + `install` + `details`,
+  asserting the inventory. Hermetic, no API key; same image local + CI. Catches
+  packaging/manifest regressions against the real CLI, and (via a version matrix)
+  version-gated harness behavior.
+- **Tier 3 — live invocation (API-gated).** `claude -p --debug` dispatch asserting
+  the right persona is dispatched, the allowlist is honored at runtime, and which
+  hook events actually fire. Needs `ANTHROPIC_API_KEY` (cost + model nondeterminism)
+  → run gated (nightly/on-release), not per-push. The only tier that catches the
+  "green-but-broken-on-real-harness" class — e.g. `SubagentStart` not firing under
+  CC 2.1.181 (today found only by a manual live test).
+
 ## Watch (acceptable as-is, but depends on loop discipline)
 
 - **`decision` event + ADR capture are router loop-steps, not hooks.** Like
