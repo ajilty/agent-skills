@@ -1,5 +1,6 @@
 ---
 name: orchestrate
+user-invocable: false   # router brain: hidden from the / menu (no /orchestrate:orchestrate stutter); still auto-triggers via description and is driven by /orchestrate:start
 description: >-
   Phase-gated, single-writer delegation pipeline for coding work. Multiplies
   intelligence (research, planning, verification) while keeping writes
