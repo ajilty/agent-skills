@@ -19,3 +19,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0011](0011-writeahead-on-pretooluse-dispatch-not-subagentstart.md) | Writer write-ahead fires on PreToolUse of the dispatch tool, not SubagentStart | active |
 | [0012](0012-subagents-not-agent-teams.md) | Orchestrate dispatches capability-subtracted subagents, not agent-teams teammates | active |
 | [0013](0013-shared-checkout-destructive-git-floor.md) | A universal floor refuses destructive git on the shared (primary) checkout | active |
+| [0014](0014-disk-first-read-lane.md) | Read-only results are disk-first: durable, attributed, gated on read | active |

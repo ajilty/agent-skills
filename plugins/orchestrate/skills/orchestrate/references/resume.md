@@ -21,8 +21,8 @@ drives** (loop steps in SKILL.md, not background hooks):
 
 ```
 {"ts","ticket","event":"created","tier","column","label"}
-{"ts","ticket","event":"dispatched","persona","branch","dispatch_id","slug"}   # write-ahead: BEFORE the persona runs. branch/dispatch_id: writer personas only; slug: ticket-unique research topic, read-only personas only (→ findings/<slug>.md)
-{"ts","ticket","event":"returned","persona","status","artifact"}        # artifact: persisted findings path, for read-only personas (router-written, §5)
+{"ts","ticket","event":"dispatched","persona","branch","dispatch_id","slug"}   # write-ahead: BEFORE the persona runs. branch: writer personas only; dispatch_id: EVERY dispatch (result→agent attribution, ADR-0014); slug: ticket-unique research topic, read-only personas only (RAW → findings/_quarantine/<slug>.<dispatch_id>.md, promoted → findings/<slug>.md)
+{"ts","ticket","event":"returned","persona","status","artifact"}        # artifact: the PROMOTED findings path (read-only). The persona wrote the RAW quarantine file itself; the router read it from disk, gated, and promoted it (§5, ADR-0014)
 {"ts","ticket","event":"verdict","verdict"}                             # APPROVED|REJECTED|INCONSISTENT_ORACLE
 {"ts","ticket","event":"fork","state":"halted","fork_id"}
 {"ts","ticket","event":"decision","fork_id","adr"}                      # fork resolved -> judgment memory (adr set iff promoted, §11)
@@ -43,11 +43,13 @@ is a `grep` over disk. Lane status and halted forks are read the same way.
 `ledger.sh reground` reconstructs open lanes two ways and merges them:
 
 1. **Ledger intent** — tickets whose last event is `dispatched`. A read-only
-   persona is safe to re-dispatch if its artifact is absent; a writer is checked
-   against its branch. That artifact is the router-written findings file (§5
-   artifact 2) at the `slug` recorded on the `dispatched` event,
-   `…/tickets/<ticket>/findings/<slug>.md` — present ⇒ the persona returned and was
-   persisted, so don't re-dispatch. Disk is authoritative; it wins over the log.
+   persona is safe to re-dispatch if its **promoted result file is absent**; a
+   writer is checked against its branch. The result is disk-first (ADR-0014): the
+   persona itself writes the RAW `…/findings/_quarantine/<slug>.<dispatch_id>.md`,
+   and the router gates+promotes it to `…/tickets/<ticket>/findings/<slug>.md` at the
+   `slug` recorded on the `dispatched` event. Promoted file present ⇒ the persona
+   delivered a durable, gated result, so don't re-dispatch. Disk is authoritative; it
+   wins over the log — and over any completion notification, which may never arrive.
 2. **Disk ground truth** — every live `worktree-agent-*` worktree with
    uncommitted work is an open writer lane to reconcile, *even if no ledger event
    exists for it* (missed append, crash mid-write). Disk wins over the log.

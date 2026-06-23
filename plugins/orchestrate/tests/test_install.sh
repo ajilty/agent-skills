@@ -6,8 +6,11 @@ o="/tmp/p4cx.$$"; rm -rf "$o"; bash "$SK/scripts/install-codex.sh" --scope proje
 for p in researcher planner implementer verifier actuator; do assert_file "$o/agents/$p.toml"; done
 assert_no_file "AGENTS.orchestrate.md"
 test -x "$o/orchestrate-runtime/ledger.sh" && pass || fail "codex ships ledger.sh executable"
-# capability -> sandbox_mode mapping: researcher (no write/run) = read-only; actuator (run) = workspace-write
-grep -q 'sandbox_mode = "read-only"' "$o/agents/researcher.toml" && pass || fail "codex researcher sandbox_mode=read-only"
+# capability -> sandbox_mode mapping: any write- or run-capable persona = workspace-write.
+# Under the disk-first read lane (ADR-0014) the researcher writes its own findings, so it
+# is workspace-write at the OS layer and confined to findings/_quarantine by the
+# write-scope hook (two layers, same posture as the planner). actuator (run) = workspace-write.
+grep -q 'sandbox_mode = "workspace-write"' "$o/agents/researcher.toml" && pass || fail "codex researcher sandbox_mode=workspace-write (results-only, hook-scoped)"
 grep -q 'sandbox_mode = "workspace-write"' "$o/agents/actuator.toml" && pass || fail "codex actuator sandbox_mode=workspace-write"
 rm -rf "$o"
 # opencode: emits ALL five personas AND honors --dir

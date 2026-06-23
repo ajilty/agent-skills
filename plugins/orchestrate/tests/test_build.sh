@@ -3,20 +3,25 @@ SK="$HERE/.."   # plugins/orchestrate
 # --- Compiled tool-allowlist (safety-critical): each generated agent carries
 #     exactly the tools agents.yaml implies. Positive + negative assertions.
 declare -A WANT=(
-  [researcher]='Read,Grep,Glob,WebSearch,WebFetch'
+  [researcher]='Read,Grep,Glob,WebSearch,WebFetch,Write'
   [planner]='Read,Grep,Glob,Write'
   [implementer]='Read,Grep,Glob,Write,Edit,Bash'
-  [verifier]='Read,Grep,Glob,Bash'
+  [verifier]='Read,Grep,Glob,Write,Bash'
   [actuator]='Read,Grep,Glob,Bash'
 )
 for p in "${!WANT[@]}"; do
   got="$(awk -F': ' '/^tools: /{print $2; exit}' "$SK/agents/$p.md" 2>/dev/null)"
   assert_eq "$got" "${WANT[$p]}" "allowlist $p"
 done
-# Negatives: read-only/run-only personas must NOT carry source-write tools.
-for p in researcher verifier actuator; do
-  if grep -qE '^tools: .*(Write|Edit)' "$SK/agents/$p.md"; then fail "$p must not have Write/Edit"; else pass; fi
+# Negatives (disk-first read lane, ADR-0014): read-only personas now carry a
+# PATH-SCOPED Write (results-only: findings/_quarantine for researcher, verdicts
+# for verifier; enforced by write-scope.sh) so their results survive interruption.
+# They must still NOT carry Edit (they create new result files, never edit source),
+# and the actuator (writes live state via run, not source via Write) carries neither.
+for p in researcher verifier; do
+  if grep -qE '^tools: .*Edit' "$SK/agents/$p.md"; then fail "$p must not have Edit (results-only Write, no source edits)"; else pass; fi
 done
+if grep -qE '^tools: .*(Write|Edit)' "$SK/agents/actuator.md"; then fail "actuator must not have Write/Edit"; else pass; fi
 
 # --- Hook-path resolution: every ${CLAUDE_PLUGIN_ROOT}/... command in hooks.json
 #     resolves to an executable script inside the plugin.

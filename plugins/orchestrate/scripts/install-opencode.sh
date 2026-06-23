@@ -26,7 +26,7 @@ oc_tools() { local p="$1" read web write run rd=false gp=false gl=false wf=false
   read="$(yq ".personas.$p.capabilities.read" "$AGENTS")"; web="$(yq ".personas.$p.capabilities.web" "$AGENTS")"
   write="$(yq ".personas.$p.capabilities.write" "$AGENTS")"; run="$(yq ".personas.$p.capabilities.run" "$AGENTS")"
   [ "$read" = true ] && { rd=true; gp=true; gl=true; }; [ "$web" = true ] && wf=true
-  case "$write" in full) wr=true; ed=true;; spec-only) wr=true;; esac
+  case "$write" in full) wr=true; ed=true;; spec-only|results-only) wr=true;; esac   # results-only: scoped Write, no Edit (ADR-0014); write-scope hook confines the path
   case "$run" in full|tests-only) bash=true;; esac
   printf '  read: %s\n  grep: %s\n  glob: %s\n  webfetch: %s\n  write: %s\n  edit: %s\n  bash: %s\n' "$rd" "$gp" "$gl" "$wf" "$wr" "$ed" "$bash"; }
 body() { awk 'f==2{print} /^---[[:space:]]*$/{f++}' "$1"; }
@@ -56,7 +56,7 @@ export const orchestrate = async () => ({
     process.env.TOOL_INPUT = String(input?.args?.command ?? "");
     if (["read","grep","glob"].includes(tool)) sh(\`\${RT}/hooks/deny-heldout-read.sh\`);
     if (tool === "bash") { sh(\`\${RT}/hooks/keep-on-branch.sh\`); sh(\`\${RT}/hooks/gate-prod-apply.sh\`); sh(\`\${RT}/hooks/run-scope.sh\`); }  // gate is the hard floor; run-scope confines verifier Bash
-    if (tool === "write" || tool === "edit") sh(\`\${RT}/hooks/write-scope.sh\`);  // planner spec/ADR write confinement (self-guards)
+    if (tool === "write" || tool === "edit") sh(\`\${RT}/hooks/write-scope.sh\`);  // planner spec/ADR + researcher findings_quarantine + verifier verdicts confinement (self-guards, ADR-0014)
   },
   // Write-ahead for the writer (deterministic): runs before an implementer subagent.
   // The script self-guards on persona=implementer. Confirm the event name for your
