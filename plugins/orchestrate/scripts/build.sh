@@ -42,8 +42,8 @@ cat > "$PLUGIN_ROOT/hooks/hooks.json" <<JSON
         { "type": "command", "command": "$H/gate-prod-apply.sh" },
         { "type": "command", "command": "$H/run-scope.sh" } ] },
       { "matcher": "Write|Edit", "hooks": [
-        { "type": "command", "command": "$H/write-scope.sh" } ] } ],
-    "SubagentStart": [ { "matcher": "implementer|actuator", "hooks": [
+        { "type": "command", "command": "$H/write-scope.sh" } ] },
+      { "matcher": "Task|Agent", "hooks": [
         { "type": "command", "command": "$H/on-writer-dispatch.sh" } ] } ],
     "SessionStart": [ { "matcher": "compact", "hooks": [
         { "type": "command", "command": "$H/on-compaction.sh" } ] } ]

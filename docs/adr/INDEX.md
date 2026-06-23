@@ -16,3 +16,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0008](0008-subdir-plugin-monorepo-over-repo-root.md) | Subdir-plugin monorepo over repo-root-as-plugin | active |
 | [0009](0009-clarification-returns-pass-quarantine.md) | Clarification-skill returns pass the quarantine gate | active |
 | [0010](0010-run-scope-denylist-not-allowlist.md) | Verifier run-scope is a best-effort mutation denylist, not an allowlist | active |
+| [0011](0011-writeahead-on-pretooluse-dispatch-not-subagentstart.md) | Writer write-ahead fires on PreToolUse of the dispatch tool, not SubagentStart | active |

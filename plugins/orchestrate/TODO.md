@@ -128,16 +128,16 @@ fresh-context Verifier) — validated on its own construction.
 
 ## Plugin-validation follow-ups (Task 8, 2026-06-18)
 
-- ⚠️ **CONFIRMED (live test 2026-06-19) — `SubagentStart` does NOT fire under Claude
-  Code** (CC 2.1.181). A real subagent dispatch (`claude --plugin-dir … --debug`)
-  shows the 3 PreToolUse hooks firing on the writer's Bash call, but `SubagentStart`
-  never appears in the debug log — so the write-ahead `on-writer-dispatch.sh`
-  (deterministic `dispatched` event + lease) does **not** run via hook on CC.
-  **Not a safety hole:** the safety floors (capability allowlist, held-out deny,
-  branch guard, prod gate) all ride PreToolUse, which works. **Fix:** move the
-  write-ahead to a `PreToolUse` matcher on the writer `Task` dispatch, or have the
-  router do it in-loop (the installers' fallback comment already notes this).
-  Codex/OpenCode subagent-start event names still need confirming per harness.
+- ✅ **FIXED (ADR-0011) — `SubagentStart` doesn't fire under CC; write-ahead moved to
+  PreToolUse on the dispatch tool.** Confirmed live (CC 2.1.181/2.1.186): SubagentStart
+  never appears; the write-ahead now runs as `PreToolUse` matcher `Task|Agent` (fires
+  when the router dispatches a writer), reads the dispatched persona from
+  `tool_input.subagent_type` (namespace-stripped), and branch/ticket/targets from the
+  on-disk active-writer record (ADR-0006). Proven end-to-end by a live dispatch: the
+  `dispatched` event + lease are journaled. Locked by unit tests (subagent_type payload)
+  + drift/contract-parity. Codex/OpenCode keep their subagent-start wiring (per-harness,
+  unconfirmed); `on-writer-dispatch.sh` self-detects persona from subagent_type OR
+  agent_type OR env so one script serves all.
 - ✅ **DONE — stale `scripts/install-<harness>.sh` refs in internal comments fixed.**
   Persona bodies (`references/personas/*.md`) and `references/agents.yaml` now say
   "the per-harness generators (build.sh / install-*.sh)" instead of a nonexistent

@@ -86,7 +86,7 @@ hooks:
       on-writer-dispatch.sh, which leaves no dispatched/lease trace when unacked.
     fail_closed: true
   writer_writeahead:
-    event: subagent-start          # CC/Codex: SubagentStart (matcher=implementer); OpenCode: subagent-invoke
+    event: pre-tool-use            # CC: PreToolUse on the dispatch tool (matcher Task|Agent) — SubagentStart does NOT fire (ADR-0011); dispatched persona = tool_input.subagent_type. Codex/OpenCode: their subagent-start/invoke event (agent_type/PERSONA).
     applies_to: [implementer, actuator]
     intent: >-
       Deterministically append the write-ahead 'dispatched' event + take the lease

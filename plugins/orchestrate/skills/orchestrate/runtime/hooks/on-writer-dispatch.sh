@@ -1,23 +1,30 @@
 #!/usr/bin/env bash
-# SubagentStart (writers): write-ahead 'dispatched' + lease BEFORE the writer runs,
-# so a just-dispatched writer that left no dirty worktree is still visible to
-# reground. SubagentStart is NON-blocking and its stdout is not a decision, so this
-# does ledger side-effects only and ALWAYS exits 0 — never decision JSON, never aborts.
+# Write-ahead (writers): append 'dispatched' + take the lease BEFORE the writer runs,
+# so a just-dispatched writer that left no dirty worktree is still visible to reground.
 #
-# Input source: persona from Claude Code's stdin JSON (agent_type), env fallback.
-# NOTE: TICKET/TARGETS/PROD_TARGETS are per-dispatch context not passed to CC
-# subagent hooks via env (TODO part 2: read from on-disk ticket state by agent_id).
+# FIRING (ADR-0011): Claude Code's SubagentStart event does NOT fire (live-confirmed),
+# so under CC this runs as PreToolUse on the dispatch tool (matcher Task|Agent) — i.e.
+# when the ROUTER dispatches a writer. The dispatched persona arrives as
+# tool_input.subagent_type (the parent's own agent_type is null); Codex/OpenCode wire
+# it to their subagent-start event, where the persona is agent_type / PERSONA env.
+# The router writes active-writer.json before dispatch (ADR-0006), so the ticket/branch/
+# targets are on disk when this fires. As a PreToolUse hook it must NEVER block the
+# dispatch: ledger side-effects only, ALWAYS exit 0 — never decision JSON, never aborts.
 set -uo pipefail
 RT="$(cd "$(dirname "$0")/.." && pwd)"
 in=""; [ -t 0 ] || in="$(cat 2>/dev/null || true)"
 J(){ [ -n "$in" ] && command -v jq >/dev/null 2>&1 && printf '%s' "$in" | jq -r "$1 // empty" 2>/dev/null || true; }
-persona="$(J .agent_type)"; [ -n "$persona" ] || persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"
+# CC PreToolUse-on-dispatch: the dispatched persona is tool_input.subagent_type. Other
+# harnesses (subagent-start): agent_type / env. Strip the plugin namespace either way.
+persona="$(J .tool_input.subagent_type)"; [ -n "$persona" ] || persona="$(J .agent_type)"
+[ -n "$persona" ] || persona="${PERSONA:-${CLAUDE_AGENT_TYPE:-${CODEX_AGENT:-}}}"
+persona="${persona##*:}"   # strip plugin namespace: CC sends <plugin>:<persona>
 case "$persona" in implementer|actuator) ;; *) exit 0 ;; esac
 ts="$(date -u +%FT%TZ)"; t="${TICKET:-$(bash "$RT/ledger.sh" writer-ctx get ticket)}"; d="${DISPATCH_ID:-$RANDOM}"
 [ -n "$t" ] || exit 0    # no ticket context -> nothing to write-ahead
 
 if [ "$persona" = implementer ]; then
-  b="${ASSIGNED_BRANCH:-}"
+  b="${ASSIGNED_BRANCH:-$(bash "$RT/ledger.sh" writer-ctx get assigned_branch)}"   # CC: no env; read the router's active-writer record (ADR-0006)
   bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"dispatched\",\"persona\":\"implementer\",\"branch\":\"$b\",\"dispatch_id\":\"$d\"}"
   lease=".agents/runs/orchestrate/tickets/$t/lease"; mkdir -p "$(dirname "$lease")"
   printf '{"dispatch_id":"%s","session":"%s","pid":%s,"ts":"%s"}\n' "$d" "${SESSION_ID:-?}" "$$" "$ts" > "$lease"
@@ -34,7 +41,7 @@ for key in $pts; do
   }
 done
 bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"dispatched\",\"persona\":\"actuator\",\"dispatch_id\":\"$d\"}"
-for key in ${TARGETS:-}; do
+for key in ${TARGETS:-$pts}; do   # CC: no TARGETS env -> lease the prod targets from the active-writer record
   bash "$RT/ledger.sh" lease-acquire "$t" "$key" || \
     bash "$RT/ledger.sh" append "{\"ts\":\"$ts\",\"ticket\":\"$t\",\"event\":\"lease-conflict\",\"persona\":\"actuator\",\"key\":\"$key\"}"
 done

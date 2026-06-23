@@ -19,3 +19,28 @@ rc=$?
 assert_eq "$rc" "0" "actuator write-ahead exits 0 even on lease conflict (non-blocking)"
 grep -q '"event":"lease-conflict".*"key":"tfstate:prod/db"' .agents/runs/orchestrate/board.jsonl && pass || fail "lease-conflict journaled"
 cd /; rm -rf "$d"
+
+# --- CC PreToolUse-on-dispatch path (ADR-0011): SubagentStart doesn't fire under CC, so
+#     the write-ahead runs as PreToolUse on the Agent/Task tool. Persona arrives as
+#     tool_input.subagent_type (namespaced); branch/ticket/prod-targets come from the
+#     on-disk active-writer record (no TARGETS/ASSIGNED_BRANCH env). Needs jq.
+if command -v jq >/dev/null 2>&1; then
+  d2="$(mktemp_repo)"; cd "$d2"
+  # implementer dispatch: ticket+branch from the record; dispatched + lease written
+  bash "$RT/ledger.sh" writer-ctx set T9 implementer feat/x
+  printf '{"tool_name":"Agent","tool_input":{"subagent_type":"orchestrate:implementer"}}' | bash "$RT/hooks/on-writer-dispatch.sh"
+  grep -q '"event":"dispatched".*"persona":"implementer".*"branch":"feat/x"' .agents/runs/orchestrate/board.jsonl && pass || fail "CC dispatch: implementer write-ahead from subagent_type + disk branch"
+  assert_file ".agents/runs/orchestrate/tickets/T9/lease"
+  # actuator dispatch: acked prod target -> dispatched + lease the prod target (from record)
+  bash "$RT/ledger.sh" writer-ctx set T10 actuator feat/y "tfstate:prod/db"
+  bash "$RT/ledger.sh" ack T10 "tfstate:prod/db"
+  printf '{"tool_name":"Agent","tool_input":{"subagent_type":"orchestrate:actuator"}}' | bash "$RT/hooks/on-writer-dispatch.sh"
+  grep -q '"event":"dispatched".*"persona":"actuator"' .agents/runs/orchestrate/board.jsonl && pass || fail "CC dispatch: actuator write-ahead from subagent_type (acked prod target)"
+  assert_file ".agents/runs/orchestrate/leases/tfstate:prod%2Fdb"
+  # actuator dispatch with UNACKED prod target -> gate hygiene: NO dispatched/lease trace
+  d3="$(mktemp_repo)"; cd "$d3"
+  bash "$RT/ledger.sh" writer-ctx set T11 actuator feat/z "tfstate:prod/db"
+  printf '{"tool_name":"Agent","tool_input":{"subagent_type":"orchestrate:actuator"}}' | bash "$RT/hooks/on-writer-dispatch.sh"
+  grep -q '"event":"dispatched"' .agents/runs/orchestrate/board.jsonl && fail "CC dispatch: unacked actuator must leave NO dispatched trace" || pass
+  cd /; rm -rf "$d2" "$d3"
+fi
