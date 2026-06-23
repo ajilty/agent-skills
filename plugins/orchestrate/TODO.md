@@ -180,18 +180,23 @@ Not yet built:
   first session-start after install; on resume they drop ("no longer available"), and
   `/reload-plugins` reloads skills+hooks but NOT agents (deltas 21→16 agents, 11→10
   plugins — the −5 are the personas). `subagent_type: orchestrate:researcher` → "not
-  found" on resume. **Current tests do NOT cover this** (confirmed): Tier 2 `details`
-  reads the *static* inventory (always shows 5); Tiers 3a/3b use ephemeral
-  `--plugin-dir`, which re-registers agents every invocation and so cannot reproduce
-  the *installed-plugin* resume drop. **Coverage needed before fixing:** an
-  installed-plugin resume-lifecycle test — install (sandboxed HOME) → `claude -p`
-  session 1 → `claude -p -c` resume → probe an `orchestrate:researcher` dispatch;
-  assert it's still available. Likely tied to enable-state persistence: a stale
-  "enabled at project scope (`.claude/settings.json`)" record was seen to survive
-  marketplace removal during testing — matches the operator hypothesis. May be a CC
-  harness limitation (agent-types register only at session-start); if so, document the
-  minimal operator step and verify by an actual dispatch, not inference. Diagnose +
-  fix only AFTER the resume-lifecycle test reproduces it.
+  found" on resume.
+  **INVESTIGATED (2026-06-23) — narrowed to the interactive harness, NOT the plugin.**
+  Built `tests/integration/test_resume_registration.sh` (installed plugin in a
+  credential-cloned sandbox HOME → `claude -p` session 1 → `claude -p -c` resume →
+  dispatch `orchestrate:researcher`). Result: resume **kept** the agent dispatchable
+  (RESEARCHER_OK both sessions); a stale `enabledPlugins:{orchestrate@ghost}` entry did
+  **not** break the real install/load. So it does NOT reproduce headlessly — because
+  each `claude -p` is a fresh process that re-initialises plugins and re-registers
+  agents every time. That rules out the plugin artifacts/config and stale-enable as the
+  cause and pins Issue B to the **interactive `--resume`/`--continue` TUI path** —
+  agent-types register at interactive session-start and interactive resume doesn't
+  re-run that step. **Likely a CC harness limitation, not an orchestrate fix.** Open:
+  (a) confirm via claude-code-guide whether explicit agent enumeration in plugin.json
+  (vs auto-discovery) changes interactive-resume registration, and whether
+  `/reload-plugins` is meant to re-register agents; (b) the minimal operator step
+  (a fresh interactive session re-registers — their evidence #1; `/reload-plugins` did
+  not) — verify interactively by an actual dispatch (can't be done headlessly).
 
 ## Watch (acceptable as-is, but depends on loop discipline)
 

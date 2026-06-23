@@ -23,9 +23,10 @@ PLUGIN_DIR="$(cd "$INT_HERE/../.." && pwd)"          # plugins/orchestrate
 REPO_ROOT="$(cd "$PLUGIN_DIR/../.." && pwd)"          # agent-skills (has .claude-plugin/marketplace.json)
 
 have_claude(){ command -v claude >/dev/null 2>&1; }
-# Live-invocation auth must come from the ENV (not a harness config file), so it
-# survives the HOME sandbox: an explicit ANTHROPIC_API_KEY. No key -> Tier 3 skips.
 have_api(){ [ -n "${ANTHROPIC_API_KEY:-}" ]; }
+# Live auth that survives a HOME sandbox: either an explicit ANTHROPIC_API_KEY, or a
+# copyable OAuth credential we clone into the sandbox. No auth -> live tiers skip.
+have_live_auth(){ have_api || [ -f "$HOME/.claude/.credentials.json" ]; }
 
 # Throwaway dirs with EXIT-trap cleanup.
 _INT_TMP=()
@@ -36,3 +37,7 @@ mk_tmp(){ local d; d="$(mktemp -d)"; _INT_TMP+=("$d"); printf '%s\n' "$d"; }
 mk_home(){ mk_tmp; }
 # Isolated git repo with the orchestrate ledger dir pre-made (for ledger artifacts).
 mk_repo(){ local d; d="$(mk_tmp)"; ( cd "$d" && git init -q && git config user.email t@t && git config user.name t && mkdir -p .agents/runs/orchestrate ); printf '%s\n' "$d"; }
+# Sandbox HOME authenticated for LIVE dispatch: a fresh dir + ONLY the OAuth
+# credential cloned in (keeps sandbox state controlled). With ANTHROPIC_API_KEY set,
+# no copy is needed. Use for installed-plugin + live-dispatch tests.
+mk_authed_home(){ local h; h="$(mk_home)"; mkdir -p "$h/.claude"; [ -f "$HOME/.claude/.credentials.json" ] && cp "$HOME/.claude/.credentials.json" "$h/.claude/" 2>/dev/null; printf '%s\n' "$h"; }
