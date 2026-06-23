@@ -2,7 +2,8 @@
 
 What to pick up next, captured so we don't lose the thread. As of 2026-06-22.
 The orchestrate plugin (packaging + enforcement hooks) is merged to `main` and
-published via the repo's self-marketplace. Tests: `tests/run.sh` (155/155).
+published via the repo's self-marketplace. Tests: `tests/run.sh` (176/176, zero-dep)
++ `tests/integration/run.sh` (real-CLI / live-agent, FS-isolated, gated).
 
 ## Process lesson — do this every batch (not optional)
 
@@ -144,24 +145,53 @@ fresh-context Verifier) — validated on its own construction.
 
 ## Testing coverage (tiers)
 
-Zero-dep bash suite (`tests/run.sh`, 171/171, CI) covers: runtime logic (A);
+**Tier 1 — zero-dep bash suite** (`tests/run.sh`, 176/176, CI). Runtime logic (A);
 generation/contract — allowlist, drift, hook-path, contract-parity, manifest (B);
-**dependency/reference integrity** — persona `body:` existence + SKILL/persona
-nav-ref resolution (`test_integrity.sh`); and **installer smoke** — all 5 personas +
-codex sandbox_mode mapping (`test_install.sh`). All hermetic, no `claude`/API.
+dependency/reference integrity — persona `body:` existence + SKILL/persona nav-ref
+resolution (`test_integrity.sh`); installer smoke — all 5 personas + codex
+sandbox_mode mapping (`test_install.sh`); and the namespaced-persona regression
+(`test_hooks_safety.sh`). Hermetic, no `claude`/API.
 
-Remaining tiers (not yet built):
-- **Tier 2 — containerized plugin-install smoke.** Docker image with a pinned
-  `claude` CLI running `plugin validate` + `marketplace add` + `install` + `details`,
-  asserting the inventory. Hermetic, no API key; same image local + CI. Catches
-  packaging/manifest regressions against the real CLI, and (via a version matrix)
-  version-gated harness behavior.
-- **Tier 3 — live invocation (API-gated).** `claude -p --debug` dispatch asserting
-  the right persona is dispatched, the allowlist is honored at runtime, and which
-  hook events actually fire. Needs `ANTHROPIC_API_KEY` (cost + model nondeterminism)
-  → run gated (nightly/on-release), not per-push. The only tier that catches the
-  "green-but-broken-on-real-harness" class — e.g. `SubagentStart` not firing under
-  CC 2.1.181 (today found only by a manual live test).
+**Tiers 2 + 3 — integration suite** (`tests/integration/run.sh`; NOT on the per-push
+gate; self-skips without `claude`/auth). Filesystem-isolated at the **HOME + cwd**
+level — never via harness config knobs (CLAUDE_CONFIG_DIR/--scope only redirect user
+config, so a `claude` run inside a project still writes a project-scope `.claude/`):
+- **Tier 2 plugin-install smoke** (`test_plugin_install.sh`) — real `claude` CLI:
+  validate + marketplace add + install + details inventory. Sandboxed HOME, no API.
+- **Tier 3a mechanical invocation** (`test_invocation.sh`) — live dispatch: actuator
+  dispatched, Bash lane works, allowlist excludes Write/Edit, SubagentStart sentinel.
+- **Tier 3b safety eval** (`test_safety_gate.sh`) — live: the pre-apply gate blocks a
+  real actuator prod mutation (hard-gate; skips on model-decline). **This eval caught
+  the namespaced-`agent_type` bug** that left ALL hook enforcement hollow under the
+  plugin (now fixed — git 355c153).
+
+A containerized variant (Docker + pinned `claude` + version matrix) is a future
+hardening for fully-hermetic CI of Tiers 2/3; the local FS-isolated form is the
+current vehicle. Live tiers need OAuth (real ~/.claude) or `ANTHROPIC_API_KEY`.
+
+Not yet built:
+- **Effectiveness A/B eval (Tier 3c).** Golden fixtures {seed, goal, held-out
+  oracle, safety invariants} run through the pattern vs a naive single-agent baseline;
+  score outcomes vs the oracle and count safety violations. Safety = hard gate,
+  quality = threshold/trend. Heaviest; needs fixture format + scoring runner + baseline.
+
+- **KNOWN-GAP / Issue B — `orchestrate:*` agent types don't survive resume/reload.**
+  Observed (CC 2.1.x, interactive): the plugin's five agents register only at the
+  first session-start after install; on resume they drop ("no longer available"), and
+  `/reload-plugins` reloads skills+hooks but NOT agents (deltas 21→16 agents, 11→10
+  plugins — the −5 are the personas). `subagent_type: orchestrate:researcher` → "not
+  found" on resume. **Current tests do NOT cover this** (confirmed): Tier 2 `details`
+  reads the *static* inventory (always shows 5); Tiers 3a/3b use ephemeral
+  `--plugin-dir`, which re-registers agents every invocation and so cannot reproduce
+  the *installed-plugin* resume drop. **Coverage needed before fixing:** an
+  installed-plugin resume-lifecycle test — install (sandboxed HOME) → `claude -p`
+  session 1 → `claude -p -c` resume → probe an `orchestrate:researcher` dispatch;
+  assert it's still available. Likely tied to enable-state persistence: a stale
+  "enabled at project scope (`.claude/settings.json`)" record was seen to survive
+  marketplace removal during testing — matches the operator hypothesis. May be a CC
+  harness limitation (agent-types register only at session-start); if so, document the
+  minimal operator step and verify by an actual dispatch, not inference. Diagnose +
+  fix only AFTER the resume-lifecycle test reproduces it.
 
 ## Watch (acceptable as-is, but depends on loop discipline)
 
