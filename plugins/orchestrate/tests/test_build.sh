@@ -35,6 +35,7 @@ declare -A HOOKFILE=(
   [heldout_read_deny]=deny-heldout-read.sh
   [write_scope]=write-scope.sh
   [branch_guard]=keep-on-branch.sh
+  [shared_checkout_guard]=guard-shared-checkout.sh
   [prod_apply_gate]=gate-prod-apply.sh
   [run_scope]=run-scope.sh
   [writer_writeahead]=on-writer-dispatch.sh

@@ -5,7 +5,8 @@
         { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks/deny-heldout-read.sh" },
         { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks/keep-on-branch.sh" },
         { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks/gate-prod-apply.sh" },
-        { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks/run-scope.sh" } ] },
+        { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks/run-scope.sh" },
+        { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks/guard-shared-checkout.sh" } ] },
       { "matcher": "Write|Edit", "hooks": [
         { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks/write-scope.sh" } ] },
       { "matcher": "Task|Agent", "hooks": [

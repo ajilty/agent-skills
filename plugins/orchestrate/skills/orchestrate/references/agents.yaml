@@ -76,6 +76,15 @@ hooks:
     applies_to: [implementer]
     intent: "Deny branch create/switch and commits that move HEAD off the assigned worktree-agent branch."
     fail_closed: true
+  shared_checkout_guard:
+    event: pre-tool-use
+    applies_to: [all]              # router + EVERY persona — a universal git-safety floor, not persona-gated
+    intent: >-
+      Refuse a working-tree/history-discarding git op (reset --hard, clean -f,
+      checkout -f/./--, switch --discard-changes) against the PRIMARY shared checkout
+      (git-dir == git-common-dir). Stops a stray base-correction reset from eating
+      unpushed commits when an agent lands on main (isolation-lands-on-main trap, §9a).
+    fail_closed: true
   prod_apply_gate:
     event: pre-tool-use            # actuator Bash; SubagentStart is NON-blocking on shell harnesses, so the hard block lives here at tool-use
     applies_to: [actuator]

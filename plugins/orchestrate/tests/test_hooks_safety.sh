@@ -173,3 +173,29 @@ for h in "$RT"/*.sh; do
   assert_eq "$?" "0" "hook $name exits 0 with no orchestrate env (session-safety floor)"
 done
 cd /; rm -rf "$d"
+
+# --- guard-shared-checkout.sh: universal git-safety floor (ADR-0013). No working-tree/
+#     history-discarding git on the PRIMARY shared checkout, for ANY persona incl. the
+#     router (no agent_type). This is the data-loss stop (reset --hard ate an unpushed commit). ---
+gco="$(mktemp_repo)"; cd "$gco"; git commit --allow-empty -q -m init 2>/dev/null
+printf '{"tool_input":{"command":"git reset --hard origin/main"}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1
+assert_eq "$?" "2" "shared-checkout: deny reset --hard on PRIMARY checkout (router/no persona)"
+printf '{"agent_type":"orchestrate:implementer","tool_input":{"command":"git clean -fd"}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1
+assert_eq "$?" "2" "shared-checkout: deny git clean -fd on PRIMARY (persona-independent)"
+printf '{"tool_input":{"command":"git checkout -- ."}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1
+assert_eq "$?" "2" "shared-checkout: deny git checkout -- . on PRIMARY"
+o="$(printf '{"tool_input":{"command":"git reset --hard X"}}' | bash "$RT/guard-shared-checkout.sh" 2>/dev/null)"
+assert_eq "$o" "" "shared-checkout: empty stdout on DENY (stderr-only)"
+printf '{"tool_input":{"command":"git fetch origin --prune"}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1
+assert_eq "$?" "0" "shared-checkout: allow git fetch (the §9a base-correction) on PRIMARY"
+printf '{"tool_input":{"command":"git worktree add -b wt /tmp/x origin/main"}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1
+assert_eq "$?" "0" "shared-checkout: allow git worktree add (the §9a flow) on PRIMARY"
+printf '{"tool_input":{"command":"git status"}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1
+assert_eq "$?" "0" "shared-checkout: allow read-only git on PRIMARY (no over-denial)"
+printf '{"tool_input":{"command":"rm -rf build"}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1
+assert_eq "$?" "0" "shared-checkout: ignore non-git commands"
+# linked worktree (writer's own sandbox): destructive ops are its business -> ALLOW
+git worktree add -q -b wtX "$gco-wtX" HEAD 2>/dev/null
+( cd "$gco-wtX" && printf '{"tool_input":{"command":"git reset --hard HEAD"}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1; exit $? )
+assert_eq "$?" "0" "shared-checkout: allow reset --hard in a LINKED worktree (not the shared checkout)"
+cd /; git -C "$gco" worktree remove --force "$gco-wtX" 2>/dev/null; rm -rf "$gco" "$gco-wtX"
