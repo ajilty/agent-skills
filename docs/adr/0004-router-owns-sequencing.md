@@ -18,3 +18,7 @@ from hijacking the loop.
   is present — same philosophy as "one capability contract, three compilers."
 - The clarification is **scoped to the open `#UNKNOWN`s**, not an open-ended design
   interview, so it stays proportional to the ambiguity.
+- This ADR governs **sequencing** (ignore the sub-skill's control-flow handoff).
+  **ADR-0009** extends it to **content trust**: the clarification return also passes
+  the §4 quarantine gate (§4a), so externally-sourced material a skill surfaces is
+  neutralized rather than adopted. The two are complementary, both active.

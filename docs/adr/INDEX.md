@@ -14,3 +14,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0006](0006-per-dispatch-context-via-on-disk-active-writer.md) | Per-dispatch enforcement context via an on-disk active-writer record | active |
 | [0007](0007-plugin-is-generated-distribution-of-agents-yaml.md) | Plugin packaging is a generated distribution of the agents.yaml contract | active |
 | [0008](0008-subdir-plugin-monorepo-over-repo-root.md) | Subdir-plugin monorepo over repo-root-as-plugin | active |
+| [0009](0009-clarification-returns-pass-quarantine.md) | Clarification-skill returns pass the quarantine gate | active |
