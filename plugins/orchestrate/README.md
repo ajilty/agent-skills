@@ -69,5 +69,14 @@ formats with `scripts/install-codex.sh` / `scripts/install-opencode.sh`
 ## Tests
 
 ```
-tests/run.sh      # zero-dependency suite: runtime behavior + allowlist + drift + manifest
+tests/run.sh                  # zero-dependency suite: runtime behavior + allowlist + drift + manifest
+tests/integration/run.sh      # live tier (real claude CLI + agent sessions); self-skips without auth
 ```
+
+## Known limitations & filing bugs
+
+Some Claude Code harness behaviors (subagent result notifications, worktree
+isolation) are outside a plugin's reach; orchestrate compensates for them by
+design. Before filing a bug, skim [KNOWN-LIMITATIONS.md](KNOWN-LIMITATIONS.md) to
+tell a harness behavior from an orchestrate defect — the issue template's first
+question is exactly that triage.

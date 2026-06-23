@@ -13,7 +13,7 @@ command -v yq >/dev/null || { echo "FATAL: yq (v4, mikefarah) required." >&2; ex
 cc_tools() { local p="$1" t=()
   [ "$(yq ".personas.$p.capabilities.read" "$AGENTS")" = true ] && t+=(Read Grep Glob)
   [ "$(yq ".personas.$p.capabilities.web"  "$AGENTS")" = true ] && t+=(WebSearch WebFetch)
-  case "$(yq ".personas.$p.capabilities.write" "$AGENTS")" in full) t+=(Write Edit);; spec-only) t+=(Write);; esac
+  case "$(yq ".personas.$p.capabilities.write" "$AGENTS")" in full) t+=(Write Edit);; spec-only|results-only) t+=(Write);; esac
   case "$(yq ".personas.$p.capabilities.run" "$AGENTS")" in full|tests-only) t+=(Bash);; esac
   ( IFS=, ; echo "${t[*]}" ); }
 body() { awk 'f==2{print} /^---[[:space:]]*$/{f++}' "$1"; }

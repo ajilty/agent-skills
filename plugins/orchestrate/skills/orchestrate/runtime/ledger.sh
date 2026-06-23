@@ -27,13 +27,13 @@ case "$cmd" in
     if [ -f "$LEDGER" ]; then
       while IFS= read -r line; do
         t="$(val "$line" ticket)"; [ -z "$t" ] && continue
-        ev="$(val "$line" event)"; [ -n "$ev" ] && laststate["$t"]="$ev|$(val "$line" persona)|$(val "$line" branch)"
+        ev="$(val "$line" event)"; [ -n "$ev" ] && laststate["$t"]="$ev|$(val "$line" persona)|$(val "$line" branch)|$(val "$line" slug)"
       done < "$LEDGER"
     fi
     ambiguous=0; printed=0
     # (a) ledger-derived open lanes
     for t in "${!laststate[@]}"; do
-      IFS='|' read -r ev persona branch <<< "${laststate[$t]}"
+      IFS='|' read -r ev persona branch slug <<< "${laststate[$t]}"
       [ "$ev" = dispatched ] || continue
       printed=1
       if [ "$persona" = implementer ]; then
@@ -43,7 +43,15 @@ case "$cmd" in
           echo "OPEN WRITER   ticket=$t branch=$branch MISSING -> re-dispatch candidate"
         fi
       else
-        echo "OPEN READONLY ticket=$t persona=$persona -> re-dispatch if $ROOT/tickets/$t artifact absent"
+        # READ-ONLY lane (ADR-0014): the result is now a durable file, so the
+        # re-dispatch decision keys on its PRESENCE, not a guess. A read-only
+        # re-dispatch is idempotent (no writer lease) -> never an ambiguous HALT.
+        art="$ROOT/tickets/$t/findings/$slug.md"
+        if [ -n "$slug" ] && [ -f "$art" ]; then
+          echo "READONLY DONE  ticket=$t slug=$slug -> result on disk: $art"
+        else
+          echo "OPEN READONLY  ticket=$t persona=$persona slug=${slug:-?} -> re-dispatch (no result on disk${slug:+: $art})"
+        fi
       fi
     done
     # (b) disk ground truth: any worktree on a worktree-agent-* branch with

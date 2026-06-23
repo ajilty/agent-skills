@@ -59,7 +59,7 @@ Add to ${DEST}/config.toml (or project .codex/config.toml):
   [[hooks.PreToolUse.hooks]]
   type = "command"; command = "$HOOKS/gate-prod-apply.sh"   # pre-apply gate hard floor (PreToolUse blocks; SubagentStart does not)
   [[hooks.PreToolUse.hooks]]
-  type = "command"; command = "$HOOKS/write-scope.sh"       # planner spec/ADR write confinement (self-guards; Write|Edit)
+  type = "command"; command = "$HOOKS/write-scope.sh"       # planner spec/ADR + researcher findings_quarantine + verifier verdicts confinement (self-guards; Write|Edit; ADR-0014)
   [[hooks.PreToolUse.hooks]]
   type = "command"; command = "$HOOKS/run-scope.sh"         # verifier tests-only: deny workspace/git-mutating Bash (self-guards)
 

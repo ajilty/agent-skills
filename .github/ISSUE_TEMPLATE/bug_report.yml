@@ -1,0 +1,101 @@
+name: Bug report (orchestrate)
+description: Report a defect in the orchestrate plugin. Please triage harness vs. plugin first.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing. **Before anything else: is this a plugin bug or a host-harness behavior?**
+        orchestrate runs on top of Claude Code's subagent dispatch, notifications, and worktree
+        isolation. Several harness behaviors are outside a plugin's reach and orchestrate already
+        compensates for them — please skim
+        [KNOWN-LIMITATIONS.md](https://github.com/ajilty/agent-skills/blob/main/plugins/orchestrate/KNOWN-LIMITATIONS.md)
+        so we don't re-triage a known harness limitation as a plugin bug.
+
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Which layer do you think this is in?
+      description: A best guess is fine — we'll confirm. "Not sure" is a valid answer.
+      options:
+        - orchestrate plugin (its logic, hooks, personas, ledger, worktree helper)
+        - Claude Code harness (subagent dispatch / notifications / worktree isolation)
+        - Not sure
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: pre-checks
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I checked KNOWN-LIMITATIONS.md and this is not a documented harness behavior orchestrate already compensates for.
+          required: true
+        - label: I'm on the latest orchestrate version I can install (and said which below).
+          required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened vs. what you expected
+      description: Be specific. If a result was lost or mis-attributed, say which lane (research/plan/implement/verify/actuate) and what you saw instead.
+      placeholder: |
+        Expected: ...
+        Actual: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: The goal you gave, the tier, and what the router did. A minimal repo state helps most.
+      placeholder: |
+        1. Gave the goal: "..."
+        2. Router dispatched ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: ledger
+    attributes:
+      label: Relevant ledger lines
+      description: >-
+        Paste the relevant lines from `.agents/runs/orchestrate/board.jsonl`
+        (the durable control state). REDACT any secrets/paths you can't share.
+      render: text
+
+  - type: input
+    id: cc-version
+    attributes:
+      label: Claude Code version
+      description: From `/status` (e.g. 2.1.186). Note other harnesses (Codex/OpenCode) + version if applicable.
+    validations:
+      required: true
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: orchestrate version
+      description: From `/plugin` (e.g. 0.2.2), or the commit if installed from source.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Install scope
+      options:
+        - user
+        - project
+        - local
+        - installed from source / --plugin-dir
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS / shell
+      placeholder: e.g. Linux / zsh, macOS / fish
