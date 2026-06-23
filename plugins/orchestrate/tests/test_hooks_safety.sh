@@ -127,6 +127,27 @@ if command -v jq >/dev/null 2>&1; then
   printf '{"agent_type":"verifier","tool_input":{"file_path":"/tmp/ho/x"}}' \
     | PERSONA=implementer HELDOUT_ROOT=/tmp/ho RESOLVED_PATH=/tmp/ho/x bash "$RT/deny-heldout-read.sh" >/dev/null 2>&1; rc=$?
   assert_eq "$rc" "0" "deny-heldout: stdin agent_type overrides env PERSONA"
+  # --- REGRESSION (caught by Tier 3b live eval): the CC plugin delivers a NAMESPACED
+  #     agent_type, e.g. "orchestrate:actuator" — not the bare persona. Every
+  #     persona-guarded hook must normalize the namespace, else the whole hook-enforced
+  #     safety layer silently no-ops under the plugin. One per guarded hook:
+  printf '{"agent_type":"orchestrate:implementer","tool_name":"Read","tool_input":{"file_path":"/tmp/ho/secret"}}' \
+    | HELDOUT_ROOT=/tmp/ho bash "$RT/deny-heldout-read.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "2" "deny-heldout: denies plugin-namespaced orchestrate:implementer"
+  printf '{"agent_type":"orchestrate:implementer","tool_name":"Bash","tool_input":{"command":"git checkout -b x"}}' \
+    | bash "$RT/keep-on-branch.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "2" "keep-on-branch: denies plugin-namespaced orchestrate:implementer branch-create"
+  printf '{"agent_type":"orchestrate:planner","tool_name":"Write","tool_input":{"file_path":"src/x.py"}}' \
+    | bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "2" "write-scope: denies plugin-namespaced orchestrate:planner write to src"
+  printf '{"agent_type":"orchestrate:verifier","tool_name":"Bash","tool_input":{"command":"rm tests/t.py"}}' \
+    | bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "2" "run-scope: denies plugin-namespaced orchestrate:verifier rm"
+  gd="$(mktemp -d)"; mkdir -p "$gd/.agents/runs/orchestrate"
+  printf '{"agent_type":"orchestrate:actuator","tool_input":{"command":"terraform apply"}}' \
+    | ( cd "$gd" && TICKET=T1 PROD_TARGETS="tfstate:prod/db" bash "$RT/gate-prod-apply.sh" ) >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "2" "gate: denies plugin-namespaced orchestrate:actuator with unacked prod target"
+  rm -rf "$gd"
 else
   echo "(skip stdin/CC-path hook tests: jq absent)"
 fi
