@@ -578,6 +578,14 @@ runtime/worktree.sh staleness "$ticket" "$persona" "$BASE_REF" \
   || WT="$(runtime/worktree.sh create "$ticket" "$persona" "$BASE_REF")"
 ```
 
+`$BASE_REF` defaults to the **current checked-out branch** — *never* the repo default
+branch / `origin/HEAD`, which can be a stale orphan: a repo whose canonical branch is
+e.g. `blank-slate` but whose `origin/HEAD` still points at a stale `master` would pin
+every lane hundreds of commits in the past (a confirmed field failure). `worktree.sh`
+also runs `git remote set-head origin <base>` so the harness's `isolation:worktree`
+(if ever used instead of the helper) cuts from the right base too. **Operator quick-fix**
+if lanes still come up stale: `git remote set-head origin <canonical-branch>`.
+
 The Implementer should never need a blank-slate `reset --hard` to get a clean base —
 if it does, that's a staleness-guard miss (§8). And working-tree-discarding git
 (`reset --hard`, `clean -f`, `checkout -f`) on the **shared/primary checkout** is

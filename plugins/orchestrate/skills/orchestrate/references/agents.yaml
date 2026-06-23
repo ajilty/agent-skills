@@ -146,7 +146,7 @@ conventions:
   lease_path:   ".agents/runs/orchestrate/tickets/${ticket}/lease"  # writer lease (at-most-once dispatch)
   heldout_root_env: "HELDOUT_ROOT"       # held-out suite lives outside the impl tree
   worktree:
-    base_ref: "main"                     # branch from origin/<base_ref>, freshly fetched
+    base_ref: ""                         # DEFAULT: the current checked-out branch (worktree.sh resolves it); NEVER origin/HEAD/default-branch (stale-orphan trap, ADR-0013). Set explicitly only to override.
     branch_template: "worktree-agent-${ticket}-${persona}"
     merge_glob: "worktree-agent-*"       # enumerate deterministically; never guess
     path: ".agents/worktrees/${ticket}-${persona}"  # configurable; some prefer a sibling-of-repo path

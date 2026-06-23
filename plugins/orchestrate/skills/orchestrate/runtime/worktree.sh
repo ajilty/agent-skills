@@ -16,7 +16,15 @@
 set -uo pipefail
 
 cmd="${1:-}"; shift || true
-t="${1:-}"; p="${2:-}"; base="${3:-main}"
+t="${1:-}"; p="${2:-}"; base="${3:-}"
+# Base resolution (ADR-0013): explicit arg > the CURRENT checked-out branch > main.
+# NEVER the repo default branch / origin/HEAD — that's the stale-orphan trap (a repo
+# whose canonical branch is e.g. "blank-slate" has origin/HEAD pointing at a stale
+# "master", and cutting worktrees from it pins every lane hundreds of commits behind).
+if [ -z "$base" ]; then
+  base="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+  { [ -n "$base" ] && [ "$base" != HEAD ]; } || base="main"
+fi
 case "$cmd" in path|branch|create|staleness|remove) ;; *) echo "usage: worktree.sh {create|staleness|remove|path|branch} <ticket> <persona> [base_ref]" >&2; exit 64 ;; esac
 [ -n "$t" ] && [ -n "$p" ] || { echo "worktree.sh: ticket and persona required" >&2; exit 64; }
 
@@ -60,6 +68,10 @@ case "$cmd" in
     git rev-parse --git-dir >/dev/null 2>&1 || { echo "worktree.sh: not in a git repo" >&2; exit 1; }
     fetch
     git rev-parse --verify "origin/$base" >/dev/null 2>&1 || { echo "worktree.sh: origin/$base not found (fetch failed or wrong base_ref)" >&2; exit 1; }
+    # Align origin/HEAD -> origin/<base>, so the harness's isolation:worktree (if it is
+    # ever used instead of this helper) ALSO cuts from the right base rather than a stale
+    # default-branch orphan. Local ref update only; reversible.
+    git remote set-head origin "$base" >/dev/null 2>&1 || true
     if has_wt; then
       if is_behind; then
         if has_work; then echo "worktree.sh: $WT is STALE and holds work — HALT for reconcile (do not auto-recreate)" >&2; exit 3; fi
