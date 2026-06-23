@@ -55,7 +55,8 @@ export const orchestrate = async () => ({
     process.env.RESOLVED_PATH = String(input?.args?.path ?? input?.args?.filePath ?? "");
     process.env.TOOL_INPUT = String(input?.args?.command ?? "");
     if (["read","grep","glob"].includes(tool)) sh(\`\${RT}/hooks/deny-heldout-read.sh\`);
-    if (tool === "bash") { sh(\`\${RT}/hooks/keep-on-branch.sh\`); sh(\`\${RT}/hooks/gate-prod-apply.sh\`); }  // gate is the hard floor at tool-use
+    if (tool === "bash") { sh(\`\${RT}/hooks/keep-on-branch.sh\`); sh(\`\${RT}/hooks/gate-prod-apply.sh\`); sh(\`\${RT}/hooks/run-scope.sh\`); }  // gate is the hard floor; run-scope confines verifier Bash
+    if (tool === "write" || tool === "edit") sh(\`\${RT}/hooks/write-scope.sh\`);  // planner spec/ADR write confinement (self-guards)
   },
   // Write-ahead for the writer (deterministic): runs before an implementer subagent.
   // The script self-guards on persona=implementer. Confirm the event name for your

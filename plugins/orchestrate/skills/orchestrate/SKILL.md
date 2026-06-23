@@ -661,17 +661,27 @@ with the repo to the next clone, user, and harness.
 
 Capability subtraction is the portable, load-bearing control, declared in
 `references/agents.yaml`. But it expresses *what* a persona may do, not *path*
-scope. Three constraints need a fail-closed harness hook, and these are
+scope. Four constraints need a fail-closed harness hook, and these are
 **generated per harness** by the `../../scripts/` generators (`build.sh` for Claude
 Code, `install-codex.sh` for Codex, a TypeScript plugin via `install-opencode.sh`
 for OpenCode) rather than hand-wired here:
 
-- **held-out read-deny** — deny **writer** reads resolving under `$HELDOUT_ROOT`
-  (persona-guarded; allows when unset; never errors); secondary layer behind the
-  filesystem isolation (§7).
-- **write-scope** — deny Planner writes outside the spec/ADR artifact (§1).
+- **held-out read-deny** — deny **writer** reads (Implementer *and* Actuator)
+  resolving under `$HELDOUT_ROOT` (persona-guarded; allows when unset; never
+  errors); secondary layer behind the filesystem isolation (§7).
+- **write-scope** — deny Planner writes outside the spec/ADR artifact —
+  `docs/specs/`, `docs/adr/`, or the per-ticket dir (§1, §5); fail-closed on an
+  unresolvable path.
+- **run-scope** — confine the Verifier's `tests-only` run: deny Bash that mutates
+  the working tree or git state (the oracle-gaming threat), allowing test runs +
+  read-only inspection. Best-effort denylist behind the Verifier's no-Write/Edit
+  capability subtraction — defense-in-depth, not a hard guarantee (cf. ADR-0002).
 - **branch-guard** — deny branch create/switch and off-branch commits so the
   Implementer stays on its assigned `worktree-agent-*` branch (§9b).
+
+A contract-parity test (`tests/test_build.sh`) asserts every hook declared in
+`agents.yaml` is actually materialized and wired, so a declared-but-unwired
+control (the failure that left write-scope hollow) fails the build.
 
 The generators are the single source of truth for the hook bodies; this keeps
 the enforcement from drifting across three copies. Where a harness can't enforce

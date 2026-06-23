@@ -50,7 +50,7 @@ personas:
 hooks:
   heldout_read_deny:
     event: pre-tool-use
-    applies_to: [implementer]
+    applies_to: [implementer, actuator]   # both writers: the Actuator can't read the held-out ops oracle either
     intent: "Deny any file read resolving under $HELDOUT_ROOT (and on an unresolvable path)."
     fail_closed: true
   write_scope:
@@ -58,6 +58,18 @@ hooks:
     applies_to: [planner]
     intent: "Deny writes outside the spec/ADR artifact path for the planner."
     fail_closed: true
+  run_scope:
+    event: pre-tool-use
+    applies_to: [verifier]
+    intent: >-
+      Confine the verifier's tests-only run capability: deny Bash that mutates the
+      working tree or git state (the oracle-gaming threat — editing tests/source so
+      the held-out suite passes), while allowing test execution + read-only
+      inspection. Best-effort threat-model DENYLIST, not an exhaustive allowlist:
+      robustly scoping a shell to "only tests" is repo-specific, so this is
+      defense-in-depth behind the verifier's capability subtraction (no Write/Edit),
+      and a determined escape is accepted — same posture as cred-scope (ADR-0002).
+    fail_closed: false
   branch_guard:
     event: pre-tool-use
     applies_to: [implementer]

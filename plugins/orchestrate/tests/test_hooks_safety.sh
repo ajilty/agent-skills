@@ -14,6 +14,8 @@ PERSONA=implementer HELDOUT_ROOT=/tmp/ho RESOLVED_PATH=/tmp/ho/secret bash "$RT/
 assert_eq "$rc" "2" "deny-heldout: denies writer under HELDOUT_ROOT with exit 2"
 PERSONA=implementer HELDOUT_ROOT=/tmp/ho RESOLVED_PATH= bash "$RT/deny-heldout-read.sh" >/dev/null 2>&1; rc=$?
 assert_eq "$rc" "0" "deny-heldout: allows writer bash (empty path)"
+PERSONA=actuator HELDOUT_ROOT=/tmp/ho RESOLVED_PATH=/tmp/ho/oracle bash "$RT/deny-heldout-read.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "deny-heldout: denies the ACTUATOR under HELDOUT_ROOT too (agents.yaml applies_to)"
 
 # --- keep-on-branch.sh ---
 o="$(PERSONA= TOOL_INPUT='git checkout -b foo' bash "$RT/keep-on-branch.sh" 2>/dev/null)"; rc=$?
@@ -30,6 +32,62 @@ assert_eq "$rc" "0" "gate: exit 0 for non-actuator"
 assert_eq "$o" "" "gate: silent stdout on allow"
 PERSONA=actuator TICKET= PROD_TARGETS= bash "$RT/gate-prod-apply.sh" >/dev/null 2>&1; rc=$?
 assert_eq "$rc" "0" "gate: exit 0 for actuator with no ticket/targets (no :? abort)"
+
+# --- write-scope.sh (planner spec/ADR write confinement; fail-closed) ---
+o="$(PERSONA= bash "$RT/write-scope.sh" 2>/dev/null)"; rc=$?
+assert_eq "$rc" "0" "write-scope: exit 0 for non-planner"
+assert_eq "$o" "" "write-scope: silent stdout on allow"
+PERSONA=planner RESOLVED_PATH=docs/specs/2026-x.md bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "write-scope: allows planner write to docs/specs/**"
+PERSONA=planner RESOLVED_PATH=docs/adr/0007-x.md bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "write-scope: allows planner write to docs/adr/**"
+PERSONA=planner RESOLVED_PATH=.agents/runs/orchestrate/tickets/T1/spec.md bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "write-scope: allows planner write to the per-ticket artifact dir"
+PERSONA=planner RESOLVED_PATH=/repo/docs/adr/0007-x.md bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "write-scope: allows absolute path under docs/adr/**"
+PERSONA=planner RESOLVED_PATH=src/main.py bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "write-scope: denies planner write outside spec/ADR (exit 2)"
+o="$(PERSONA=planner RESOLVED_PATH=src/main.py bash "$RT/write-scope.sh" 2>/dev/null)"
+assert_eq "$o" "" "write-scope: empty stdout on DENY (stderr-only)"
+PERSONA=planner RESOLVED_PATH= bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "write-scope: fail-closed on planner with unresolvable path (deny)"
+PERSONA=implementer RESOLVED_PATH=src/main.py bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "write-scope: self-guards — only the planner is scoped (implementer allowed)"
+PERSONA=planner RESOLVED_PATH='docs/specs/../../src/evil.py' bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "write-scope: denies path traversal (..) out of an allowed prefix"
+
+# --- run-scope.sh (verifier tests-only: deny workspace/git-mutating Bash) ---
+o="$(PERSONA= bash "$RT/run-scope.sh" 2>/dev/null)"; rc=$?
+assert_eq "$rc" "0" "run-scope: exit 0 for non-verifier"
+assert_eq "$o" "" "run-scope: silent stdout on allow"
+PERSONA=verifier TOOL_INPUT='bash tests/run.sh' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "run-scope: allows the verifier to run the test suite"
+PERSONA=verifier TOOL_INPUT='pytest -q 2>&1' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "run-scope: allows a test run with benign 2>&1 redirect"
+PERSONA=verifier TOOL_INPUT='grep -rn foo src' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "run-scope: allows read-only inspection (grep)"
+PERSONA=verifier TOOL_INPUT='confirm and rearm' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "run-scope: no false-positive on substrings (confirm/rearm not rm/mv)"
+PERSONA=verifier TOOL_INPUT='git checkout -- .' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "run-scope: denies git working-tree mutation (exit 2)"
+PERSONA=verifier TOOL_INPUT='echo pass > tests/result.txt' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "run-scope: denies output redirection to a file"
+PERSONA=verifier TOOL_INPUT='sed -i s/x/y/ tests/t.py' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "run-scope: denies in-place edit (sed -i)"
+PERSONA=verifier TOOL_INPUT='rm tests/t.py' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "run-scope: denies rm"
+o="$(PERSONA=verifier TOOL_INPUT='rm tests/t.py' bash "$RT/run-scope.sh" 2>/dev/null)"
+assert_eq "$o" "" "run-scope: empty stdout on DENY (stderr-only)"
+PERSONA=implementer TOOL_INPUT='echo x > src/foo.py' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "run-scope: self-guards — only the verifier is scoped (implementer writes freely)"
+PERSONA=verifier TOOL_INPUT='git -C . checkout -- .' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "run-scope: denies git mutation with intervening -C option"
+PERSONA=verifier TOOL_INPUT='git -C . reset --hard' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "run-scope: denies git reset --hard behind -C"
+PERSONA=verifier TOOL_INPUT='git status' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "run-scope: allows read-only git status (no over-denial)"
+PERSONA=verifier TOOL_INPUT='git diff HEAD' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "run-scope: allows read-only git diff"
 
 # --- stdin (Claude Code) path: identity + tool input arrive as stdin JSON ---
 if command -v jq >/dev/null 2>&1; then
@@ -48,6 +106,20 @@ if command -v jq >/dev/null 2>&1; then
   printf '{"agent_type":"actuator","tool_input":{"command":"terraform apply"}}' \
     | bash "$RT/gate-prod-apply.sh" >/dev/null 2>&1; rc=$?
   assert_eq "$rc" "0" "gate: detects actuator via stdin; no prod targets -> allow"
+  printf '{"agent_type":"planner","tool_name":"Write","tool_input":{"file_path":"src/x.py"}}' \
+    | bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "2" "write-scope: denies planner write to src via stdin (CC path)"
+  printf '{"agent_type":"planner","tool_name":"Write","tool_input":{"file_path":"docs/adr/0007-x.md"}}' \
+    | bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "0" "write-scope: allows planner docs/adr write via stdin (CC path)"
+  o="$(printf '{"agent_type":"planner","tool_input":{"file_path":"src/x.py"}}' | bash "$RT/write-scope.sh" 2>/dev/null)"
+  assert_eq "$o" "" "write-scope: empty stdout on stdin DENY (stderr-only)"
+  printf '{"agent_type":"verifier","tool_name":"Bash","tool_input":{"command":"rm tests/t.py"}}' \
+    | bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "2" "run-scope: denies verifier rm via stdin (CC path)"
+  printf '{"agent_type":"verifier","tool_name":"Bash","tool_input":{"command":"bash tests/run.sh"}}' \
+    | bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "0" "run-scope: allows verifier test run via stdin (CC path)"
   # stdin DENY path is stderr-only: empty stdout even when it blocks (else "Invalid input")
   o="$(printf '{"agent_type":"implementer","tool_input":{"file_path":"/tmp/ho/x"}}' | HELDOUT_ROOT=/tmp/ho bash "$RT/deny-heldout-read.sh" 2>/dev/null)"
   assert_eq "$o" "" "deny-heldout: empty stdout on stdin DENY (stderr-only)"

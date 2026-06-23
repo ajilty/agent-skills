@@ -35,10 +35,14 @@ H='${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks'
 cat > "$PLUGIN_ROOT/hooks/hooks.json" <<JSON
 {
   "hooks": {
-    "PreToolUse": [ { "matcher": "Read|Bash", "hooks": [
+    "PreToolUse": [
+      { "matcher": "Read|Bash", "hooks": [
         { "type": "command", "command": "$H/deny-heldout-read.sh" },
         { "type": "command", "command": "$H/keep-on-branch.sh" },
-        { "type": "command", "command": "$H/gate-prod-apply.sh" } ] } ],
+        { "type": "command", "command": "$H/gate-prod-apply.sh" },
+        { "type": "command", "command": "$H/run-scope.sh" } ] },
+      { "matcher": "Write|Edit", "hooks": [
+        { "type": "command", "command": "$H/write-scope.sh" } ] } ],
     "SubagentStart": [ { "matcher": "implementer|actuator", "hooks": [
         { "type": "command", "command": "$H/on-writer-dispatch.sh" } ] } ],
     "SessionStart": [ { "matcher": "compact", "hooks": [

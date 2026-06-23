@@ -26,6 +26,34 @@ while IFS= read -r rel; do
 done < <(grep -oE '\$\{CLAUDE_PLUGIN_ROOT\}/[^"]+\.sh' "$SK/hooks/hooks.json" | sed 's#${CLAUDE_PLUGIN_ROOT}/##' | sort -u)
 [ "$ok" = 1 ] && pass || fail "hooks.json paths resolve to executable scripts"
 
+# --- Contract parity (root-cause guard): EVERY hook declared in agents.yaml's
+#     hooks: block must be materialized (script exists + executable) AND wired into
+#     hooks.json. The declared-name -> script-file map is explicit, so declaring a
+#     new hook forces wiring it here too. This is the check that would have caught
+#     write_scope being declared (fail_closed) but never filed or wired.
+declare -A HOOKFILE=(
+  [heldout_read_deny]=deny-heldout-read.sh
+  [write_scope]=write-scope.sh
+  [branch_guard]=keep-on-branch.sh
+  [prod_apply_gate]=gate-prod-apply.sh
+  [run_scope]=run-scope.sh
+  [writer_writeahead]=on-writer-dispatch.sh
+  [compaction_reground]=on-compaction.sh
+)
+if command -v yq >/dev/null 2>&1; then
+  AG="$SK/skills/orchestrate/references/agents.yaml"
+  HJ="$SK/hooks/hooks.json"
+  HD="$SK/skills/orchestrate/runtime/hooks"
+  for name in $(yq '.hooks | keys | .[]' "$AG"); do
+    f="${HOOKFILE[$name]:-}"
+    if [ -z "$f" ]; then fail "declared hook '$name' has no script mapping in test_build.sh (add it)"; continue; fi
+    if [ ! -x "$HD/$f" ]; then fail "declared hook '$name' -> $f missing or non-executable"; continue; fi
+    if grep -q "/$f\"" "$HJ"; then pass; else fail "declared hook '$name' ($f) not wired in hooks.json"; fi
+  done
+else
+  echo "(skip contract-parity: yq absent)"
+fi
+
 # --- Drift guard: committed artifacts must equal a fresh build. Copy the plugin
 #     to a temp tree, rebuild there, diff the generated files. Skips without yq.
 if command -v yq >/dev/null 2>&1; then

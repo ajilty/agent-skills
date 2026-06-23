@@ -51,13 +51,17 @@ Codex install complete ($SCOPE scope).
 
 Add to ${DEST}/config.toml (or project .codex/config.toml):
   [[hooks.PreToolUse]]
-  matcher = "^(Read|Bash)\$"
+  matcher = "^(Read|Edit|Write|Bash)\$"
   [[hooks.PreToolUse.hooks]]
   type = "command"; command = "$HOOKS/deny-heldout-read.sh"
   [[hooks.PreToolUse.hooks]]
   type = "command"; command = "$HOOKS/keep-on-branch.sh"
   [[hooks.PreToolUse.hooks]]
   type = "command"; command = "$HOOKS/gate-prod-apply.sh"   # pre-apply gate hard floor (PreToolUse blocks; SubagentStart does not)
+  [[hooks.PreToolUse.hooks]]
+  type = "command"; command = "$HOOKS/write-scope.sh"       # planner spec/ADR write confinement (self-guards; Write|Edit)
+  [[hooks.PreToolUse.hooks]]
+  type = "command"; command = "$HOOKS/run-scope.sh"         # verifier tests-only: deny workspace/git-mutating Bash (self-guards)
 
   # Write-ahead for both writers (deterministic ledger + lease; the gate's ledger half lives inside it):
   [[hooks.SubagentStart]]
