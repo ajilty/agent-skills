@@ -22,6 +22,28 @@ case "$cmd" in
     t="${1:?ticket}"; [ -f "$LEDGER" ] || { echo 0; exit 0; }
     grep -c "\"ticket\":\"$t\".*\"verdict\":\"REJECTED\"" "$LEDGER" || true ;;
 
+  metrics)   # §8 metrics, derived by replaying the ledger (no separate sink). Optional
+             # ticket filter. Emits key=val pairs; splits healthy escalations (forks/
+             # decisions) from friction (rejects + oracle-inconsistencies + lease-conflicts).
+    t="${1:-}"
+    src(){ [ -f "$LEDGER" ] || return 0; if [ -n "$t" ]; then grep "\"ticket\":\"$t\"" "$LEDGER"; else cat "$LEDGER"; fi; }
+    c(){ src | grep -c "$1" 2>/dev/null || true; }
+    sh=$(c '"event":"done"'); di=$(c '"event":"dispatched"'); fk=$(c '"event":"fork"')
+    de=$(c '"event":"decision"'); rj=$(c '"verdict":"REJECTED"'); oi=$(c '"verdict":"INCONSISTENT_ORACLE"')
+    lc=$(c '"event":"lease-conflict"'); fr=$(( rj + oi + lc ))
+    printf 'shipped=%s dispatches=%s forks=%s decisions=%s rejects=%s oracle_inconsistent=%s lease_conflicts=%s friction=%s\n' \
+      "$sh" "$di" "$fk" "$de" "$rj" "$oi" "$lc" "$fr" ;;
+
+  feedback)  # Tier 3c, Layer 3: append a durable operator-feedback record (a ledger
+             # metrics snapshot + a free-text rating) to the eval log, and echo it. This
+             # is the live, observational complement to the headless A/B (tests/eval).
+    note="${*:-}"; ed="$ROOT/eval"; mkdir -p "$ed"
+    m="$(bash "$0" metrics)"
+    json=""; for kv in $m; do json="$json,\"${kv%%=*}\":${kv#*=}"; done
+    nl="${note//\\/\\\\}"; nl="${nl//\"/\\\"}"
+    printf '{"ts":"%s","event":"feedback","note":"%s"%s}\n' "$(date -u +%FT%TZ)" "$nl" "$json" >> "$ed/feedback.jsonl"
+    printf 'feedback recorded -> %s\n%s\nnote: %s\n' "$ed/feedback.jsonl" "$m" "${note:-<none>}" ;;
+
   reground)
     declare -A laststate
     if [ -f "$LEDGER" ]; then
