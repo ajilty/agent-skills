@@ -44,6 +44,28 @@ case "$cmd" in
     printf '{"ts":"%s","event":"feedback","note":"%s"%s}\n' "$(date -u +%FT%TZ)" "$nl" "$json" >> "$ed/feedback.jsonl"
     printf 'feedback recorded -> %s\n%s\nnote: %s\n' "$ed/feedback.jsonl" "$m" "${note:-<none>}" ;;
 
+  conformance)  # Tier 3c trace conformance: assert the ledger contains the expected
+                # choreography as an ORDERED SUBSEQUENCE. Each arg is event[:detail],
+                # e.g. dispatched:implementer, returned:researcher, verdict, verdict:APPROVED.
+                # Catches orchestrate silently SKIPPING a step (e.g. the verifier never
+                # ran -> no verdict). exit 0 = chain ran as designed; exit 1 = first unmet
+                # step named; exit 64 = no specs.
+    [ $# -gt 0 ] || { echo "usage: ledger.sh conformance <event[:detail]>..." >&2; exit 64; }
+    specs=("$@"); n=$#; i=0
+    if [ -f "$LEDGER" ]; then
+      while IFS= read -r line; do
+        [ "$i" -lt "$n" ] || break
+        spec="${specs[$i]}"; kind="${spec%%:*}"; detail=""
+        case "$spec" in *:*) detail="${spec#*:}";; esac
+        case "$line" in *"\"event\":\"$kind\""*) ;; *) continue;; esac
+        if [ -n "$detail" ]; then case "$line" in *"\"$detail\""*) ;; *) continue;; esac; fi
+        i=$((i+1))
+      done < "$LEDGER"
+    fi
+    [ "$i" -ge "$n" ] && exit 0
+    echo "conformance: chain broke at step $((i+1))/$n — missing (or out of order): ${specs[$i]}" >&2
+    exit 1 ;;
+
   reground)
     declare -A laststate
     if [ -f "$LEDGER" ]; then
@@ -155,5 +177,5 @@ case "$cmd" in
       *) echo "usage: ledger.sh writer-ctx set <ticket> <persona> <branch> [prod...] | get <key> | clear" >&2; exit 64 ;;
     esac ;;
 
-  *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground|lease-{key,acquire,release,check}|ack|decision <ticket> <fork_id> [adr]|writer-ctx set|get|clear}" >&2; exit 64 ;;
+  *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground|metrics [ticket]|feedback <note>|conformance <event[:detail]>...|lease-{key,acquire,release,check}|ack|decision <ticket> <fork_id> [adr]|writer-ctx set|get|clear}" >&2; exit 64 ;;
 esac
