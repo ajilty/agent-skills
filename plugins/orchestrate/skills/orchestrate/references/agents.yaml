@@ -14,6 +14,11 @@
 #   run:   none | tests-only | full       # tests-only needs a run-scope hook
 #   web:   true | false                   # external/untrusted intake
 # The role body for each persona lives in personas/<name>.md.
+#
+# tier: { model, effort } is harness-neutral right-sizing. Each generator maps it:
+#   Codex 0.142.1 (install-codex.sh): model economy->gpt-5.4-mini, standard->gpt-5.4,
+#   premium->gpt-5.5; effort passthrough low|medium|high|xhigh, and `max`->xhigh
+#   (Codex has NO `max` effort — the API rejects it; xhigh is the real ceiling).
 
 version: 1
 
