@@ -83,7 +83,11 @@ Run these in order on every invocation. Steps reference the detailed sections.
    `…/tickets/<ticket>/work-item.md`. Don't assume any particular tracker.
 2. **Baseline + right-size (§2, §2a).** Attempt the baseline; on failure pick the
    cheapest tier the counted signals allow (T0/T1/T2), defaulting down.
-3. **Drive each lane:**
+3. **Drive each lane:** *(As you drive, journal only the **canonical** ledger events —
+   `intake`, `clarify`, `dispatched`, `returned`, `verdict`, `fork`, `decision`,
+   `lane`, `done` — via the `ledger.sh` helpers. The board is machine-read: an
+   invented event name is invisible to reground, metrics, and conformance. Full
+   vocabulary in `references/resume.md`.)*
    a. Dispatch. Mint a unique `dispatch_id` for **every** dispatch — read-only
       personas too, not just writers — so a result can be matched to its agent even
       when a completion notification is mislabeled (ADR-0014). For an **Implementer**
@@ -226,12 +230,18 @@ Q&A, using whichever is present. **Exactly one** fires — this is a *selection*
 (first-present-wins), never a chain. An irreducible call surfaces as `DECISION_FORK`
 (§3b), not clarification.
 
-**Journal the decision first.** Before invoking the selected skill, record it with
-`runtime/ledger.sh clarify <skill>` (e.g. `clarify grill-with-docs`). A clarification
-skill runs in *router context*, not as a persona dispatch, so without this it leaves
-**no ledger trace** and the choreography can't be verified — the one step that was
-invisible to reground, metrics, and conformance. The `clarify` event makes "the router
-recognized ambiguity and selected the first-present skill" a checkable fact on disk.
+**Journal the decision — canonically.** When you clarify, record it with
+`runtime/ledger.sh clarify <skill>` where `<skill>` is the mechanism you **actually
+used**: `grill-with-docs` / `grill-me` / `brainstorming` when present *and* the
+session is interactive, or **`inline`** when those can't run (a non-interactive
+session falls through to inline Q&A — that is still a clarification, and it is still
+journaled). Use this **canonical** `clarify` event — do **not** coin an ad-hoc name
+like `clarification_halt`; the board is machine-read (reground, metrics, conformance)
+and an invented event is invisible to all of them (references/resume.md vocabulary). A
+clarification runs in *router context*, not as a persona dispatch, so without this
+`clarify` event the step leaves **no trace** and can't be verified. If you must pause
+for the operator's answers, that is simply this lane staying open after the `clarify`
+event — not a new event type.
 
 **The clarification return passes the §4a quarantine gate before the router acts on
 it** (ADR-0009): the router separates the operator's `TRUSTED` answers from the

@@ -31,8 +31,17 @@ case "$cmd" in
     sh=$(c '"event":"done"'); di=$(c '"event":"dispatched"'); fk=$(c '"event":"fork"')
     de=$(c '"event":"decision"'); rj=$(c '"verdict":"REJECTED"'); oi=$(c '"verdict":"INCONSISTENT_ORACLE"')
     lc=$(c '"event":"lease-conflict"'); fr=$(( rj + oi + lc ))
-    printf 'shipped=%s dispatches=%s forks=%s decisions=%s rejects=%s oracle_inconsistent=%s lease_conflicts=%s friction=%s\n' \
-      "$sh" "$di" "$fk" "$de" "$rj" "$oi" "$lc" "$fr" ;;
+    # delegation health (the infra-log finding: verification is the least-delegated function).
+    dr=$(c '"event":"dispatched".*"persona":"researcher"'); dp=$(c '"event":"dispatched".*"persona":"planner"')
+    dimp=$(c '"event":"dispatched".*"persona":"implementer"'); da=$(c '"event":"dispatched".*"persona":"actuator"')
+    dv=$(src | grep -cE '"event":"dispatched".*"persona":"(verifier|validator)"' 2>/dev/null || true)
+    # verify_coverage: of shipped (done) lanes, how many actually got a verifier verdict?
+    verified=0; total=0
+    while IFS= read -r tk; do [ -n "$tk" ] || continue; total=$((total+1))
+      src | grep -q "\"ticket\":\"$tk\".*\"event\":\"verdict\"" && verified=$((verified+1))
+    done < <(src | grep '"event":"done"' | sed -n 's/.*"ticket":"\([^"]*\)".*/\1/p' | sort -u)
+    printf 'shipped=%s dispatches=%s forks=%s decisions=%s rejects=%s oracle_inconsistent=%s lease_conflicts=%s friction=%s disp_researcher=%s disp_planner=%s disp_implementer=%s disp_verifier=%s disp_actuator=%s verify_coverage=%s/%s\n' \
+      "$sh" "$di" "$fk" "$de" "$rj" "$oi" "$lc" "$fr" "$dr" "$dp" "$dimp" "$dv" "$da" "$verified" "$total" ;;
 
   feedback)  # Tier 3c, Layer 3: append a durable operator-feedback record (a ledger
              # metrics snapshot + a free-text rating) to the eval log, and echo it. This
