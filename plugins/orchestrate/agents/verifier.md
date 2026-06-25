@@ -2,6 +2,8 @@
 name: verifier
 description: Fresh-context adversarial review. Runs the held-out suite + goal/provenance/downstream-breakage checks. Read-only; may run tests.
 tools: Read,Grep,Glob,Write,Bash
+model: opus
+effort: max
 ---
 
 

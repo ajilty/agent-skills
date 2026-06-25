@@ -2,6 +2,8 @@
 name: researcher
 description: Read-only explorer; returns confidence- and provenance-labeled findings. The only persona with external intake. Doubles as Troubleshooter.
 tools: Read,Grep,Glob,WebSearch,WebFetch,Write
+model: haiku
+effort: medium
 ---
 
 

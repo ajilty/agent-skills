@@ -2,6 +2,8 @@
 name: planner
 description: Turns findings into a committed spec/ADR with oracle and grep-backed independence claims. No web, no run.
 tools: Read,Grep,Glob,Write
+model: opus
+effort: high
 ---
 
 

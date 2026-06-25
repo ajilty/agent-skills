@@ -238,6 +238,15 @@ comparable** (a one-line edit, a single quick check). Context preservation is a
 parallelism — not an afterthought. The two pulls resolve cleanly: right-size by task
 complexity, *and* offload by reduction ratio.
 
+**Horsepower is right-sized per persona, not per task.** Each persona's model +
+reasoning effort are fixed by its *role* in the contract (`agents.yaml` `tier:`,
+compiled per harness): *premium/max* for the Verifier (correctness is the whole
+point), *economy* for the Researcher (reduction work). That static default is the
+load-bearing choice — it can't be forgotten the way a per-dispatch decision can. You
+*may* **escalate** a single dispatch's model/effort for a known-hard instance (pass it
+on the dispatch, the same way you'd promote a tier on a counted signal) — but treat
+that as the exception, never the primary mechanism.
+
 ---
 
 ## 2b. Intake clarification (ambiguity-gated, router-owned sequencing)

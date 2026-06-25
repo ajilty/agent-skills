@@ -17,14 +17,22 @@ cc_tools() { local p="$1" t=()
   case "$(yq ".personas.$p.capabilities.run" "$AGENTS")" in full|tests-only) t+=(Bash);; esac
   ( IFS=, ; echo "${t[*]}" ); }
 body() { awk 'f==2{print} /^---[[:space:]]*$/{f++}' "$1"; }
+# Abstract horsepower tier (agents.yaml, portable) -> concrete CC model. Effort passes
+# through (low|medium|high|xhigh|max are CC-native). Keeps the contract free of vendor
+# model IDs; each harness generator maps the same tier to its own models.
+cc_model() { case "$1" in economy) echo haiku;; standard) echo sonnet;; premium) echo opus;; *) echo "";; esac; }
 
 # 1) agents/<persona>.md — frontmatter (name/description/tools) + persona body
 mkdir -p "$PLUGIN_ROOT/agents"
 for p in $(yq '.personas | keys | .[]' "$AGENTS"); do
   desc="$(yq ".personas.$p.description" "$AGENTS")"
   bsrc="$SKILL_DIR/references/$(yq ".personas.$p.body" "$AGENTS")"
-  { printf -- '---\nname: %s\ndescription: %s\ntools: %s\n---\n\n' "$p" "$desc" "$(cc_tools "$p")"; body "$bsrc"; } > "$PLUGIN_ROOT/agents/$p.md"
-  echo "  agent  -> agents/$p.md   (tools: $(cc_tools "$p"))"
+  mt="$(yq ".personas.$p.tier.model" "$AGENTS")"; ef="$(yq ".personas.$p.tier.effort" "$AGENTS")"
+  extra=""
+  [ "$mt" != null ] && [ -n "$mt" ] && extra="${extra}model: $(cc_model "$mt")\n"
+  [ "$ef" != null ] && [ -n "$ef" ] && extra="${extra}effort: $ef\n"
+  { printf -- '---\nname: %s\ndescription: %s\ntools: %s\n%b---\n\n' "$p" "$desc" "$(cc_tools "$p")" "$extra"; body "$bsrc"; } > "$PLUGIN_ROOT/agents/$p.md"
+  echo "  agent  -> agents/$p.md   (tools: $(cc_tools "$p"), model: $(cc_model "$mt"), effort: ${ef})"
 done
 
 # 2) hooks/hooks.json — auto-registered when the plugin is enabled. Paths use

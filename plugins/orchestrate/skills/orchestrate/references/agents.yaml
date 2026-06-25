@@ -22,6 +22,7 @@ personas:
     body: personas/researcher.md
     description: "Read-only explorer; returns confidence- and provenance-labeled findings. The only persona with external intake. Doubles as Troubleshooter."
     capabilities: { read: true,  write: results-only, run: none,      web: true  }
+    tier:         { model: economy,  effort: medium }   # reduction work (read many, return little) — cheapest to downshift
     # explorer; the ONLY persona allowed external intake. results-only = may write
     # ONLY its RAW findings to findings/_quarantine/ (durable, attributed; the router
     # gates+promotes it, ADR-0014). Still no source/prod write.
@@ -29,22 +30,26 @@ personas:
     body: personas/planner.md
     description: "Turns findings into a committed spec/ADR with oracle and grep-backed independence claims. No web, no run."
     capabilities: { read: true,  write: spec-only,  run: none,        web: false }
+    tier:         { model: premium,  effort: high }     # judgment: the spec+oracle gates everything downstream
     # may write only the spec/ADR artifact; enforced by write-scope hook.
   implementer:
     body: personas/implementer.md
     description: "The single writer for coupled code (write + run + git). Builds one task from the signed spec. No external intake."
     capabilities: { read: true,  write: full,       run: full,        web: false }
+    tier:         { model: standard, effort: high }     # executes a SIGNED spec; the hard judgment was upstream
     # the single writer (write + run + git). No external intake by design.
   verifier:
     body: personas/verifier.md
     description: "Fresh-context adversarial review. Runs the held-out suite + goal/provenance/downstream-breakage checks. Read-only; may run tests."
     capabilities: { read: true,  write: results-only, run: tests-only, web: false }
+    tier:         { model: premium,  effort: max }      # adversarial correctness — the one place cheaping out defeats the point
     # fresh context; may run the held-out suite, may not edit tests/source. results-only
     # = may write ONLY its verdict + reasoning to verdicts/ (durable, attributed; ADR-0014).
   actuator:
     body: personas/actuator.md
     description: "The single writer for downstream live-environment mutations (terraform/kubectl/db). run + target-scoped creds; edits no source. The ops-lane writer."
     capabilities: { read: true,  write: none,      run: full,        web: false }
+    tier:         { model: standard, effort: high }     # runs a plan; the pre-apply gate is the safety, not raw horsepower
     # writes live state via run, not source via write; creds scoped to leased targets (P4).
 
 # --- Hooks the installer must materialize (the floor + two narrow resume hooks) -

@@ -13,6 +13,20 @@ for p in "${!WANT[@]}"; do
   got="$(awk -F': ' '/^tools: /{print $2; exit}' "$SK/agents/$p.md" 2>/dev/null)"
   assert_eq "$got" "${WANT[$p]}" "allowlist $p"
 done
+
+# --- Compiled model/effort tiers: horsepower right-sized by persona role. The abstract
+#     contract tier (economy/standard/premium) compiles to a concrete CC model; effort
+#     passes through. Judgment/correctness (planner/verifier) premium; reduction
+#     (researcher) economy. (CLAUDE_CODE_SUBAGENT_MODEL=inherit can override model at
+#     runtime — that's an operator env concern, not the compiled artifact.)
+declare -A WANT_MODEL=( [researcher]=haiku [planner]=opus [implementer]=sonnet [verifier]=opus [actuator]=sonnet )
+declare -A WANT_EFFORT=( [researcher]=medium [planner]=high [implementer]=high [verifier]=max [actuator]=high )
+for p in "${!WANT_MODEL[@]}"; do
+  gm="$(awk -F': ' '/^model: /{print $2; exit}' "$SK/agents/$p.md" 2>/dev/null)"
+  ge="$(awk -F': ' '/^effort: /{print $2; exit}' "$SK/agents/$p.md" 2>/dev/null)"
+  assert_eq "$gm" "${WANT_MODEL[$p]}" "model tier $p"
+  assert_eq "$ge" "${WANT_EFFORT[$p]}" "effort tier $p"
+done
 # Negatives (disk-first read lane, ADR-0014): read-only personas now carry a
 # PATH-SCOPED Write (results-only: findings/_quarantine for researcher, verdicts
 # for verifier; enforced by write-scope.sh) so their results survive interruption.
