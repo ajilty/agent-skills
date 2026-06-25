@@ -7,6 +7,11 @@
 # for Codex/OpenCode (which set RESOLVED_PATH/PERSONA-style vars). Needs jq to
 # enforce under CC; without jq it degrades to allow (safe, not enforcing).
 #
+# We inspect BOTH a structured path (Read/Edit tool_input.file_path) AND the shell
+# command (Bash tool_input.command): a writer can otherwise read the oracle via
+# `cat $HELDOUT_ROOT/x`, which carries no file_path, and the denial fails open on
+# every Bash-capable writer (CC and Codex alike).
+#
 # Contract (Claude Code): ALLOW = exit 0 with NO stdout; DENY = reason on stderr +
 # exit 2. Self-guards on persona; never errors.
 set -uo pipefail
@@ -20,5 +25,12 @@ p="$(J .tool_input.file_path)"; [ -n "$p" ] || p="$(J .tool_input.path)"
 [ -n "$p" ] || p="${RESOLVED_PATH:-${CODEX_TOOL_PATH:-}}"
 case "$p" in
   "$HELDOUT_ROOT"/*) echo "orchestrate: held-out oracle is off-limits to the writer ($p)" >&2; exit 2 ;;
+esac
+# Shell-command path: deny any Bash that references a path UNDER the held-out root
+# (same under-root precision as the file_path check — '$HELDOUT_ROOT/' boundary, so
+# /tmp/ho/x denies but /tmp/hotel does not).
+cmd="$(J .tool_input.command)"
+case "$cmd" in
+  *"$HELDOUT_ROOT"/*) echo "orchestrate: held-out oracle is off-limits to the writer (command references $HELDOUT_ROOT)" >&2; exit 2 ;;
 esac
 exit 0

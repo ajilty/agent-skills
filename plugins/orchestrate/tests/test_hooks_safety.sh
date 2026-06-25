@@ -97,6 +97,15 @@ if command -v jq >/dev/null 2>&1; then
   printf '{"agent_type":"verifier","tool_input":{"file_path":"/tmp/ho/probe"}}' \
     | HELDOUT_ROOT=/tmp/ho bash "$RT/deny-heldout-read.sh" >/dev/null 2>&1; rc=$?
   assert_eq "$rc" "0" "deny-heldout: allows non-writer via stdin (CC path)"
+  # A writer can read the held-out oracle through the SHELL (cat $HELDOUT_ROOT/x), which
+  # carries no file_path — only tool_input.command. The hook must inspect the command too,
+  # or the denial silently fails open on every Bash-capable writer (CC and Codex alike).
+  printf '{"agent_type":"implementer","tool_name":"Bash","tool_input":{"command":"cat /tmp/ho/oracle.py"}}' \
+    | HELDOUT_ROOT=/tmp/ho bash "$RT/deny-heldout-read.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "2" "deny-heldout: denies writer reading held-out via Bash command (not just file_path)"
+  printf '{"agent_type":"implementer","tool_name":"Bash","tool_input":{"command":"ls -la && echo done"}}' \
+    | HELDOUT_ROOT=/tmp/ho bash "$RT/deny-heldout-read.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "0" "deny-heldout: allows writer Bash that does not reference HELDOUT_ROOT"
   printf '{"agent_type":"implementer","tool_name":"Bash","tool_input":{"command":"git checkout -b x"}}' \
     | bash "$RT/keep-on-branch.sh" >/dev/null 2>&1; rc=$?
   assert_eq "$rc" "2" "keep-on-branch: denies implementer branch-create via stdin (CC path)"
