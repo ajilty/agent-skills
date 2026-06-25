@@ -20,24 +20,25 @@ The two gaps that bound the claim:
   tool; the wired matcher `^(Read|Edit|Write|Bash)$` does not match it, so even a
   main-agent write via `apply_patch` bypasses `write-scope` until the matcher is widened.
 
-Installer fixes still required (the hooks themselves are unchanged):
+Installer status (0.7.0 — the hooks themselves are unchanged):
 
-1. **Persist hook trust (load-bearing).** A wired Codex hook silently NO-OPS
-   (**fails OPEN**) unless its sha256 is recorded as trusted in `[hooks.state]` (or the
-   session runs `--dangerously-bypass-hook-trust`). Until trust is persisted, even the
-   main-agent floor is **inert**. The installer must write the per-hook trust entries at
-   install time, not leave it to the operator.
-2. **Widen the PreToolUse matcher to include `apply_patch`** so main-agent writes are
-   scoped (gap above).
-3. **Rewrite the agent-role `.toml` schema.** Codex expects `developer_instructions`
-   (not `instructions`) plus `model` and `model_reasoning_effort`. The current
-   installer emits `instructions` and no model/effort, so the per-persona tiers are
-   dropped. This is the **only** carrier of the tiers on Codex, because SubagentStart
-   does not fire in `codex exec` headless (so the per-subagent model-override hook is
-   inert; the `.toml` `model` field, verified working, sets the tier). Map them: model
-   `economy → gpt-5.4-mini`, `standard → gpt-5.4`, `premium → gpt-5.5`; effort
-   `low/medium/high/xhigh`, with `max → xhigh` (Codex has no `max`, so the Verifier's
-   max-effort lane degrades to `xhigh`).
+1. **`.toml` schema + tiers — DONE.** The installer emits `developer_instructions` (not
+   `instructions`) plus `model` and `model_reasoning_effort` per persona. This is the
+   **only** carrier of the tiers on Codex, since SubagentStart is inert in `codex exec`
+   headless. Map: model `economy → gpt-5.4-mini`, `standard → gpt-5.4`, `premium →
+   gpt-5.5`; effort `low/medium/high/xhigh`, `max → xhigh` (no Codex `max`, so the
+   Verifier's max-effort lane degrades to `xhigh`). Validated live under `codex exec
+   --strict-config` (zero malformed-role errors; the old schema reproduces the bug).
+2. **Hook trust — DOCUMENTED, not pre-seeded (deliberate).** A wired Codex hook silently
+   NO-OPS (**fails OPEN**) unless its sha256 is trusted in `[hooks.state]` or the session
+   runs `--dangerously-bypass-hook-trust`. The installer does **not** pre-seed a
+   `trusted_hash`: the format is internal + version-coupled, and a wrong value fails open
+   silently. It prints the two safe paths instead (approve once in the TUI, or
+   `--dangerously-bypass-hook-trust` for vetted CI). Operator tradeoff: the floor is not
+   live until trust is established. Revisit pre-seeding if a stable hash API lands.
+3. **Widen the matcher for `apply_patch` — FOLLOW-UP (KNOWN-LIMITATIONS #7).** Not a
+   one-line matcher change: `write-scope.sh` would also need to parse the `apply_patch`
+   payload (a patch, not a `file_path`) to extract written paths. Deferred.
 
 The `.command` held-out fix already shipped (0.6.1): `deny-heldout-read.sh` inspects
 `tool_input.command`, denying a Writer reading the oracle by shelling out around the
