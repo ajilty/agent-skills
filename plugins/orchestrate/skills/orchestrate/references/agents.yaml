@@ -93,6 +93,17 @@ hooks:
       (git-dir == git-common-dir). Stops a stray base-correction reset from eating
       unpushed commits when an agent lands on main (isolation-lands-on-main trap, §9a).
     fail_closed: true
+  done_gate:
+    event: pre-tool-use
+    applies_to: [all]              # persona-independent: the offender is the router itself (no agent_type)
+    intent: >-
+      Funnel every `done` event through the gated `ledger.sh done` helper: DENY a raw
+      append of event:"done" so a T1/T2 lane cannot be closed without a Verifier verdict
+      on the board (verification is not optional; T0 baseline lanes exempt — the oracle is
+      their check). The enforcement half of the verify gate: the helper alone was
+      raw-appended around in practice (validation re-probe), so the floor makes a ship
+      without a Verifier impossible, not just discouraged.
+    fail_closed: true
   prod_apply_gate:
     event: pre-tool-use            # actuator Bash; SubagentStart is NON-blocking on shell harnesses, so the hard block lives here at tool-use
     applies_to: [actuator]
