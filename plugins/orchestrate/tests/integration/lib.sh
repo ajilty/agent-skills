@@ -28,6 +28,26 @@ have_api(){ [ -n "${ANTHROPIC_API_KEY:-}" ]; }
 # copyable OAuth credential we clone into the sandbox. No auth -> live tiers skip.
 have_live_auth(){ have_api || [ -f "$HOME/.claude/.credentials.json" ]; }
 
+# --- Codex (codex-cli) tier ---------------------------------------------------
+# Mirror of the Claude-side probes for the Codex harness. Same isolation contract:
+# a throwaway CODEX_HOME (never the real ~/.codex) + a throwaway cwd, EXIT-trap
+# cleaned. Tests self-skip when codex / its auth is absent.
+have_codex(){ command -v codex >/dev/null 2>&1; }
+# Live auth that survives a CODEX_HOME sandbox: `codex login status` succeeds, OR a
+# copyable ~/.codex/auth.json we clone into the sandbox. No auth -> Codex live tiers skip.
+have_codex_auth(){ codex login status >/dev/null 2>&1 || [ -f "$HOME/.codex/auth.json" ]; }
+
+# Throwaway CODEX_HOME with ONLY the auth credential cloned in (never the real
+# ~/.codex). Use as `CODEX_HOME=$(mk_codex_home)` for installed-plugin + live tests.
+mk_codex_home(){ local h; h="$(mk_tmp)"; [ -f "$HOME/.codex/auth.json" ] && cp "$HOME/.codex/auth.json" "$h/auth.json" 2>/dev/null; printf '%s\n' "$h"; }
+
+# Install the orchestrate skill into a CODEX_HOME (user scope, --dir override so it
+# can't pollute a real ~/.codex). Echoes nothing; returns the installer's exit code.
+codex_install(){ # <codex_home>
+  local ch="$1"
+  CODEX_HOME="$ch" bash "$PLUGIN_DIR/scripts/install-codex.sh" --scope user --dir "$ch" >/dev/null 2>&1
+}
+
 # Throwaway dirs with EXIT-trap cleanup.
 _INT_TMP=()
 _int_cleanup(){ cd "$REPO_ROOT" 2>/dev/null || cd / ; local d; for d in "${_INT_TMP[@]:-}"; do [ -n "${d:-}" ] && rm -rf "$d"; done; }
