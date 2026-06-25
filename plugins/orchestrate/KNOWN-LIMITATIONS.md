@@ -56,19 +56,24 @@ actuator lane's creds to its leased targets in your deployment.
 
 ## Codex-specific (codex-cli 0.142.1)
 
-A live probe confirmed Codex's PreToolUse hooks **block** (exit 2 + stderr contract,
-Claude-Code-shaped wire), so full fail-closed parity is feasible (ADR-0016). The
-runtime hooks need no per-harness fork; the items below are Codex behaviors the
-**installer** compensates for, plus one degraded effort tier. They are not orchestrate
-bugs.
+A live probe (`codex exec` headless) confirmed Codex's PreToolUse hooks **block for
+the MAIN agent's hooked tools** (exit 2 + stderr contract, Claude-Code-shaped wire).
+They do **not** reach a spawned subagent's tool calls, nor the `apply_patch` tool, so
+the enforcement story is **scoped, not full parity** (ADR-0016). On Codex a spawned
+persona's confinement rests on its role `sandbox_mode` + capability subtraction, not on
+the per-persona hooks. The runtime hooks need no per-harness fork; the items below are
+Codex behaviors, not orchestrate bugs.
 
 | # | Codex behavior | Status / how orchestrate compensates |
 |---|----------------|--------------------------------------|
-| 1 | A Writer could read the held-out oracle by shelling out (`cat`/`sed`) around the Read-tool path. | **Resolved in 0.6.1.** `deny-heldout-read.sh` now inspects `tool_input.command`, so the shell path is denied too. Harness-neutral; closes the Codex variant of the hole. |
-| 2 | A wired hook silently **NO-OPS (fails OPEN)** unless its sha256 is trusted in `[hooks.state]` (or `--dangerously-bypass-hook-trust` is passed). | **Live limitation.** Until the installer persists trust, every fail-closed hook is **inert**: the guarantee looks wired but never fires. The installer must write the per-hook trust entries at install time (ADR-0016). Inverse of Claude Code, where a referenced hook runs immediately. |
+| 1 | A Writer could read the held-out oracle by shelling out (`cat`/`sed`) around the Read-tool path. | **Resolved in 0.6.1.** `deny-heldout-read.sh` now inspects `tool_input.command`, so the shell path is denied too. Harness-neutral. Note (per #6): on Codex this only covers the main agent; a spawned persona's shell reads are bounded by `sandbox_mode`, not this hook. |
+| 2 | A wired hook silently **NO-OPS (fails OPEN)** unless its sha256 is trusted in `[hooks.state]` (or `--dangerously-bypass-hook-trust` is passed). | **Live limitation.** Until the installer persists trust, every fail-closed hook is **inert**: even the main-agent floor looks wired but never fires. The installer must write the per-hook trust entries at install time (ADR-0016). Inverse of Claude Code, where a referenced hook runs immediately. |
 | 3 | `effort: max` has **no Codex equivalent** (Codex tops out at `xhigh`). | **Live limitation.** The Verifier's max-effort adversarial lane runs at `xhigh` on Codex. Documented, not blocking. |
 | 4 | Actuator credential confinement is **advisory** (ADR-0002), as on every harness. | Unchanged. Lease serialization is the only guaranteed layer; scope the actuator lane's creds in your deployment. |
-| 5 | `sandbox_mode` is coarse (`workspace-write`). | **Live limitation.** The results-only confinement is carried by `write-scope.sh` (not the sandbox), and `writable_roots` can narrow it further. |
+| 5 | `sandbox_mode` is coarse (`workspace-write`). | **Live limitation.** For the main agent, results-only confinement is carried by `write-scope.sh` (not the sandbox), and `writable_roots` can narrow it. For a spawned persona, `sandbox_mode` is the primary confinement (the hook does not fire). |
+| 6 | **PreToolUse does not fire inside a spawned subagent.** The per-persona hooks (`write-scope`, `keep-on-branch`, `deny-heldout-read`) do **not** see a dispatched persona's own tool calls. | **Live limitation (load-bearing).** orchestrate's per-persona hook floor is a **main-agent** floor on Codex, not a per-subagent one. A spawned persona is confined by its role `sandbox_mode` + capability subtraction only. Claude Code, where PreToolUse fires for subagent tool calls, keeps the stronger per-persona floor. |
+| 7 | **`apply_patch` is not matched.** Codex top-level writes surface as the `apply_patch` tool; the wired matcher is `^(Read|Edit|Write|Bash)$`, which does not match it. | **Live limitation.** Even a **main-agent** write via `apply_patch` bypasses `write-scope` until the installer widens the matcher to include `apply_patch`. Known follow-up. |
+| 8 | **SubagentStart does not fire in `codex exec` headless.** | **Live limitation.** Per-subagent model override via the `on-writer-dispatch` SubagentStart hook is **inert** headlessly. The role `.toml` `model` field sets the tier instead (verified working), so the `.toml` schema fix is the actual carrier of per-persona tiers. |
 
-See `docs/notes/codex-support.md` for the verdict and the installer fixes still
-required for a live fail-closed Codex.
+See `docs/notes/codex-support.md` for the verdict, the enforcement scope, and the
+installer fixes still required.
