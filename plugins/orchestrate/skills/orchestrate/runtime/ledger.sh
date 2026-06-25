@@ -162,6 +162,12 @@ case "$cmd" in
     tk="${1:?ticket}"; fid="${2:?fork_id}"; adr="${3:-}"; mkdir -p "$ROOT"
     printf '{"ts":"%s","ticket":"%s","event":"decision","fork_id":"%s","adr":"%s"}\n' "$(date -u +%FT%TZ)" "$tk" "$fid" "$adr" >> "$LEDGER" ;;
 
+  clarify)    # journal the router's intake-clarification decision (§2b/ADR-0004): which
+              # clarification skill was selected (first-present-wins), so the choreography
+              # is a checkable trace instead of invisible router-context behavior.
+    sk="${1:?skill}"; tk="${2:-intake}"; mkdir -p "$ROOT"
+    printf '{"ts":"%s","ticket":"%s","event":"clarify","skill":"%s"}\n' "$(date -u +%FT%TZ)" "$tk" "$sk" >> "$LEDGER" ;;
+
   writer-ctx)  # per-dispatch enforcement context (ADR-0006): the router writes this
                # BEFORE dispatching a writer; the hooks read it (CC passes no router
                # env to subagent hooks). Line format -> no jq needed. Single active
@@ -177,5 +183,5 @@ case "$cmd" in
       *) echo "usage: ledger.sh writer-ctx set <ticket> <persona> <branch> [prod...] | get <key> | clear" >&2; exit 64 ;;
     esac ;;
 
-  *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground|metrics [ticket]|feedback <note>|conformance <event[:detail]>...|lease-{key,acquire,release,check}|ack|decision <ticket> <fork_id> [adr]|writer-ctx set|get|clear}" >&2; exit 64 ;;
+  *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground|metrics [ticket]|feedback <note>|conformance <event[:detail]>...|clarify <skill> [ticket]|lease-{key,acquire,release,check}|ack|decision <ticket> <fork_id> [adr]|writer-ctx set|get|clear}" >&2; exit 64 ;;
 esac

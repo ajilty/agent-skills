@@ -24,6 +24,7 @@ drives** (loop steps in SKILL.md, not background hooks):
 {"ts","ticket","event":"dispatched","persona","branch","dispatch_id","slug"}   # write-ahead: BEFORE the persona runs. branch: writer personas only; dispatch_id: EVERY dispatch (result→agent attribution, ADR-0014); slug: ticket-unique research topic, read-only personas only (RAW → findings/_quarantine/<slug>.<dispatch_id>.md, promoted → findings/<slug>.md)
 {"ts","ticket","event":"returned","persona","status","artifact"}        # artifact: the PROMOTED findings path (read-only). The persona wrote the RAW quarantine file itself; the router read it from disk, gated, and promoted it (§5, ADR-0014)
 {"ts","ticket","event":"verdict","verdict"}                             # APPROVED|REJECTED|INCONSISTENT_ORACLE
+{"ts","ticket","event":"clarify","skill"}                              # §2b: router selected a clarification skill (first-present-wins) on intake ambiguity. ticket="intake" if pre-ticket
 {"ts","ticket","event":"fork","state":"halted","fork_id"}
 {"ts","ticket","event":"decision","fork_id","adr"}                      # fork resolved -> judgment memory (adr set iff promoted, §11)
 {"ts","ticket","event":"lease-conflict","persona","key"}               # actuator denied: mutation target held by another lane

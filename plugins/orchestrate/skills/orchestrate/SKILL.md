@@ -222,8 +222,16 @@ to those `#UNKNOWN`s — not an open-ended interview.
 produces, then **ignore its built-in next-step handoff** and return to this loop.
 The skill is bound per deployment in preference order (`clarification_skills` in
 `agents.yaml`), defaulting to grill-with-docs → grill-me → brainstorming → inline
-Q&A, using whichever is present. An irreducible call surfaces as `DECISION_FORK`
+Q&A, using whichever is present. **Exactly one** fires — this is a *selection*
+(first-present-wins), never a chain. An irreducible call surfaces as `DECISION_FORK`
 (§3b), not clarification.
+
+**Journal the decision first.** Before invoking the selected skill, record it with
+`runtime/ledger.sh clarify <skill>` (e.g. `clarify grill-with-docs`). A clarification
+skill runs in *router context*, not as a persona dispatch, so without this it leaves
+**no ledger trace** and the choreography can't be verified — the one step that was
+invisible to reground, metrics, and conformance. The `clarify` event makes "the router
+recognized ambiguity and selected the first-present skill" a checkable fact on disk.
 
 **The clarification return passes the §4a quarantine gate before the router acts on
 it** (ADR-0009): the router separates the operator's `TRUSTED` answers from the
