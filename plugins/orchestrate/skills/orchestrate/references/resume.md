@@ -39,7 +39,7 @@ interactive grill skills can't run, e.g. a non-interactive session).
 {"ts","ticket","event":"decision","fork_id","adr"}                      # fork resolved -> judgment memory (adr set iff promoted, §11)
 {"ts","ticket","event":"lease-conflict","persona","key"}               # actuator denied: mutation target held by another lane
 {"ts","ticket","event":"lane","state":"open|closed","branch"}
-{"ts","ticket","event":"done"}
+{"ts","ticket","event":"done"}                                          # write via `ledger.sh done <ticket>` — FAIL-CLOSED: refuses a T1/T2 lane with no verdict (verification not optional); T0 exempt (oracle is the check)
 ```
 
 ## Derived, never held

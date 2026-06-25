@@ -177,6 +177,26 @@ case "$cmd" in
     sk="${1:?skill}"; tk="${2:-intake}"; mkdir -p "$ROOT"
     printf '{"ts":"%s","ticket":"%s","event":"clarify","skill":"%s"}\n' "$(date -u +%FT%TZ)" "$tk" "$sk" >> "$LEDGER" ;;
 
+  done)       # close a lane FAIL-CLOSED on unverified ships: a verifying tier (T1/T2)
+              # may not be marked done without a verdict for that ticket. T0 (one
+              # Implementer vs the oracle — the oracle IS the check) is exempt; unknown
+              # tier requires a verdict (fail-closed). The ENFORCEMENT half of
+              # "verification is not optional" — the router under-delegates verification,
+              # so the gate makes a ship without a Verifier impossible, not just discouraged.
+    tk="${1:?ticket}"; mkdir -p "$ROOT"; tier=""; hv=0
+    if [ -f "$LEDGER" ]; then
+      tier="$(grep "\"ticket\":\"$tk\".*\"event\":\"intake\"" "$LEDGER" 2>/dev/null | sed -n 's/.*"tier":"\([^"]*\)".*/\1/p' | tail -1 || true)"
+      grep -q "\"ticket\":\"$tk\".*\"event\":\"verdict\"" "$LEDGER" 2>/dev/null && hv=1 || true
+    fi
+    case "$tier" in
+      T0*|t0*) ;;   # T0 baseline lane: the acceptance oracle is the check, no Verifier
+      *) if [ "$hv" != 1 ]; then
+           echo "orchestrate: refusing 'done' for $tk — no Verifier verdict on the board (tier=${tier:-unknown}). A T1/T2 lane must pass a Verifier first: dispatch the verifier, record its verdict, then mark done. (T0 baseline lanes are exempt — set tier=T0 at intake.)" >&2
+           exit 3
+         fi ;;
+    esac
+    printf '{"ts":"%s","ticket":"%s","event":"done"}\n' "$(date -u +%FT%TZ)" "$tk" >> "$LEDGER" ;;
+
   writer-ctx)  # per-dispatch enforcement context (ADR-0006): the router writes this
                # BEFORE dispatching a writer; the hooks read it (CC passes no router
                # env to subagent hooks). Line format -> no jq needed. Single active
@@ -192,5 +212,5 @@ case "$cmd" in
       *) echo "usage: ledger.sh writer-ctx set <ticket> <persona> <branch> [prod...] | get <key> | clear" >&2; exit 64 ;;
     esac ;;
 
-  *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground|metrics [ticket]|feedback <note>|conformance <event[:detail]>...|clarify <skill> [ticket]|lease-{key,acquire,release,check}|ack|decision <ticket> <fork_id> [adr]|writer-ctx set|get|clear}" >&2; exit 64 ;;
+  *) echo "usage: ledger.sh {append '<json>'|retries <ticket>|reground|metrics [ticket]|feedback <note>|conformance <event[:detail]>...|clarify <skill> [ticket]|done <ticket>|lease-{key,acquire,release,check}|ack|decision <ticket> <fork_id> [adr]|writer-ctx set|get|clear}" >&2; exit 64 ;;
 esac

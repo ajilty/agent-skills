@@ -117,7 +117,11 @@ Run these in order on every invocation. Steps reference the detailed sections.
    d. Route per §3. The retry budget is **counted from the ledger**
       (`ledger.sh retries <ticket>`), not remembered.
 4. **Verify, resolve, merge, close (§7, §9).** Resolve every open tag; merge by
-   the deterministic branch glob; append `done`.
+   the deterministic branch glob; close the lane with `runtime/ledger.sh done
+   <ticket>` — **fail-closed**: it refuses a T1/T2 ship that has no Verifier verdict
+   on the board. Verification is *not optional* (the router's measured habit is to
+   self-verify inline and skip the Verifier; this gate makes that impossible). T0
+   baseline lanes are exempt — the acceptance oracle is their check.
 5. **Escalate, don't thrash.** `DECISION_FORK` / quarantine halt their lane and
    surface to the operator (§3b). Metrics derive from the ledger (§8).
 
@@ -211,6 +215,28 @@ the diff/plan, `#UNKNOWN` presence, and the §6 disjointness check. A task may b
 **promoted** mid-flight (a T0 that fails its oracle, or surfaces an `#UNKNOWN`,
 escalates to T2) but never silently **demoted**. Thresholds default to 1/4 and
 are overridable conversationally in-session.
+
+### 2a′. Context economy — your own context is the scarce resource
+
+Right-sizing (above) is one pull: *don't over-dispatch a tiny task*. There is a
+second, opposing pull that the loop tends to forget, and forgetting it is the
+measured failure mode (delegation tapers as a campaign runs, the router absorbs
+verbose tool output, and bloats toward a compaction that degrades every later
+decision): **§8's "attention is the bottleneck" applies to *you*, the router, not
+just the operator.** A subagent is *context isolation* — it spends *its* throwaway
+context on the noisy work and hands you back only the conclusion.
+
+So **delegate work whose input is large or noisy but whose output is small**, even
+when you could do it inline: a wide file sweep to find one definition, a probe whose
+only signal is GREEN/RED behind hundreds of lines of output, exploratory research.
+Doing it inline feels cheaper *this turn* but spends the one budget that, exhausted,
+forces the compaction that costs fidelity everywhere after.
+
+**Heuristic: delegate when work-to-produce ≫ result-size; inline when they're
+comparable** (a one-line edit, a single quick check). Context preservation is a
+*primary* reason to dispatch — alongside independence (a fresh Verifier, §6) and
+parallelism — not an afterthought. The two pulls resolve cleanly: right-size by task
+complexity, *and* offload by reduction ratio.
 
 ---
 
