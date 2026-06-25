@@ -177,7 +177,7 @@ conventions:
   metrics_from_ledger: true              # metrics are derived by replaying board.jsonl (no separate sink)
   adr_dir:      "docs/adr"               # judgment memory: TRACKED ADRs (ADR-0003), never under .agents/ or harness memory
   adr_index:    "docs/adr/INDEX.md"      # Planner reads this at intake; capture/supersede via runtime/adr.sh
-  clarification_skills: [grill-with-docs, grill-me, brainstorming, inline]  # intake ambiguity; router-context, first present wins (ADR-0004)
+  clarification_skills: [grill-with-docs, grill-me, brainstorming, inline]  # §2b front-door gate; router-context, first present wins (ADR-0004); gate consults adr_index before firing
   actuator_cred_scope: advisory          # ADR-0002: confinement is best-effort per deployment; lease serialization is the only guaranteed layer
 
 # --- Resume / durability (apply "contracts are the bus" to the ROUTER itself) -

@@ -101,3 +101,16 @@ if command -v yq >/dev/null 2>&1; then
 else
   echo "(skip manifest validity: yq absent)"
 fi
+
+# --- Clarification binding (§2b front-door gate): the router-prose config that binds
+#     WHICH clarification skill fires must stay present and order-matched. Nothing
+#     compiles it per-harness, so without this guard it can silently drift or vanish
+#     (the gate would fall through to inline on every ambiguous goal, unnoticed). It
+#     lives under conventions:, not top-level — a wrong path once read it as ABSENT.
+if command -v yq >/dev/null 2>&1; then
+  AGY="$SK/skills/orchestrate/references/agents.yaml"
+  got_cs="$(yq '.conventions.clarification_skills | join(",")' "$AGY" 2>/dev/null)"
+  assert_eq "$got_cs" "grill-with-docs,grill-me,brainstorming,inline" "clarification_skills present + order-matched (§2b)"
+else
+  echo "(skip clarification binding: yq absent)"
+fi

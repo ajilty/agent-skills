@@ -81,8 +81,11 @@ Run these in order on every invocation. Steps reference the detailed sections.
    file, a pasted spec — and pull what you need with whatever tools are available;
    otherwise treat the input itself as the work-item. Write it to
    `…/tickets/<ticket>/work-item.md`. Don't assume any particular tracker.
-2. **Baseline + right-size (§2, §2a).** Attempt the baseline; on failure pick the
-   cheapest tier the counted signals allow (T0/T1/T2), defaulting down.
+2. **Baseline + right-size (§2, §2a), then clarify-gate (§2b).** Attempt the baseline;
+   on failure pick the cheapest tier the counted signals allow (T0/T1/T2), defaulting
+   down. **Before the first dispatch**, run the §2b front-door gate: if no acceptance
+   oracle is nameable from the goal as-stated (ADR index consulted), clarify first —
+   err toward asking. A clear goal of any altitude proceeds without pausing.
 3. **Drive each lane:** *(As you drive, journal only the **canonical** ledger events —
    `intake`, `clarify`, `dispatched`, `returned`, `verdict`, `fork`, `decision`,
    `lane`, `done` — via the `ledger.sh` helpers. The board is machine-read: an
@@ -249,13 +252,20 @@ that as the exception, never the primary mechanism.
 
 ---
 
-## 2b. Intake clarification (ambiguity-gated, router-owned sequencing)
+## 2b. Intake clarification (front-door gate, router-owned sequencing)
 
-The loop attempts intake autonomously; a clear goal of any altitude proceeds
-without pausing. Clarification fires **only when the Planner cannot sign off** —
-open `#UNKNOWN`s block the spec. Then, in the **router's own context** (only the
-router talks to the operator), invoke the configured clarification skill, scoped
-to those `#UNKNOWN`s — not an open-ended interview.
+The gate runs **once, at the front door — after intake (§1), before the first
+dispatch.** Ask one question of the goal as stated: *can a Planner name a real
+acceptance oracle for this without inventing requirements?* (§2 — the oracle is the
+testable definition of done.) **Consult `docs/adr/INDEX.md` first**: an `active`
+decision that already resolves the ambiguity counts as the answer. If **yes**, the
+goal is clear at any altitude — proceed, no clarification. If **no**, the goal has
+open design space: **err toward asking** — clarify *before* dispatching any persona,
+so a premium Planner never invents a plausible-but-wrong spec and signs off on it
+(the silent-rework failure: a fuzzy goal that reaches an Implementer with no `clarify`
+event is this gate failing). Then, in the **router's own context** (only the router
+talks to the operator), invoke the configured clarification skill, scoped to the
+missing requirement — not an open-ended interview.
 
 **Router owns sequencing** (ADR-0004): invoke a sub-skill for the clarification it
 produces, then **ignore its built-in next-step handoff** and return to this loop.
@@ -266,8 +276,9 @@ Q&A, using whichever is present. **Exactly one** fires — this is a *selection*
 (§3b), not clarification.
 
 **Journal the decision — canonically.** When you clarify, record it with
-`runtime/ledger.sh clarify <skill>` where `<skill>` is the mechanism you **actually
-used**: `grill-with-docs` / `grill-me` / `brainstorming` when present *and* the
+`runtime/ledger.sh clarify <skill> <ticket>` (**skill first, ticket second** — passing
+them reversed mislabels the event and blinds per-ticket metrics/conformance) where
+`<skill>` is the mechanism you **actually used**: `grill-with-docs` / `grill-me` / `brainstorming` when present *and* the
 session is interactive, or **`inline`** when those can't run (a non-interactive
 session falls through to inline Q&A — that is still a clarification, and it is still
 journaled). Use this **canonical** `clarify` event — do **not** coin an ad-hoc name
@@ -277,6 +288,16 @@ clarification runs in *router context*, not as a persona dispatch, so without th
 `clarify` event the step leaves **no trace** and can't be verified. If you must pause
 for the operator's answers, that is simply this lane staying open after the `clarify`
 event — not a new event type.
+
+**Headless + non-convergence.** In a non-interactive session the formal skills can't
+interview: journal it (`runtime/ledger.sh clarify inline <ticket>` — skill first, ticket
+second) and **HALT the lane open** for the next resume — **never silent-build** a dispatch against an unresolved goal. Proceed on
+a journaled `#ASSUMPTION(...)` (carrying a verify-at-impl check, §5) **only if**
+assume-and-proceed was authorized this run; the Verifier's open-tag rule (no
+`#ASSUMPTION` open at approval) then forces it back to a human before `done`. Bound the
+interview: after **2** `clarify` rounds on one ticket (counted from the ledger, the
+`retries` pattern), stop asking and surface the residual as a `DECISION_FORK` (§3b) —
+convert "going in circles" into one operator call.
 
 **The clarification return passes the §4a quarantine gate before the router acts on
 it** (ADR-0009): the router separates the operator's `TRUSTED` answers from the

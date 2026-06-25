@@ -20,3 +20,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0012](0012-subagents-not-agent-teams.md) | Orchestrate dispatches capability-subtracted subagents, not agent-teams teammates | active |
 | [0013](0013-shared-checkout-destructive-git-floor.md) | A universal floor refuses destructive git on the shared (primary) checkout | active |
 | [0014](0014-disk-first-read-lane.md) | Read-only results are disk-first: durable, attributed, gated on read | active |
+| [0015](0015-front-door-clarify-gate.md) | Clarification is a front-door gate keyed on a nameable oracle, not a post-Planner fallback | active |
