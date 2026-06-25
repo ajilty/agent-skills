@@ -53,3 +53,22 @@ The actuator's credential scoping is **advisory** (ADR-0002): orchestrate cannot
 enforce "no credentials for an unleased target" from inside the harness. The
 guaranteed layer is lease **serialization** (single-writer per target). Scope the
 actuator lane's creds to its leased targets in your deployment.
+
+## Codex-specific (codex-cli 0.142.1)
+
+A live probe confirmed Codex's PreToolUse hooks **block** (exit 2 + stderr contract,
+Claude-Code-shaped wire), so full fail-closed parity is feasible (ADR-0016). The
+runtime hooks need no per-harness fork; the items below are Codex behaviors the
+**installer** compensates for, plus one degraded effort tier. They are not orchestrate
+bugs.
+
+| # | Codex behavior | Status / how orchestrate compensates |
+|---|----------------|--------------------------------------|
+| 1 | A Writer could read the held-out oracle by shelling out (`cat`/`sed`) around the Read-tool path. | **Resolved in 0.6.1.** `deny-heldout-read.sh` now inspects `tool_input.command`, so the shell path is denied too. Harness-neutral; closes the Codex variant of the hole. |
+| 2 | A wired hook silently **NO-OPS (fails OPEN)** unless its sha256 is trusted in `[hooks.state]` (or `--dangerously-bypass-hook-trust` is passed). | **Live limitation.** Until the installer persists trust, every fail-closed hook is **inert**: the guarantee looks wired but never fires. The installer must write the per-hook trust entries at install time (ADR-0016). Inverse of Claude Code, where a referenced hook runs immediately. |
+| 3 | `effort: max` has **no Codex equivalent** (Codex tops out at `xhigh`). | **Live limitation.** The Verifier's max-effort adversarial lane runs at `xhigh` on Codex. Documented, not blocking. |
+| 4 | Actuator credential confinement is **advisory** (ADR-0002), as on every harness. | Unchanged. Lease serialization is the only guaranteed layer; scope the actuator lane's creds in your deployment. |
+| 5 | `sandbox_mode` is coarse (`workspace-write`). | **Live limitation.** The results-only confinement is carried by `write-scope.sh` (not the sandbox), and `writable_roots` can narrow it further. |
+
+See `docs/notes/codex-support.md` for the verdict and the installer fixes still
+required for a live fail-closed Codex.
