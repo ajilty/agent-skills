@@ -62,9 +62,16 @@ so the native per-persona hook floor stands.
   it stabilizes (could give finer-than-cwd lane separation).
 
 ## Consequences
-- **Not yet implemented.** Scoped here; build is a follow-up: `install-codex.sh` emits a
-  per-persona launcher (`dispatch-persona.sh <persona> <ticket_dir>` setting `-s` + `--cd`),
-  and the router uses it instead of `spawn_agent` for planner/researcher/verifier on Codex.
+- **Implemented (0.8.0).** `runtime/dispatch-persona.sh` runs each persona as
+  `codex exec -s <sandbox> --cd <lane>`; `install-codex.sh` emits it, writes the per-persona
+  bodies it injects, and appends a dispatch addendum to the Codex brain telling the router
+  to use it instead of `spawn_agent`. **Requires the router session's `network_access = true`**
+  (the installer sets it in `config.toml`) so the nested persona `codex exec` can reach the
+  model — without it the launcher cannot dispatch. This brings Codex to Claude Code's
+  existing network-open posture; persona writes stay OS-confined by `--cd` regardless.
+  Validated live: a launcher-dispatched verifier's out-of-lane write is refused
+  (`read-only file system`), end-to-end through the launcher
+  (`tests/integration/test_codex_persona_confine.sh`).
 - Cost: the router shells out per persona on Codex and gives up Codex's native in-session
   `spawn_agent` context-forking. orchestrate does not rely on that (it passes explicit
   prompts and reads results from disk), so the loss is small.
@@ -78,4 +85,4 @@ so the native per-persona hook floor stands.
 
 ## Status
 
-active (decision accepted; implementation pending — see Consequences)
+active (implemented in 0.8.0)

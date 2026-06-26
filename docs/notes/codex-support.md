@@ -4,21 +4,22 @@ Status: **RESOLVED.** Verdict (live-probe verified, codex-cli 0.142.1, `codex ex
 headless): Codex's PreToolUse hooks **BLOCK for the MAIN agent's hooked tools** (exit 2
 plus the stderr contract is honored; the wire shape is Claude-Code-shaped:
 `tool_name`, `tool_input.command`). They do **NOT** fire inside a spawned subagent. So
-this is **scoped enforcement, not full parity**: a spawned persona on Codex is confined
-only by the shared session sandbox + capability subtraction (its role `sandbox_mode` is
-**inert** for spawns), so it is **not lane-confined** today. ADR-0017 designs the fix
-(per-persona top-level `codex exec --cd`). Captured as ADR-0016/0017; limitations in
+the per-persona PreToolUse hook does not reach a spawned subagent — so as of 0.8.0
+(ADR-0017) orchestrate dispatches each persona as its own top-level `codex exec --cd <lane>`,
+OS-confining its writes to its result subtree (stronger than the CC hook) instead of relying
+on the inert per-role `sandbox_mode`. Captured as ADR-0016/0017; limitations in
 `plugins/orchestrate/KNOWN-LIMITATIONS.md`.
 
 What bounds the claim:
 
-- **PreToolUse does not fire in a spawned subagent (still open).** `write-scope`,
-  `keep-on-branch`, and `deny-heldout-read` do not see a dispatched persona's own tool
-  calls on Codex, so the per-persona hook floor is a **main-agent** floor here.
-  Spawned-persona confinement is the shared session sandbox + capability subtraction (role
-  `sandbox_mode` is inert for spawns), so it is not lane-confined today — ADR-0017 designs
-  the fix. Claude Code keeps the stronger per-persona floor (PreToolUse fires for subagent
-  tool calls there).
+- **PreToolUse does not fire in a spawned subagent (resolved 0.8.0).** The per-persona
+  hooks do not see a `spawn_agent` subagent's tool calls — so orchestrate stopped using
+  `spawn_agent` for dispatch on Codex and runs each persona as its own top-level
+  `codex exec --cd <lane>` (ADR-0017). The OS sandbox confines its writes to its result
+  subtree (source/prod refused at the syscall, sub-spawn-proof) and the main-agent hook
+  floor fires on top. Requires the router's `network_access = true` (installer-set) so the
+  nested persona session can reach the model. Claude Code keeps the per-persona hook floor
+  natively.
 - **`apply_patch` — RESOLVED (0.7.1).** The matcher now includes `apply_patch` and
   `write-scope.sh` parses the patch body to confine every target (any out-of-scope target
   denies the patch); verified live. This closed the main-agent bypass; a spawned persona's

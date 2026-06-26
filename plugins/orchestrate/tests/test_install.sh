@@ -12,6 +12,11 @@ test -x "$o/orchestrate-runtime/ledger.sh" && pass || fail "codex ships ledger.s
 # write-scope hook (two layers, same posture as the planner). actuator (run) = workspace-write.
 grep -q 'sandbox_mode = "workspace-write"' "$o/agents/researcher.toml" && pass || fail "codex researcher sandbox_mode=workspace-write (results-only, hook-scoped)"
 grep -q 'sandbox_mode = "workspace-write"' "$o/agents/actuator.toml" && pass || fail "codex actuator sandbox_mode=workspace-write"
+# ADR-0017: per-persona launcher + injected bodies + router network egress so confined
+# personas can be dispatched as their own `codex exec --cd <lane>` (OS-confined writes).
+test -x "$o/orchestrate-runtime/dispatch-persona.sh" && pass || fail "codex ships dispatch-persona.sh executable (ADR-0017)"
+for p in researcher planner implementer verifier actuator; do assert_file "$o/orchestrate-runtime/personas/$p.md"; done
+grep -qE '^[[:space:]]*network_access[[:space:]]*=[[:space:]]*true' "$o/config.toml" && pass || fail "codex config sets network_access=true (ADR-0017)"
 rm -rf "$o"
 # opencode: emits ALL five personas AND honors --dir
 o="/tmp/p4oc.$$"; rm -rf "$o"; bash "$SK/scripts/install-opencode.sh" --scope project --dir "$o" >/dev/null 2>&1
