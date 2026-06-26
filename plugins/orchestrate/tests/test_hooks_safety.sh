@@ -121,6 +121,25 @@ if command -v jq >/dev/null 2>&1; then
   printf '{"agent_type":"planner","tool_name":"Write","tool_input":{"file_path":"docs/adr/0007-x.md"}}' \
     | bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
   assert_eq "$rc" "0" "write-scope: allows planner docs/adr write via stdin (CC path)"
+  # Codex apply_patch: paths live in the patch body (tool_input.command), not file_path.
+  # The hook must parse them and confine each (ANY out-of-scope target denies the patch).
+  printf '%s' '{"agent_type":"planner","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Update File: src/x.py\n@@\n+x\n*** End Patch\n"}}' \
+    | bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "2" "write-scope: denies planner apply_patch write to src (Codex patch path)"
+  printf '%s' '{"agent_type":"planner","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Update File: docs/adr/0007-x.md\n@@\n+x\n*** End Patch\n"}}' \
+    | bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "0" "write-scope: allows planner apply_patch write to docs/adr (Codex patch path)"
+  printf '%s' '{"agent_type":"planner","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Update File: docs/adr/ok.md\n@@\n+a\n*** Add File: src/evil.py\n+b\n*** End Patch\n"}}' \
+    | bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "2" "write-scope: denies planner apply_patch when ANY target is out of scope (fail-closed)"
+  # Tool-awareness (Codex shares one PreToolUse matcher across hooks): write-scope must
+  # NOT confine non-write tools, or it would block a confined persona's reads/test-runs.
+  printf '%s' '{"agent_type":"verifier","tool_name":"Read","tool_input":{"file_path":"src/foo.py"}}' \
+    | bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "0" "write-scope: allows a confined persona to READ source (not a write; Codex shared matcher)"
+  printf '%s' '{"agent_type":"verifier","tool_name":"Bash","tool_input":{"command":"pytest -q"}}' \
+    | bash "$RT/write-scope.sh" >/dev/null 2>&1; rc=$?
+  assert_eq "$rc" "0" "write-scope: ignores verifier Bash (run-scope governs that, not write-scope)"
   o="$(printf '{"agent_type":"planner","tool_input":{"file_path":"src/x.py"}}' | bash "$RT/write-scope.sh" 2>/dev/null)"
   assert_eq "$o" "" "write-scope: empty stdout on stdin DENY (stderr-only)"
   printf '{"agent_type":"verifier","tool_name":"Bash","tool_input":{"command":"rm tests/t.py"}}' \

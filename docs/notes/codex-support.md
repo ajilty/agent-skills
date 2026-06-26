@@ -3,24 +3,24 @@
 Status: **RESOLVED.** Verdict (live-probe verified, codex-cli 0.142.1, `codex exec`
 headless): Codex's PreToolUse hooks **BLOCK for the MAIN agent's hooked tools** (exit 2
 plus the stderr contract is honored; the wire shape is Claude-Code-shaped:
-`tool_name`, `tool_input.command`). They do **NOT** fire inside a spawned subagent, nor
-do they match the `apply_patch` tool. So this is **scoped enforcement, not full
-parity**: a spawned persona's confinement on Codex rests on its role `sandbox_mode` +
-capability subtraction, not on the per-persona hooks. Captured as ADR-0016;
-limitations in `plugins/orchestrate/KNOWN-LIMITATIONS.md`.
+`tool_name`, `tool_input.command`). They do **NOT** fire inside a spawned subagent. So
+this is **scoped enforcement, not full parity**: a spawned persona's confinement on Codex
+rests on its role `sandbox_mode` + capability subtraction, not on the per-persona hooks.
+Captured as ADR-0016; limitations in `plugins/orchestrate/KNOWN-LIMITATIONS.md`.
 
-The two gaps that bound the claim:
+What bounds the claim:
 
-- **PreToolUse does not fire in a spawned subagent.** `write-scope`, `keep-on-branch`,
-  and `deny-heldout-read` do not see a dispatched persona's own tool calls on Codex, so
-  the per-persona hook floor is a **main-agent** floor here. Spawned-persona confinement
-  is `sandbox_mode` + capability subtraction. Claude Code keeps the stronger per-persona
-  floor (PreToolUse fires for subagent tool calls there).
-- **`apply_patch` is unmatched.** Codex top-level writes surface as the `apply_patch`
-  tool; the wired matcher `^(Read|Edit|Write|Bash)$` does not match it, so even a
-  main-agent write via `apply_patch` bypasses `write-scope` until the matcher is widened.
+- **PreToolUse does not fire in a spawned subagent (still open).** `write-scope`,
+  `keep-on-branch`, and `deny-heldout-read` do not see a dispatched persona's own tool
+  calls on Codex, so the per-persona hook floor is a **main-agent** floor here.
+  Spawned-persona confinement is `sandbox_mode` + capability subtraction. Claude Code keeps
+  the stronger per-persona floor (PreToolUse fires for subagent tool calls there).
+- **`apply_patch` — RESOLVED (0.7.1).** The matcher now includes `apply_patch` and
+  `write-scope.sh` parses the patch body to confine every target (any out-of-scope target
+  denies the patch); verified live. This closed the main-agent bypass; a spawned persona's
+  `apply_patch` is still unhooked (the gap above).
 
-Installer status (0.7.0 — the hooks themselves are unchanged):
+Installer status (0.7.0–0.7.1):
 
 1. **`.toml` schema + tiers — DONE.** The installer emits `developer_instructions` (not
    `instructions`) plus `model` and `model_reasoning_effort` per persona. This is the
@@ -29,16 +29,19 @@ Installer status (0.7.0 — the hooks themselves are unchanged):
    gpt-5.5`; effort `low/medium/high/xhigh`, `max → xhigh` (no Codex `max`, so the
    Verifier's max-effort lane degrades to `xhigh`). Validated live under `codex exec
    --strict-config` (zero malformed-role errors; the old schema reproduces the bug).
-2. **Hook trust — DOCUMENTED, not pre-seeded (deliberate).** A wired Codex hook silently
-   NO-OPS (**fails OPEN**) unless its sha256 is trusted in `[hooks.state]` or the session
-   runs `--dangerously-bypass-hook-trust`. The installer does **not** pre-seed a
-   `trusted_hash`: the format is internal + version-coupled, and a wrong value fails open
-   silently. It prints the two safe paths instead (approve once in the TUI, or
-   `--dangerously-bypass-hook-trust` for vetted CI). Operator tradeoff: the floor is not
-   live until trust is established. Revisit pre-seeding if a stable hash API lands.
-3. **Widen the matcher for `apply_patch` — FOLLOW-UP (KNOWN-LIMITATIONS #7).** Not a
-   one-line matcher change: `write-scope.sh` would also need to parse the `apply_patch`
-   payload (a patch, not a `file_path`) to extract written paths. Deferred.
+2. **Hook trust — SEEDED + self-verified (DONE).** A wired Codex hook fails OPEN unless
+   trusted in `[hooks.state]`. The installer now seeds trust automatically, and **never
+   guesses the hash**: it asks codex for the value codex itself computes (`codex
+   app-server` → `hooks/list` → `currentHash`), then **self-verifies** that a hook
+   actually fires with no `--dangerously-bypass-hook-trust`. On drift (key/hash format
+   change) it strips the seeds and falls back loudly to the manual paths — structurally
+   incapable of silently failing open. `docs-only` when codex/auth is absent at install.
+3. **`apply_patch` matcher + parser — DONE (0.7.1).** Matcher widened to include
+   `apply_patch`; `write-scope.sh` parses the patch body (`*** Add/Update/Delete File:`,
+   `*** Move to:`) to confine every target, fail-closed on any out-of-scope path. The same
+   change made `write-scope` tool-aware (the shared Codex matcher no longer makes it deny a
+   confined persona's reads/test-runs). Verified live end-to-end (out-of-scope apply_patch
+   write blocked with trust seeded, no bypass).
 
 The `.command` held-out fix already shipped (0.6.1): `deny-heldout-read.sh` inspects
 `tool_input.command`, denying a Writer reading the oracle by shelling out around the
