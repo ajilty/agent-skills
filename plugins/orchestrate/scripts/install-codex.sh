@@ -76,14 +76,176 @@ for p in $(yq '.personas | keys | .[]' "$AGENTS"); do
   echo "  subagent -> $AGENTS_DEST/$p.toml   (sandbox: $sandbox, model: ${model:-default}, effort: ${effort:-default}, web: $web)"
 done
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Hook wiring + trust seeding (codex-cli 0.142.x).
+#
+# Codex's PreToolUse matcher must include `apply_patch` (top-level writes surface
+# as that tool, NOT Edit/Write). And a wired Codex hook SILENTLY NO-OPS — fails
+# OPEN — unless its sha256 is trusted in [hooks.state] (or the run passes
+# --dangerously-bypass-hook-trust). So we (a) WRITE a managed hooks.json wiring the
+# floor with the widened matcher, and (b) SEED [hooks.state] so the floor is live on
+# first run. The trusted_hash format is internal/opaque, so we never GUESS it: we ask
+# codex itself for the value it computes (`codex app-server` -> hooks/list ->
+# currentHash), which is deterministic and stable. Then we SELF-VERIFY: a deny probe
+# fires under `codex exec` with NO bypass; if it doesn't, a wrong-hash drift has us
+# failing OPEN, so we LOUDLY warn, strip the seeds, and fall back to documenting the
+# bypass flag — never leaving the operator believing the floor is live when it isn't.
+HOOKS_JSON="$DEST/hooks.json"
+PRE_MATCHER='^(Read|Edit|Write|Bash|apply_patch)$'   # apply_patch is the Codex write tool
+SEED_BEGIN='# >>> orchestrate hook-trust (managed; do not edit by hand) >>>'
+SEED_END='#   <<< orchestrate hook-trust (managed) <<<'
+
+# The PreToolUse floor, in wire order (must match the printed config-block order below).
+# Each entry: <script-basename>.
+PRE_HOOKS="deny-heldout-read.sh keep-on-branch.sh guard-shared-checkout.sh guard-done.sh gate-prod-apply.sh write-scope.sh run-scope.sh"
+
+# Emit the managed hooks.json (CC-shaped — the shape codex reads from $CODEX_HOME/hooks.json).
+# $1: extra PreToolUse matcher-group lines (used to append the self-verify probe group).
+write_hooks_json() { # [<extra_group_json>]
+  local extra="${1:-}" pre_hooks_json="" h
+  for h in $PRE_HOOKS; do
+    pre_hooks_json="${pre_hooks_json:+$pre_hooks_json, }{ \"type\": \"command\", \"command\": \"$HOOKS/$h\" }"
+  done
+  {
+    printf '{ "hooks": {\n'
+    printf '  "PreToolUse": [\n'
+    printf '    { "matcher": "%s", "hooks": [ %s ] }%s\n' "$PRE_MATCHER" "$pre_hooks_json" "${extra:+,}"
+    [ -n "$extra" ] && printf '    %s\n' "$extra"
+    printf '  ],\n'
+    printf '  "SubagentStart": [ { "matcher": "implementer|actuator", "hooks": [ { "type": "command", "command": "%s/on-writer-dispatch.sh" } ] } ],\n' "$HOOKS"
+    printf '  "PostCompact": [ { "hooks": [ { "type": "command", "command": "%s/on-compaction.sh" } ] } ]\n' "$HOOKS"
+    printf '} }\n'
+  } > "$HOOKS_JSON"
+}
+
+# Ensure [features] hooks = true lands in config.toml (idempotent; never clobbers).
+ensure_hooks_feature() { # <config.toml>
+  local cfg="$1"
+  [ -f "$cfg" ] || : > "$cfg"
+  if ! grep -qE '^\s*hooks\s*=\s*true' "$cfg" 2>/dev/null; then
+    printf '\n[features]\nhooks = true\n' >> "$cfg"
+  fi
+}
+
+# Strip any prior managed seed block (idempotent re-install).
+strip_seed_block() { # <config.toml>
+  local cfg="$1"; [ -f "$cfg" ] || return 0
+  awk -v b="$SEED_BEGIN" -v e="$SEED_END" '
+    $0==b {drop=1; next} $0==e {drop=0; next} !drop {print}
+  ' "$cfg" > "$cfg.tmp" && mv "$cfg.tmp" "$cfg"
+}
+
+# Ask codex for the key->currentHash of every wired hook (deterministic oracle).
+# Echoes lines "<key>\t<sha256:...>". Empty output -> oracle unavailable.
+hook_trust_oracle() { # <CODEX_HOME>
+  local ch="$1"
+  { printf '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"clientInfo":{"name":"orchestrate-install","version":"0"}}}\n'
+    sleep 1
+    printf '{"jsonrpc":"2.0","id":2,"method":"hooks/list","params":{}}\n'
+    sleep 2
+  } | CODEX_HOME="$ch" timeout 30 codex app-server 2>/dev/null | python3 -c '
+import sys, json
+for line in sys.stdin:
+    line=line.strip()
+    if not line: continue
+    try: m=json.loads(line)
+    except Exception: continue
+    if m.get("id")==2 and isinstance(m.get("result"),dict):
+        for inst in m["result"].get("data",[]):
+            for h in inst.get("hooks",[]):
+                k=h.get("key"); v=h.get("currentHash")
+                if k and v: print(f"{k}\t{v}")
+        break
+' 2>/dev/null
+}
+
+# Write the managed [hooks.state] block from "<key>\t<hash>" lines on stdin.
+write_seed_block() { # <config.toml>  (reads key\thash pairs on stdin)
+  local cfg="$1" key hash any=0 tmp; tmp="$(mktemp)"
+  printf '%s\n' "$SEED_BEGIN" >> "$tmp"
+  printf '[hooks.state]\n' >> "$tmp"
+  while IFS=$'\t' read -r key hash; do
+    [ -n "$key" ] && [ -n "$hash" ] || continue
+    any=1
+    printf '[hooks.state."%s"]\ntrusted_hash = "%s"\nenabled = true\n' "$key" "$hash" >> "$tmp"
+  done
+  printf '%s\n' "$SEED_END" >> "$tmp"
+  [ "$any" = 1 ] && cat "$tmp" >> "$cfg"
+  rm -f "$tmp"
+  return $((1-any))   # 0 if we wrote at least one entry
+}
+
+# SELF-VERIFY: with the floor seeded (no bypass), a deny probe must BLOCK. Returns 0 on
+# proven-live, non-zero otherwise. Uses an isolated throwaway CODEX_HOME that MIRRORS the
+# real seeding flow (same hooks.json + same oracle + same [hooks.state] mechanism) plus one
+# extra deny hook — so a PASS proves the exact seeding recipe makes a wired hook fire, while
+# never depending on the model running a real floor hook against real state.
+selfverify_trust() { # echoes PASS|FAIL|SKIP
+  command -v codex >/dev/null 2>&1 || { echo SKIP; return; }
+  command -v python3 >/dev/null 2>&1 || { echo SKIP; return; }
+  codex login status >/dev/null 2>&1 || [ -f "$HOME/.codex/auth.json" ] || { echo SKIP; return; }
+  local sv ws deny oracle out
+  sv="$(mktemp -d)"; ws="$(mktemp -d)"
+  [ -f "$HOME/.codex/auth.json" ] && cp "$HOME/.codex/auth.json" "$sv/auth.json" 2>/dev/null
+  ( cd "$ws" && git init -q ) 2>/dev/null
+  deny="$sv/selfverify-deny.sh"
+  printf '#!/usr/bin/env bash\necho "ORCH-SELFVERIFY-DENY" >&2\nexit 2\n' > "$deny"; chmod +x "$deny"
+  # A single deny hook on Bash — the same hooks.json shape + same trust mechanism.
+  printf '{ "hooks": { "PreToolUse": [ { "matcher": "^(Bash|Shell|apply_patch)$", "hooks": [ { "type": "command", "command": "%s" } ] } ] } }\n' "$deny" > "$sv/hooks.json"
+  printf '[features]\nhooks = true\n' > "$sv/config.toml"
+  oracle="$(hook_trust_oracle "$sv")"
+  [ -n "$oracle" ] || { rm -rf "$sv" "$ws"; echo SKIP; return; }
+  printf '%s\n' "$oracle" | write_seed_block "$sv/config.toml" >/dev/null || { rm -rf "$sv" "$ws"; echo SKIP; return; }
+  out="$(printf 'Run the shell command: echo orch-probe. Report the result.' \
+    | ( cd "$ws" && CODEX_HOME="$sv" timeout 180 codex exec -s workspace-write --skip-git-repo-check - ) 2>&1)"
+  rm -rf "$sv" "$ws"
+  if printf '%s' "$out" | grep -qi "ORCH-SELFVERIFY-DENY"; then echo PASS; else echo FAIL; fi
+}
+
+# Drive the seeding + self-verify, set SEED_STATUS for the printed summary.
+SEED_STATUS=unknown
+seed_hook_trust() {
+  write_hooks_json
+  ensure_hooks_feature "$CONFIG_TOML"
+  strip_seed_block "$CONFIG_TOML"
+  # Oracle unavailable (no codex/auth)? Leave docs-only; floor needs manual trust.
+  if ! command -v codex >/dev/null 2>&1 \
+     || ! command -v python3 >/dev/null 2>&1 \
+     || { ! codex login status >/dev/null 2>&1 && [ ! -f "$HOME/.codex/auth.json" ]; }; then
+    SEED_STATUS=docs-only
+    return 0
+  fi
+  local oracle
+  oracle="$(hook_trust_oracle "$DEST")"
+  if [ -z "$oracle" ]; then SEED_STATUS=docs-only; return 0; fi
+  if ! printf '%s\n' "$oracle" | write_seed_block "$CONFIG_TOML" >/dev/null; then
+    SEED_STATUS=docs-only; return 0
+  fi
+  # Load-bearing safety gate: prove the seeding recipe actually makes a hook FIRE.
+  local v; v="$(selfverify_trust)"
+  case "$v" in
+    PASS) SEED_STATUS=seeded ;;
+    SKIP) SEED_STATUS=seeded-unverified ;;       # seeded, but couldn't run the live probe
+    *)    strip_seed_block "$CONFIG_TOML"; SEED_STATUS=verify-failed ;;  # drift -> strip, fall back to docs
+  esac
+}
+
+# config.toml codex actually reads (user scope -> $DEST; project scope -> $DEST too).
+CONFIG_TOML="$DEST/config.toml"
+seed_hook_trust
+
 cat <<EOF
 
 Codex install complete ($SCOPE scope).
   subagents -> $AGENTS_DEST/{...}.toml
   runtime   -> $DEST/orchestrate-runtime/ (ledger.sh + hooks)
   brain     -> $BRAIN_DIR/AGENTS.orchestrate.md  (include into AGENTS.md)
+  hooks     -> $HOOKS_JSON  (wired; matcher includes apply_patch)
+  trust     -> $CONFIG_TOML  ([features] hooks=true + [hooks.state] seeds)
 
-Add to ${DEST}/config.toml (or project .codex/config.toml):
+Hook wiring + trust were applied automatically (status: $SEED_STATUS). The
+reference config below documents the SAME wiring the installer wrote to
+$HOOKS_JSON (you do NOT need to paste it unless you prefer config-inline hooks):
 
   # Hooks must be turned ON as a feature, or every [[hooks.*]] table below is inert.
   [features]
@@ -99,7 +261,7 @@ Add to ${DEST}/config.toml (or project .codex/config.toml):
   # PreCompact are REAL events in this build, not stale.)
 
   [[hooks.PreToolUse]]
-  matcher = "^(Read|Edit|Write|Bash)\$"
+  matcher = "^(Read|Edit|Write|Bash|apply_patch)\$"   # apply_patch is the Codex top-level write tool
   [[hooks.PreToolUse.hooks]]
   type = "command"
   command = "$HOOKS/deny-heldout-read.sh"
@@ -135,21 +297,38 @@ Add to ${DEST}/config.toml (or project .codex/config.toml):
   type = "command"
   command = "$HOOKS/on-compaction.sh"
 
->>> HOOK TRUST (READ THIS — fail-OPEN risk) <<<
-A wired hook SILENTLY NO-OPS unless codex trusts it. These hooks are the fail-closed
-security floor (held-out reads, branch guard, prod-apply gate, done-gate); a silent
-no-op disarms them. Two ways to make them fire:
-  1. Interactive: run codex once in the TUI and APPROVE the hooks when prompted —
-     codex persists the trust (a per-hook \`trusted_hash\` under [hooks.state]) itself.
-     This is the robust path; let codex compute the hash.
-  2. Headless / CI: pass --dangerously-bypass-hook-trust to \`codex exec\`, e.g.
-       codex exec --dangerously-bypass-hook-trust [PROMPT]
-     This runs ALL enabled hooks without the persisted-trust check FOR THAT INVOCATION.
-TRADEOFF: this installer does NOT pre-seed [hooks.state] trusted_hash entries. The
-hash format is internal and version-coupled; a wrong/stale hash would fail OPEN
-(silent no-op) — the exact catastrophe these hooks guard against. Letting codex hash
-the trust (path 1) or explicitly bypassing per-run (path 2) is safer than shipping a
-guessed hash. Pick path 1 for a workstation, path 2 only for vetted automation.
+>>> HOOK TRUST (fail-OPEN risk — status: $SEED_STATUS) <<<
+A wired Codex hook SILENTLY NO-OPS — fails OPEN — unless its sha256 is trusted in
+[hooks.state] (or the run passes --dangerously-bypass-hook-trust). These hooks are the
+fail-closed floor (held-out reads, branch guard, prod-apply gate, done-gate); a silent
+no-op disarms them. This installer SEEDS [hooks.state] automatically, using the hash
+codex itself computes (\`codex app-server\` -> hooks/list -> currentHash; never a guess),
+then SELF-VERIFIES that a wired hook actually fires with NO bypass. Outcome:
+$(case "$SEED_STATUS" in
+seeded) printf '%s' \
+"  SEEDED + SELF-VERIFIED. The floor is LIVE on first run — no manual step. A deny
+  probe blocked under \`codex exec\` with no bypass, proving the seeded trust takes.";;
+seeded-unverified) printf '%s' \
+"  SEEDED, NOT self-verified (could not run the live probe this install — e.g. no
+  network/auth for a \`codex exec\` round-trip). The seeds use the codex-computed hash,
+  but confirm once: run codex in the TUI and ensure no 'Hooks need review' prompt
+  appears, OR re-run this installer where a live probe can complete.";;
+verify-failed) printf '%s' \
+"  *** SEEDING DID NOT TAKE — FLOOR IS NOT LIVE. *** The self-verify deny probe did NOT
+  fire under \`codex exec\` even after seeding (likely a codex version/format DRIFT in
+  the [hooks.state] key or hash recipe). The seeds were STRIPPED to avoid a false sense
+  of safety. Until fixed, make the floor fire MANUALLY:
+    1. Interactive: run codex once in the TUI and APPROVE the hooks when prompted.
+    2. Headless/CI: \`codex exec --dangerously-bypass-hook-trust [PROMPT]\` (vetted only).
+  Please report the drift: the key format or currentHash recipe changed.";;
+docs-only) printf '%s' \
+"  NOT seeded (codex/auth/python3 unavailable at install time, so the hash oracle and
+  self-verify could not run). The floor is NOT live until you establish trust:
+    1. Interactive: run codex once in the TUI and APPROVE the hooks when prompted.
+    2. Headless/CI: \`codex exec --dangerously-bypass-hook-trust [PROMPT]\` (vetted only).
+  Re-run this installer with codex logged in to seed + self-verify automatically.";;
+*) printf '%s' "  (unknown seeding status)";;
+esac)
 
 Actuator credential confinement is ADVISORY (ADR-0002): scope the actuator lane's
 creds to its leased targets in your deployment; serialization (the lease) is the
