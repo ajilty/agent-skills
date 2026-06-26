@@ -1,5 +1,14 @@
 # Codex enforces fail-closed hooks for the MAIN agent's hooked tools, not for spawned subagents or apply_patch
 
+> **Correction (ADR-0017).** This ADR states below that a spawned persona's confinement
+> "rests on its role `sandbox_mode` + capability subtraction." A later live probe found
+> that is **wrong**: `spawn_agent` shares the session sandbox and exposes no per-agent
+> sandbox knob, so the per-role `sandbox_mode` is **inert** for a spawn. A spawned persona
+> is confined only by the shared session sandbox (source writable in `workspace-write`) +
+> capability subtraction — it is not lane-confined. The fix (per-persona top-level
+> `codex exec --cd`) is in **ADR-0017**. The apply_patch finding below was separately
+> resolved in 0.7.1.
+
 orchestrate's safety floor is a set of fail-closed PreToolUse hooks (held-out-read
 denial, branch-keep, pre-apply gate, write-scope, run-scope). On Claude Code these
 **block** a tool call by exiting non-zero with a stderr contract. The open question

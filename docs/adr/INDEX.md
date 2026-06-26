@@ -22,3 +22,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0014](0014-disk-first-read-lane.md) | Read-only results are disk-first: durable, attributed, gated on read | active |
 | [0015](0015-front-door-clarify-gate.md) | Clarification is a front-door gate keyed on a nameable oracle, not a post-Planner fallback | active |
 | [0016](0016-codex-hook-enforcement-scope.md) | Codex enforces fail-closed hooks for the MAIN agent's hooked tools, not for spawned subagents or apply_patch | active |
+| [0017](0017-codex-confine-personas-via-top-level-exec.md) | Confine Codex personas with a top-level `codex exec --cd`, not in-session `spawn_agent` | active |

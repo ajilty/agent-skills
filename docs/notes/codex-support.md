@@ -4,17 +4,21 @@ Status: **RESOLVED.** Verdict (live-probe verified, codex-cli 0.142.1, `codex ex
 headless): Codex's PreToolUse hooks **BLOCK for the MAIN agent's hooked tools** (exit 2
 plus the stderr contract is honored; the wire shape is Claude-Code-shaped:
 `tool_name`, `tool_input.command`). They do **NOT** fire inside a spawned subagent. So
-this is **scoped enforcement, not full parity**: a spawned persona's confinement on Codex
-rests on its role `sandbox_mode` + capability subtraction, not on the per-persona hooks.
-Captured as ADR-0016; limitations in `plugins/orchestrate/KNOWN-LIMITATIONS.md`.
+this is **scoped enforcement, not full parity**: a spawned persona on Codex is confined
+only by the shared session sandbox + capability subtraction (its role `sandbox_mode` is
+**inert** for spawns), so it is **not lane-confined** today. ADR-0017 designs the fix
+(per-persona top-level `codex exec --cd`). Captured as ADR-0016/0017; limitations in
+`plugins/orchestrate/KNOWN-LIMITATIONS.md`.
 
 What bounds the claim:
 
 - **PreToolUse does not fire in a spawned subagent (still open).** `write-scope`,
   `keep-on-branch`, and `deny-heldout-read` do not see a dispatched persona's own tool
   calls on Codex, so the per-persona hook floor is a **main-agent** floor here.
-  Spawned-persona confinement is `sandbox_mode` + capability subtraction. Claude Code keeps
-  the stronger per-persona floor (PreToolUse fires for subagent tool calls there).
+  Spawned-persona confinement is the shared session sandbox + capability subtraction (role
+  `sandbox_mode` is inert for spawns), so it is not lane-confined today — ADR-0017 designs
+  the fix. Claude Code keeps the stronger per-persona floor (PreToolUse fires for subagent
+  tool calls there).
 - **`apply_patch` — RESOLVED (0.7.1).** The matcher now includes `apply_patch` and
   `write-scope.sh` parses the patch body to confine every target (any out-of-scope target
   denies the patch); verified live. This closed the main-agent bypass; a spawned persona's
@@ -119,14 +123,18 @@ Results (codex-cli 0.142.1, `codex exec` headless):
 
 The spawned-subagent PreToolUse gap is **not** an installer fix: it is a Codex behavior.
 On Codex the per-persona hook floor is a main-agent floor, and a spawned persona is
-confined by its role `sandbox_mode` + capability subtraction. Claude Code keeps the
-stronger per-persona floor.
+confined only by the shared session sandbox + capability subtraction (role `sandbox_mode`
+is inert for spawns) — not lane-confined. ADR-0017 designs the fix (per-persona top-level
+`codex exec --cd`). Claude Code keeps the stronger per-persona floor.
 
 ## Notes and residuals
 
-- `sandbox_mode` is coarse (`workspace-write`). For the main agent, results-only
-  confinement is carried by `write-scope.sh` and `writable_roots` can narrow it. For a
-  spawned persona, `sandbox_mode` is the primary confinement (the hook does not fire).
+- `sandbox_mode` is coarse (`workspace-write`); `writable_roots` is additive (cannot
+  subtract source) and ignored in `read-only` mode. For the main agent, results-only
+  confinement is carried by `write-scope.sh`, not the sandbox. For a spawned persona the
+  per-role `sandbox_mode` is inert; only the shared session sandbox + capability
+  subtraction apply (not lane-confined) — ADR-0017's per-persona `codex exec --cd` is the
+  designed fix.
 - Actuator credential confinement stays advisory on Codex as on every harness
   (ADR-0002); lease serialization is the only guaranteed layer.
 - The runtime hooks and the `agents.yaml` contract are unchanged by any of this: the
