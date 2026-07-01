@@ -81,13 +81,18 @@ Run these in order on every invocation. Steps reference the detailed sections.
    file, a pasted spec — and pull what you need with whatever tools are available;
    otherwise treat the input itself as the work-item. Write it to
    `…/tickets/<ticket>/work-item.md`. Don't assume any particular tracker.
+   Journal the run-level goal: `ledger.sh goal "<goal>" [spec-path]` (add the spec
+   path once the Planner signs it — the latest goal wins on reground). This anchors
+   the board to the north star, so a **clean** board (no open lanes, or between
+   phases) still points a resumed run at the goal + plan instead of an external prose
+   doc (§10, ADR-0020).
 2. **Baseline + right-size (§2, §2a), then clarify-gate (§2b).** Attempt the baseline;
    on failure pick the cheapest tier the counted signals allow (T0/T1/T2), defaulting
    down. **Before the first dispatch**, run the §2b front-door gate: if no acceptance
    oracle is nameable from the goal as-stated (ADR index consulted), clarify first —
    err toward asking. A clear goal of any altitude proceeds without pausing.
 3. **Drive each lane:** *(As you drive, journal only the **canonical** ledger events —
-   `intake`, `clarify`, `dispatched`, `returned`, `verdict`, `fork`, `decision`,
+   `goal`, `intake`, `clarify`, `dispatched`, `returned`, `verdict`, `fork`, `decision`,
    `lane`, `done` — via the `ledger.sh` helpers. The board is machine-read: an
    invented event name is invisible to reground, metrics, and conformance. Full
    vocabulary in `references/resume.md`.)*

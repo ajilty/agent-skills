@@ -23,13 +23,14 @@ drives** (loop steps in SKILL.md, not background hooks).
 (reground, `metrics`, `conformance` all match on these exact `event` values). An
 event outside this set is **invisible** to every consumer — it neither reconstructs
 on resume, counts in metrics, nor satisfies a conformance check. Journal **only**
-these, via the `ledger.sh` helpers (`clarify` / `decision` / `append`); do not coin
+these, via the `ledger.sh` helpers (`goal` / `clarify` / `decision` / `append`); do not coin
 ad-hoc events like `clarification_halt`. Use `intake` for work-item recording (it is
 what the router naturally emits — adopted as canonical) and `clarify` for any
 clarification (its `skill` records the mechanism actually used — `inline` when the
 interactive grill skills can't run, e.g. a non-interactive session).
 
 ```
+{"ts","event":"goal","note","spec"}                                     # run-level north star + pointer to where the plan lives (spec/ADR); NO ticket. reground surfaces the latest so a clean board still carries the goal + plan location (§10, ADR-0020)
 {"ts","ticket","event":"intake","tier","note"}                          # work item recorded + right-sized; tier = chosen lane (T0/T1/T2)
 {"ts","ticket","event":"dispatched","persona","branch","dispatch_id","slug"}   # write-ahead: BEFORE the persona runs. branch: writer personas only; dispatch_id: EVERY dispatch (result→agent attribution, ADR-0014); slug: ticket-unique research topic, read-only personas only (RAW → findings/_quarantine/<slug>.<dispatch_id>.md, promoted → findings/<slug>.md)
 {"ts","ticket","event":"returned","persona","status","artifact"}        # artifact: the PROMOTED findings path (read-only). The persona wrote the RAW quarantine file itself; the router read it from disk, gated, and promoted it (§5, ADR-0014)

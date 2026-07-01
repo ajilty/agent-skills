@@ -7,6 +7,7 @@
 #   ledger.sh retries <ticket>         # COUNT of REJECTED verdicts for a ticket (no-loop budget, derived)
 #   ledger.sh reground                 # reconstruct open lanes; reconcile vs git worktrees (ground truth)
 #                                       # exit 0 = clean/empty, exit 3 = ambiguous writer -> HALT
+#   ledger.sh goal <note> [spec-path]  # journal the run-level goal + a pointer to the plan (ADR-0020)
 set -euo pipefail
 ROOT=".agents/runs/orchestrate"; LEDGER="$ROOT/board.jsonl"
 LEASES="$ROOT/leases"
@@ -144,7 +145,15 @@ case "$cmd" in
       echo "OPEN WRITER   active-writer ticket=$awt persona=$awp -> reconcile (ledger.sh writer-ctx clear) before re-dispatch"
       ambiguous=1; printed=1
     fi
-    [ "$printed" = 0 ] && echo "board: no open lanes"
+    # Run-level anchor (ADR-0020): the latest `goal` event carries the north star + a
+    # pointer to where the plan durably lives (spec/ADR). Surface it so a clean board
+    # never reads as "finished" and resume doesn't depend on external prose.
+    gline=""; [ -f "$LEDGER" ] && gline="$(grep '"event":"goal"' "$LEDGER" 2>/dev/null | tail -1 || true)"
+    if [ -n "$gline" ]; then
+      gn="$(val "$gline" note)"; gs="$(val "$gline" spec)"
+      echo "GOAL: ${gn:-?}${gs:+ -> resume from plan: $gs}"
+    fi
+    [ "$printed" = 0 ] && echo "board: no open lanes${gline:+ (goal above is open unless the plan is complete — verify before concluding done)}"
     [ "$ambiguous" = 1 ] && { echo "REGROUND: ambiguous writer lane(s) -> HALT for human re-attach"; exit 3; }
     echo "REGROUND: clean" ;;
 
@@ -176,6 +185,16 @@ case "$cmd" in
               # is a checkable trace instead of invisible router-context behavior.
     sk="${1:?skill}"; tk="${2:-intake}"; mkdir -p "$ROOT"
     printf '{"ts":"%s","ticket":"%s","event":"clarify","skill":"%s"}\n' "$(date -u +%FT%TZ)" "$tk" "$sk" >> "$LEDGER" ;;
+
+  goal)       # journal a run-level goal + a pointer to where the plan durably lives
+              # (spec/ADR). The board records per-ticket lanes (what happened) but nothing
+              # run-level, so a CLEAN board (no open lanes, or between phases) loses the
+              # north star + next-step location across compaction — resume then depends on
+              # an external prose doc. This event anchors the board to the goal (ADR-0020).
+              # Run-level, so no ticket field (reground's lane loop skips no-ticket lines).
+    note="${1:?goal note}"; spec="${2:-}"; mkdir -p "$ROOT"
+    nl="${note//\\/\\\\}"; nl="${nl//\"/\\\"}"          # escape backslash + quote in free text
+    printf '{"ts":"%s","event":"goal","note":"%s","spec":"%s"}\n' "$(date -u +%FT%TZ)" "$nl" "$spec" >> "$LEDGER" ;;
 
   done)       # close a lane FAIL-CLOSED on unverified ships: a verifying tier (T1/T2)
               # may not be marked done without a verdict for that ticket. T0 (one

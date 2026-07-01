@@ -25,3 +25,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0017](0017-codex-confine-personas-via-top-level-exec.md) | Confine Codex personas with a top-level `codex exec --cd`, not in-session `spawn_agent` | active |
 | [0018](0018-runtime-helpers-on-path-not-plugin-root.md) | Runtime helpers resolve via plugin `bin/` on PATH, not `${CLAUDE_PLUGIN_ROOT}` | active |
 | [0019](0019-writer-proves-its-commit.md) | The writer proves its commit; verification runs against the committed state, not the working tree | active |
+| [0020](0020-board-carries-run-level-goal-anchor.md) | The board carries a run-level goal anchor, so a clean board is still resumable | active |
