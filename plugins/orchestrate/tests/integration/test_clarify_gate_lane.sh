@@ -15,6 +15,14 @@
 #   the first dispatch — or every clear goal pays an interruption tax (the O7 failure mode).
 #
 # We seed the real clarification skills so first-present selection is faithful.
+#
+# FUZZY runs K times (CLARIFY_GATE_K, default 1): a silent build is a hard FAIL, all
+# declines SKIP, and under K>1 a minority fire-rate FAILs (catches a gate that mostly
+# declines when it should ask). Each fire also asserts the §2b HEADLESS contract: the
+# journaled clarify skill must be `inline` (formal grill skills can't interview with no
+# human), and journaling a formal skill headless is a mislabel -> FAIL. We do NOT assert
+# a formal grill skill "executed": headless it can't (no human), so that is designed-zero,
+# not a gap — interactive grilling is out of scope for an automated test by construction.
 if ! have_claude; then
   skip "tier3 clarify-gate: claude CLI not on PATH"
 elif ! have_live_auth; then
@@ -29,21 +37,55 @@ else
       --plugin-dir "$PLUGIN_DIR" --allowedTools "Read,Grep,Glob,Write,Edit,Bash,Task,Skill" ) >/dev/null 2>&1; }
   _firstline(){ grep -nE "$2" "$1" 2>/dev/null | head -1 | cut -d: -f1; }
 
-  # --- Case FUZZY -------------------------------------------------------------------
-  hf="$(mk_authed_home)"; rf="$(mk_repo)"; _seed_skills "$hf"
-  printf 'def handle_request(req: dict) -> dict:\n    return {"status": "ok"}\n' > "$rf/api.py"
-  ( cd "$rf" && git add -A && git commit -q -m seed )
-  _run "$rf" "$hf" "Use the orchestrate skill to deliver this goal end to end: add rate limiting to the API in api.py. Follow the skill's full process."
-  bf="$rf/.agents/runs/orchestrate/board.jsonl"
-  cl="$(_firstline "$bf" '"event":"clarify"')"
-  im="$(_firstline "$bf" '"event":"dispatched".*"persona":"implementer"')"
-  if [ -n "$cl" ] && { [ -z "$im" ] || [ "$cl" -lt "$im" ]; }; then
-    pass   # gate fired: clarify before any build
-    [ -z "$im" ] && echo "  (FUZZY: HALT-open — no implementer dispatched on the unresolved goal)"
-  elif [ -n "$im" ] && [ -z "$cl" ]; then
-    fail "clarify-gate FUZZY: implementer dispatched with NO clarify (silent-rework — gate did not fire)"
+  # --- Case FUZZY (K-run fire-rate) -------------------------------------------------
+  # Run the ambiguous goal K times (CLARIFY_GATE_K, default 1). Per run:
+  #   silent   — implementer dispatched with NO clarify (the silent-rework failure) -> FAIL
+  #   fire     — a clarify event before any build. Headless, §2b REQUIRES the journaled
+  #              skill be `inline` (formal grill skills can't interview with no human);
+  #              journaling a formal skill headless is a mislabel that blinds metrics -> FAIL.
+  #   decline  — router never reached a dispatch this run (didn't engage).
+  # Verdict: any silent or mislabel -> FAIL; fires==0 (all declines) -> SKIP; under K>1 a
+  # minority fire-rate -> FAIL (a gate that mostly declines when it should ask).
+  # NOTE: we deliberately do NOT assert a formal grill skill "executed" — headless it
+  # can't (no human), so that is designed-zero, not a gap. Interactive grilling is out of
+  # scope for an automated test by construction.
+  K="${CLARIFY_GATE_K:-1}"; fires=0; declines=0; silent=0; mislabel=0
+  for _i in $(seq 1 "$K"); do
+    hf="$(mk_authed_home)"; rf="$(mk_repo)"; _seed_skills "$hf"
+    printf 'def handle_request(req: dict) -> dict:\n    return {"status": "ok"}\n' > "$rf/api.py"
+    ( cd "$rf" && git add -A && git commit -q -m seed )
+    _run "$rf" "$hf" "Use the orchestrate skill to deliver this goal end to end: add rate limiting to the API in api.py. Follow the skill's full process."
+    bf="$rf/.agents/runs/orchestrate/board.jsonl"
+    cl="$(_firstline "$bf" '"event":"clarify"')"
+    im="$(_firstline "$bf" '"event":"dispatched".*"persona":"implementer"')"
+    if [ -n "$im" ] && [ -z "$cl" ]; then
+      silent=$((silent+1))
+    elif [ -n "$cl" ] && { [ -z "$im" ] || [ "$cl" -lt "$im" ]; }; then
+      fires=$((fires+1))
+      # §2b headless contract: the journaled clarify skill must be `inline`, not a formal
+      # grill skill (which cannot interview with no human present).
+      sk="$(grep '"event":"clarify"' "$bf" 2>/dev/null | grep -oE '"skill":"[^"]*"' | head -1)"
+      case "$sk" in
+        *inline*) : ;;                                   # correct headless fallthrough
+        *grill-with-docs*|*grill-me*|*brainstorming*)
+          mislabel=$((mislabel+1))
+          echo "  (FUZZY: headless run journaled a FORMAL skill $sk — §2b requires 'inline' when no human can interview)" ;;
+      esac
+    else
+      declines=$((declines+1))
+    fi
+  done
+  if [ "$silent" -gt 0 ]; then
+    fail "clarify-gate FUZZY: $silent/$K runs dispatched an implementer with NO clarify (silent-rework — gate did not fire)"
+  elif [ "$mislabel" -gt 0 ]; then
+    fail "clarify-gate FUZZY: $mislabel/$K fires journaled a FORMAL grill skill in a headless run (§2b requires inline)"
+  elif [ "$fires" -eq 0 ]; then
+    skip "clarify-gate FUZZY: gate never fired in $K run(s) (all declines) — not exercised"
+  elif [ $((fires * 2)) -ge "$K" ]; then
+    pass   # gate fires on a majority of ambiguous-goal runs, journaling inline per §2b
+    echo "  (FUZZY: fired $fires/$K, journaled inline + HALT-open per §2b headless contract, declines $declines)"
   else
-    skip "clarify-gate FUZZY: router neither clarified nor built this run (declined / didn't reach dispatch)"
+    fail "clarify-gate FUZZY: gate fired only $fires/$K on an ambiguous goal (under-firing)"
   fi
 
   # --- Case CLEAR (over-fire guard) -------------------------------------------------
