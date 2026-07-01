@@ -48,4 +48,22 @@ test -f "$wt2/work.txt" && pass || fail "uncommitted work preserved (not destroy
 bash "$RT/worktree.sh" staleness T9 implementer >/dev/null 2>&1
 assert_eq "$?" "4" "staleness on a non-existent worktree -> exit 4 (missing)"
 
+# --- ADR-0019: `committed` proves the work IS the commit (clean tree + commit ahead) ---
+# fresh worktree, nothing committed yet -> exit 5 (nothing ahead of base)
+bash "$RT/worktree.sh" create T3 implementer >/dev/null 2>&1
+wt3="$(bash "$RT/worktree.sh" path T3 implementer)"
+bash "$RT/worktree.sh" committed T3 implementer >/dev/null 2>&1
+assert_eq "$?" "5" "committed: clean worktree, no commit ahead -> nothing committed (exit 5)"
+# commit the work -> exit 0 (committed & clean)
+( cd "$wt3" && echo feat > feat.txt && git add feat.txt && git commit -q -m "T3 work" )
+bash "$RT/worktree.sh" committed T3 implementer >/dev/null 2>&1
+assert_eq "$?" "0" "committed: committed & clean worktree -> exit 0"
+# leave an uncommitted change -> exit 2 (the 'validated the tree, not the commit' defect)
+echo wip >> "$wt3/feat.txt"
+bash "$RT/worktree.sh" committed T3 implementer >/dev/null 2>&1
+assert_eq "$?" "2" "committed: uncommitted changes -> exit 2 (commit is not the artifact)"
+# missing worktree -> exit 4
+bash "$RT/worktree.sh" committed T9 implementer >/dev/null 2>&1
+assert_eq "$?" "4" "committed: no worktree -> exit 4"
+
 cd /; rm -rf "$tmp"

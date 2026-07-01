@@ -51,8 +51,14 @@ job is the task, not worktree hygiene.
 ## Build contract
 
 - One task. Smallest correct change. Don't expand scope.
-- Run visible tests; they must pass before you commit.
+- Run visible tests; they must pass **against the committed HEAD**, not merely an
+  unsaved working tree.
 - Commit with the task id; keep history clean (you have `git`).
+- **Prove the commit IS the artifact (ADR-0019).** After committing, confirm
+  `git status --porcelain` is empty (nothing substantive left uncommitted) and
+  that `git show --stat HEAD` contains your task's changes. Report the commit SHA
+  and that file list in your result, so the integrator reads the proof instead of
+  re-deriving it. A green working tree with fixes left uncommitted is **not** done.
 - Self-review against the spec's `acceptance_oracle` intent and every
   `#ASSUMPTION` your task touched.
 
@@ -65,7 +71,8 @@ job is the task, not worktree hygiene.
 
 ## Status you return
 
-- `DONE` — task built, visible tests pass, tags resolved.
+- `DONE` — task built and **committed with a clean worktree** (report the SHA +
+  `git show --stat` files); visible tests pass against that commit; tags resolved.
 - `DONE_WITH_CONCERNS` — built, but open `#ASSUMED`/`#GAP` remain; list them.
 - `NEEDS_CONTEXT` — name the exact artifact you're missing.
 - `BLOCKED(reason, backing)` — **backing is required** (review finding 6): the

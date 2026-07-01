@@ -30,7 +30,18 @@ evidence.
 
 ## Outcome-mode (after a `DONE`)
 
-Run all four, in order. Any failure short-circuits to the stated route.
+First confirm the commit is the artifact (step 0), then run all four checks in
+order. Any failure short-circuits to the stated route.
+
+0. **The commit is the artifact (ADR-0019).** Before testing anything, confirm the
+   Implementer's work is actually committed, not sitting in a green working tree:
+   run `worktree.sh committed <ticket> implementer`. Exit 0 = clean tree with the
+   work committed → proceed, and run every check below against **that committed
+   state**, never a dirty working tree. A nonzero exit means uncommitted changes
+   (exit 2 — the "validated the tree, not the commit" defect) or nothing committed
+   (exit 5) → `REJECTED(uncommitted-work)` with the exit code as backing. Do not
+   re-derive what the Implementer should have proven; this is the independent
+   confirmation of it.
 
 1. **Held-out divergence (review finding 2).** Run the held-out suite from
    `$HELDOUT_ROOT/<repo>/` — the suite the Implementer never saw. Report

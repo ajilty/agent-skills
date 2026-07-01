@@ -9,6 +9,7 @@
 #   worktree.sh staleness <ticket> <persona> [base_ref]# exit 0 current, 3 behind, 4 missing
 #   worktree.sh remove <ticket> <persona>              # remove iff clean (never discards work)
 #   worktree.sh path|branch <ticket> <persona>         # print the deterministic path/branch
+#   worktree.sh committed <ticket> <persona>           # exit 0 committed&clean, 2 uncommitted, 5 nothing-committed, 4 missing (ADR-0019)
 #
 # SAFETY: this helper NEVER destroys a worktree that holds work (uncommitted changes OR
 # commits ahead of the base). On stale-with-work it exits 3 for operator/reground
@@ -25,7 +26,7 @@ if [ -z "$base" ]; then
   base="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
   { [ -n "$base" ] && [ "$base" != HEAD ]; } || base="main"
 fi
-case "$cmd" in path|branch|create|staleness|remove) ;; *) echo "usage: worktree.sh {create|staleness|remove|path|branch} <ticket> <persona> [base_ref]" >&2; exit 64 ;; esac
+case "$cmd" in path|branch|create|staleness|remove|committed) ;; *) echo "usage: worktree.sh {create|staleness|remove|path|branch|committed} <ticket> <persona> [base_ref]" >&2; exit 64 ;; esac
 [ -n "$t" ] && [ -n "$p" ] || { echo "worktree.sh: ticket and persona required" >&2; exit 64; }
 
 BRANCH="worktree-agent-${t}-${p}"           # §9b naming (agents.yaml branch_template)
@@ -62,6 +63,20 @@ case "$cmd" in
     if has_work; then echo "worktree.sh: refusing to remove $WT — it holds work (reconcile first)" >&2; exit 3; fi
     git worktree remove --force "$WT" >/dev/null 2>&1 || true
     git branch -D "$BRANCH" >/dev/null 2>&1 || true
+    exit 0 ;;
+
+  committed)   # ADR-0019: prove the worktree's work IS the commit, so the Verifier tests
+               # the commit and not a green-but-uncommitted working tree. Read-only.
+               #   exit 0 = clean tree AND >=1 commit ahead of base (committed & clean)
+               #   exit 2 = uncommitted changes (the "validated the tree, not the commit" defect)
+               #   exit 5 = nothing committed ahead of base
+               #   exit 4 = no worktree
+    has_wt || { echo "worktree.sh: no worktree at $WT" >&2; exit 4; }
+    if [ -n "$(git -C "$WT" status --porcelain 2>/dev/null)" ]; then
+      echo "worktree.sh: $WT has uncommitted changes — the commit is not the artifact (ADR-0019)" >&2; exit 2
+    fi
+    ahead="$(git -C "$WT" rev-list --count "origin/$base..HEAD" 2>/dev/null || echo 0)"
+    [ "${ahead:-0}" != 0 ] || { echo "worktree.sh: $WT has no commit ahead of origin/$base — nothing committed" >&2; exit 5; }
     exit 0 ;;
 
   create)

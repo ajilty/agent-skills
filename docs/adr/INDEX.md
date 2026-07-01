@@ -24,3 +24,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0016](0016-codex-hook-enforcement-scope.md) | Codex enforces fail-closed hooks for the MAIN agent's hooked tools, not for spawned subagents or apply_patch | active |
 | [0017](0017-codex-confine-personas-via-top-level-exec.md) | Confine Codex personas with a top-level `codex exec --cd`, not in-session `spawn_agent` | active |
 | [0018](0018-runtime-helpers-on-path-not-plugin-root.md) | Runtime helpers resolve via plugin `bin/` on PATH, not `${CLAUDE_PLUGIN_ROOT}` | active |
+| [0019](0019-writer-proves-its-commit.md) | The writer proves its commit; verification runs against the committed state, not the working tree | active |
