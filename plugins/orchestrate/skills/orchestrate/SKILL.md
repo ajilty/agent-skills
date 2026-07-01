@@ -246,6 +246,23 @@ comparable** (a one-line edit, a single quick check). Context preservation is a
 parallelism — not an afterthought. The two pulls resolve cleanly: right-size by task
 complexity, *and* offload by reduction ratio.
 
+**Second-strike tripwire (the trigger, not just the heuristic).** The heuristic above
+is easy to honor for work that *looks* noisy up front and easy to forget for a diagnosis
+that *looks* like a one-liner but isn't. Make it mechanical: hand the diagnosis to a fresh
+Troubleshooter (a Researcher in diagnostic mode, §5) the moment **either** trips —
+regardless of how trivial the eventual fix turns out to be:
+- it isn't resolved in ~**2** inline tool calls, **or**
+- the next step would pull **raw verbose output** into your context (pod/reconciler logs,
+  a stacktrace, `terraform state show`, an SSM dump, a DB restore error).
+
+Delegate the whole *diagnose → fix-spec* loop and keep only the **fix decision**: the
+Troubleshooter spends *its* throwaway context on the noise and returns *root cause + exact
+fix* in one message; the stacktrace never touches the main loop. The discipline is
+**context cost, not difficulty** — the same-class failure gets delegated whether it looks
+scary or looks like a quick grind. The measured leak is exactly this: the failure that
+*looked* hard got a debugger (clean); three same-class failures that *looked* like
+one-liners got 4–6 verbose inline calls each (bloat).
+
 **Horsepower is right-sized per persona, not per task.** Each persona's model +
 reasoning effort are fixed by its *role* in the contract (`agents.yaml` `tier:`,
 compiled per harness): *premium/max* for the Verifier (correctness is the whole

@@ -93,6 +93,12 @@ planning item naming the violated assumption with `file:line`. If the fix would
 change a plan assumption, say so explicitly so the orchestrator reopens Planning
 rather than patching.
 
+You exist to keep the noise out of the router's context (§2a′). The raw logs,
+stacktraces, `terraform state show`, SSM dumps, and reconciler traces you sift stay
+in **your** throwaway context; return only **root cause + the exact fix** compactly.
+The router gets the conclusion and the fix decision, never the hundreds of lines you
+read to reach them.
+
 ## Surfacing forks, not resolving them
 
 If research turns up a genuine fork the spec can't settle — two viable
