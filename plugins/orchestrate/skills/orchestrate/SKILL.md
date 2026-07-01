@@ -120,7 +120,7 @@ Run these in order on every invocation. Steps reference the detailed sections.
    d. Route per §3. The retry budget is **counted from the ledger**
       (`ledger.sh retries <ticket>`), not remembered.
 4. **Verify, resolve, merge, close (§7, §9).** Resolve every open tag; merge by
-   the deterministic branch glob; close the lane with `runtime/ledger.sh done
+   the deterministic branch glob; close the lane with `ledger.sh done
    <ticket>` — **fail-closed**: it refuses a T1/T2 ship that has no Verifier verdict
    on the board. Verification is *not optional* (the router's measured habit is to
    self-verify inline and skip the Verifier; this gate makes that impossible). T0
@@ -276,7 +276,7 @@ Q&A, using whichever is present. **Exactly one** fires — this is a *selection*
 (§3b), not clarification.
 
 **Journal the decision — canonically.** When you clarify, record it with
-`runtime/ledger.sh clarify <skill> <ticket>` (**skill first, ticket second** — passing
+`ledger.sh clarify <skill> <ticket>` (**skill first, ticket second** — passing
 them reversed mislabels the event and blinds per-ticket metrics/conformance) where
 `<skill>` is the mechanism you **actually used**: `grill-with-docs` / `grill-me` / `brainstorming` when present *and* the
 session is interactive, or **`inline`** when those can't run (a non-interactive
@@ -290,7 +290,7 @@ for the operator's answers, that is simply this lane staying open after the `cla
 event — not a new event type.
 
 **Headless + non-convergence.** In a non-interactive session the formal skills can't
-interview: journal it (`runtime/ledger.sh clarify inline <ticket>` — skill first, ticket
+interview: journal it (`ledger.sh clarify inline <ticket>` — skill first, ticket
 second) and **HALT the lane open** for the next resume — **never silent-build** a dispatch against an unresolved goal. Proceed on
 a journaled `#ASSUMPTION(...)` (carrying a verify-at-impl check, §5) **only if**
 assume-and-proceed was authorized this run; the Verifier's open-tag rule (no
@@ -661,7 +661,7 @@ isolation-lands-on-main trap). The router creates worktrees **explicitly** via t
 runtime helper, which fetches first and branches from the *current* origin base:
 
 ```bash
-WT="$(runtime/worktree.sh create "$ticket" "$persona" "$BASE_REF")"
+WT="$(worktree.sh create "$ticket" "$persona" "$BASE_REF")"
 # = git fetch origin --prune; git worktree add -b worktree-agent-<ticket>-<persona> "$WT" "origin/$BASE_REF"
 ```
 
@@ -671,8 +671,8 @@ worktree with uncommitted changes or unmerged commits **HALTs (exit 3) for recon
 never an auto-destroy** (the `reset --hard` data-loss lesson, ADR-0013):
 
 ```bash
-runtime/worktree.sh staleness "$ticket" "$persona" "$BASE_REF" \
-  || WT="$(runtime/worktree.sh create "$ticket" "$persona" "$BASE_REF")"
+worktree.sh staleness "$ticket" "$persona" "$BASE_REF" \
+  || WT="$(worktree.sh create "$ticket" "$persona" "$BASE_REF")"
 ```
 
 `$BASE_REF` defaults to the **current checked-out branch** — *never* the repo default
@@ -755,7 +755,7 @@ with the repo to the next clone, user, and harness.
 
 - **Home.** `docs/adr/` records (the source of truth) + a *derived*
   `docs/adr/INDEX.md`, on the tracked `docs/` axis (ADR-0005), maintained by
-  `runtime/adr.sh` (`next` | `add` | `supersede` | `reindex`). `reindex` rebuilds
+  `adr.sh` (`next` | `add` | `supersede` | `reindex`). `reindex` rebuilds
   the index from the files, so ADRs written by **any** conformant tool (e.g.
   grill-with-docs) are recalled — not only those `adr.sh` authored.
 - **Recall (intake).** Before planning, the Planner runs `adr.sh reindex` (to pick

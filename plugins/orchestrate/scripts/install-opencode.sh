@@ -48,6 +48,10 @@ cat > "$PLUGIN_DEST/orchestrate.ts" <<TS
 // orchestrate.ts — calls the shared runtime so policy stays single-source.
 import { execFileSync } from "node:child_process";
 const RT = "$RUNTIME";
+// Runtime helpers (ledger.sh/adr.sh/worktree.sh) resolve by bare name in persona/router
+// Bash; the plugin loads once at session start, so prepend the runtime dir to PATH here
+// (ADR-0018). Confirm env propagates to the bash tool in your OpenCode version.
+process.env.PATH = \`\${RT}:\${process.env.PATH ?? ""}\`;
 const sh = (p: string) => { try { execFileSync("bash", [p], { stdio: "inherit" }); } catch (e) { throw e; } };
 export const orchestrate = async () => ({
   "tool.execute.before": async (input: any) => {

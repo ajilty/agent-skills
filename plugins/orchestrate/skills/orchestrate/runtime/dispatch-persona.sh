@@ -51,6 +51,11 @@ prompt="$body
 # Task
 $task"
 
+# Runtime helpers (ledger.sh/adr.sh/worktree.sh) must resolve by bare name in the persona's
+# Bash, but its cwd is the lane subtree, not the plugin, and ${CLAUDE_PLUGIN_ROOT} is not a
+# Codex concept — so put the runtime dir on PATH for the nested session (ADR-0018).
+export PATH="$RT:$PATH"
+
 # PERSONA/CODEX_AGENT let the hook floor identify the persona (no agent_type on a top-level run).
 PERSONA="$persona" CODEX_AGENT="$persona" exec codex exec \
   -s "$sb" --cd "$cwd" --skip-git-repo-check "${margs[@]}" - <<<"$prompt"
