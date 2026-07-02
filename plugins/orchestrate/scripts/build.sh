@@ -8,7 +8,7 @@ set -euo pipefail
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILL_DIR="$PLUGIN_ROOT/skills/orchestrate"
 AGENTS="$SKILL_DIR/references/agents.yaml"
-command -v yq >/dev/null || { echo "FATAL: yq (v4, mikefarah) required." >&2; exit 1; }
+yq --version 2>/dev/null | grep -qE 'mikefarah|version v?4\.' || { echo "FATAL: yq (v4, mikefarah) required — the Python (kislyuk) yq emits JSON-quoted scalars and will not work." >&2; exit 1; }
 
 cc_tools() { local p="$1" t=()
   [ "$(yq ".personas.$p.capabilities.read" "$AGENTS")" = true ] && t+=(Read Grep Glob)

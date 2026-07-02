@@ -61,7 +61,7 @@ declare -A HOOKFILE=(
   [writer_writeahead]=on-writer-dispatch.sh
   [compaction_reground]=on-compaction.sh
 )
-if command -v yq >/dev/null 2>&1; then
+if have_yq4; then
   AG="$SK/skills/orchestrate/references/agents.yaml"
   HJ="$SK/hooks/hooks.json"
   HD="$SK/skills/orchestrate/runtime/hooks"
@@ -72,12 +72,12 @@ if command -v yq >/dev/null 2>&1; then
     if grep -q "/$f\"" "$HJ"; then pass; else fail "declared hook '$name' ($f) not wired in hooks.json"; fi
   done
 else
-  echo "(skip contract-parity: yq absent)"
+  echo "(skip contract-parity: $YQ4_SKIP)"
 fi
 
 # --- Drift guard: committed artifacts must equal a fresh build. Copy the plugin
 #     to a temp tree, rebuild there, diff the generated files. Skips without yq.
-if command -v yq >/dev/null 2>&1; then
+if have_yq4; then
   t="$(mktemp -d)"; cp -r "$SK/." "$t/"
   ( bash "$t/scripts/build.sh" >/dev/null 2>&1 )
   for f in agents/researcher.md agents/planner.md agents/implementer.md agents/verifier.md agents/actuator.md hooks/hooks.json; do
@@ -85,12 +85,12 @@ if command -v yq >/dev/null 2>&1; then
   done
   rm -rf "$t"
 else
-  echo "(skip drift guard: yq absent)"
+  echo "(skip drift guard: $YQ4_SKIP)"
 fi
 
 # --- Manifest validity: plugin.json + marketplace.json parse; names align;
 #     marketplace source resolves to a real dir. Skips without yq.
-if command -v yq >/dev/null 2>&1; then
+if have_yq4; then
   pj="$SK/.claude-plugin/plugin.json"
   mp="$(cd "$SK/../.." && pwd)/.claude-plugin/marketplace.json"
   assert_eq "$(yq -p=json -r '.name' "$pj")" "orchestrate" "plugin.json name"
@@ -99,7 +99,7 @@ if command -v yq >/dev/null 2>&1; then
   rdir="$(cd "$SK/../.." && pwd)/${src#./}"
   if [ -d "$rdir" ] && [ -f "$rdir/.claude-plugin/plugin.json" ]; then pass; else fail "marketplace source '$src' does not resolve to a plugin dir"; fi
 else
-  echo "(skip manifest validity: yq absent)"
+  echo "(skip manifest validity: $YQ4_SKIP)"
 fi
 
 # --- Clarification binding (§2b front-door gate): the router-prose config that binds
@@ -107,10 +107,10 @@ fi
 #     compiles it per-harness, so without this guard it can silently drift or vanish
 #     (the gate would fall through to inline on every ambiguous goal, unnoticed). It
 #     lives under conventions:, not top-level — a wrong path once read it as ABSENT.
-if command -v yq >/dev/null 2>&1; then
+if have_yq4; then
   AGY="$SK/skills/orchestrate/references/agents.yaml"
   got_cs="$(yq '.conventions.clarification_skills | join(",")' "$AGY" 2>/dev/null)"
   assert_eq "$got_cs" "grill-with-docs,grill-me,brainstorming,inline" "clarification_skills present + order-matched (§2b)"
 else
-  echo "(skip clarification binding: yq absent)"
+  echo "(skip clarification binding: $YQ4_SKIP)"
 fi

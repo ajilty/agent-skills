@@ -5,14 +5,14 @@ REF="$SKILLDIR/references"
 # --- Dependency integrity: every persona `body:` file declared in agents.yaml exists.
 #     A typo'd body path silently produces a broken/empty generated agent; the drift
 #     guard only diffs OUTPUT, so a missing SOURCE file would not be flagged. Needs yq.
-if command -v yq >/dev/null 2>&1; then
+if have_yq4; then
   AG="$REF/agents.yaml"
   for p in $(yq '.personas | keys | .[]' "$AG"); do
     b="$(yq ".personas.$p.body" "$AG")"
     if [ -n "$b" ] && [ -f "$REF/$b" ]; then pass; else fail "persona '$p' body file missing: references/$b"; fi
   done
 else
-  echo "(skip persona-body existence: yq absent)"
+  echo "(skip persona-body existence: $YQ4_SKIP)"
 fi
 
 # --- Reference integrity: navigable file refs (references/ runtime/ scripts/ commands/,
