@@ -22,7 +22,7 @@ case "$SCOPE" in
   project) DEST="${OVERRIDE:-$PWD/.codex}"; BRAIN_DIR="${OVERRIDE:-$PWD}" ;;   # honor --dir (don't pollute repo root on smoke installs)
   *) echo "scope must be user|project" >&2; exit 64 ;;
 esac
-command -v yq >/dev/null || { echo "FATAL: yq (v4, mikefarah) required." >&2; exit 1; }
+yq --version 2>/dev/null | grep -qE 'mikefarah|version v?4\.' || { echo "FATAL: yq (v4, mikefarah) required — the Python (kislyuk) yq emits JSON-quoted scalars and will not work." >&2; exit 1; }
 
 AGENTS_DEST="$DEST/agents"; HOOKS="$DEST/orchestrate-runtime/hooks"
 

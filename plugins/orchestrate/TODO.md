@@ -2,7 +2,8 @@
 
 What to pick up next, captured so we don't lose the thread. As of 2026-06-22.
 The orchestrate plugin (packaging + enforcement hooks) is merged to `main` and
-published via the repo's self-marketplace. Tests: `tests/run.sh` (176/176, zero-dep)
+published via the repo's self-marketplace. Tests: `tests/run.sh` (zero-dep; the
+yaml-parsing checks need mikefarah yq v4 and self-skip on any other yq flavor)
 + `tests/integration/run.sh` (real-CLI / live-agent, FS-isolated, gated).
 
 ## Process lesson — do this every batch (not optional)

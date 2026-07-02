@@ -1,5 +1,5 @@
 SK="$HERE/.."   # plugins/orchestrate
-command -v yq >/dev/null 2>&1 || { echo "(skip test_install: yq absent)"; return 0 2>/dev/null || true; }
+have_yq4 || { echo "(skip test_install: $YQ4_SKIP)"; return 0 2>/dev/null || true; }
 d="$(mktemp_repo)"; cd "$d"
 # codex: emits ALL five personas, honors --dir (no AGENTS.orchestrate.md in cwd), ships runtime
 o="/tmp/p4cx.$$"; rm -rf "$o"; bash "$SK/scripts/install-codex.sh" --scope project --dir "$o" >/dev/null 2>&1
