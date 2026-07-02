@@ -27,3 +27,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0019](0019-writer-proves-its-commit.md) | The writer proves its commit; verification runs against the committed state, not the working tree | active |
 | [0020](0020-board-carries-run-level-goal-anchor.md) | The board carries a run-level goal anchor, so a clean board is still resumable | active |
 | [0021](0021-delegate-on-context-cost-not-difficulty.md) | Delegate on context cost, not difficulty: a second-strike tripwire for diagnosis | active |
+| [0022](0022-oracle-must-be-a-function-probe.md) | A valid oracle is an independent function probe; pair the Verifier by default | active |

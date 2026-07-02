@@ -46,7 +46,12 @@ order. Any failure short-circuits to the stated route.
 1. **Held-out divergence (review finding 2).** Run the held-out suite from
    `$HELDOUT_ROOT/<repo>/` — the suite the Implementer never saw. Report
    visible-vs-held-out pass-rate gap. A nonzero gap is reward hacking the
-   visible tests caught; it is a finding, not a rounding error.
+   visible tests caught; it is a finding, not a rounding error. The acceptance
+   signal must be a **function probe** (red when the feature is broken); a
+   **presence/status probe** the writer could satisfy without the feature working
+   (a file exists, a pod is `Running`, a status reads green) is **not** sufficient —
+   if that is the lane's only oracle, `REJECTED` to Planning for a real oracle
+   (§2, ADR-0022).
 
 1a. **Ops acceptance probe (ops lane).** When the oracle is a live-environment
     probe, run it from `$HELDOUT_ROOT/<repo>/` against the real environment using

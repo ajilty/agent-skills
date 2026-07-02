@@ -204,6 +204,16 @@ absence of tests**. Route to Planning to produce an oracle first (Researcher →
 Planner). "No tests, so it passed" is a forbidden outcome — it is the failure
 mode `#GAP(no-oracle)` and escalates, it does not ship.
 
+**Oracle quality — a function probe, not a presence probe.** Whichever source, a
+valid oracle is a **function probe**: green *only if the feature actually works*, and
+**independent of the writer** — the Implementer cannot satisfy it without the change
+being correct (held-out tests it can't read; a spec-derived acceptance check authored
+*before* implementation; an ops probe it can't self-certify). A **presence/status
+probe** — a file exists, a pod is `Running`, a status reads green — can be green with
+the feature still broken; it does **not** count as the check (`#GAP(presence-probe)`).
+If the only available oracle is a presence probe, the baseline is not certified: it
+needs an independent Verifier (§2a, ≥T1), not the writer's own green.
+
 ### 2a. Right-sizing: tiers, not "always the full chain" (field-report rough edge 4)
 
 Field experience: for small, well-understood tasks (e.g. a handful of log
@@ -214,14 +224,27 @@ corrective, made a **routing rule** rather than advice. Select a tier from a
 
 | Tier | Pipeline | Selected when (all true) |
 |------|----------|--------------------------|
-| **T0** | one Implementer vs. oracle | task ≤ `tier.t0_max_files`, no open `#UNKNOWN`, single-file or grep-proven-disjoint, oracle already exists |
+| **T0** | one Implementer vs. oracle | task ≤ `tier.t0_max_files`, no open `#UNKNOWN`, single-file or grep-proven-disjoint, **and the oracle already exists as an independent function probe** (§2) |
 | **T1** | Implementer → Verifier | above T0 but ≤ `tier.t1_max_files` and no spec gap (the change is clear, the *check* is what matters) |
 | **T2** | full chain | any open `#UNKNOWN`, coupling across files, missing oracle, or above `tier.t1_max_files` |
 
 The signal is counted, never asserted (same discipline as §3a): file count from
 the diff/plan, `#UNKNOWN` presence, and the §6 disjointness check. A task may be
 **promoted** mid-flight (a T0 that fails its oracle, or surfaces an `#UNKNOWN`,
-escalates to T2) but never silently **demoted**. Thresholds default to 1/4 and
+escalates to T2) but never silently **demoted**.
+
+**Pair the Verifier by default; T0 is the exception, and its oracle carries the
+burden.** T0 drops the independent Verifier *only* because its oracle already
+certifies the change on its own (§2). So a **presence/status probe is not a T0
+qualifier** — a status the writer can flip green without the feature working fails
+the whole basis of the exemption, so that lane is **≥T1** (independent Verifier),
+however small or routine the change looks. "Looks routine" is never the reason to
+skip the Verifier; a genuine independent function probe is the *only* reason. The
+measured failure was exactly this: routine-looking code-bearing fixes self-verified
+via status probes, and two shipped broken behind green (a `db-backup` red behind
+green infra; a SHA whose commit lacked the fix). When the only check you have is one
+the Implementer could satisfy without the feature working, pair the Verifier — it is
+not optional (ADR-0022). Thresholds default to 1/4 and
 are overridable conversationally in-session.
 
 ### 2a′. Context economy — your own context is the scarce resource
