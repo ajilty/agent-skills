@@ -32,11 +32,11 @@ assert_eq "$rc" "0" "keep-on-branch: allows commit when no assigned branch"
 # check would let a main-checkout commit through).
 r="$(mktemp_repo)"
 ( cd "$r" && git commit -qm init --allow-empty && git worktree add -q -b worktree-agent-T9-implementer .agents/worktrees/T9-implementer HEAD ) 2>/dev/null
-( cd "$r" && PERSONA=implementer ASSIGNED_BRANCH=worktree-agent-T9-implementer TOOL_INPUT='cd .agents/worktrees/T9-implementer && git commit -m x' bash "$RT/keep-on-branch.sh" ) >/dev/null 2>&1; rc=$?
+( cd "$r" && PERSONA=implementer ASSIGNED_BRANCH=worktree-agent-T9-implementer TOOL_INPUT='cd .agents/worktrees/T9-implementer && git commit -m x' bash "$RT/keep-on-branch.sh" ) </dev/null >/dev/null 2>&1; rc=$?
 assert_eq "$rc" "0" "keep-on-branch: allows worktree commit via cd-compound (hook cwd = main checkout)"
-( cd "$r" && PERSONA=implementer ASSIGNED_BRANCH=worktree-agent-T9-implementer TOOL_INPUT='git -C .agents/worktrees/T9-implementer commit -m x' bash "$RT/keep-on-branch.sh" ) >/dev/null 2>&1; rc=$?
+( cd "$r" && PERSONA=implementer ASSIGNED_BRANCH=worktree-agent-T9-implementer TOOL_INPUT='git -C .agents/worktrees/T9-implementer commit -m x' bash "$RT/keep-on-branch.sh" ) </dev/null >/dev/null 2>&1; rc=$?
 assert_eq "$rc" "0" "keep-on-branch: allows worktree commit via git -C <worktree>"
-( cd "$r" && PERSONA=implementer ASSIGNED_BRANCH=worktree-agent-T9-implementer TOOL_INPUT='git commit -m x' bash "$RT/keep-on-branch.sh" ) >/dev/null 2>&1; rc=$?
+( cd "$r" && PERSONA=implementer ASSIGNED_BRANCH=worktree-agent-T9-implementer TOOL_INPUT='git commit -m x' bash "$RT/keep-on-branch.sh" ) </dev/null >/dev/null 2>&1; rc=$?
 assert_eq "$rc" "2" "keep-on-branch: still denies a bare main-checkout commit off the assigned branch"
 rm -rf "$r"
 

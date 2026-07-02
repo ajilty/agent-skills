@@ -39,6 +39,18 @@ fresh-context Verifier) — validated on its own construction.
   work-item has no oracle and no clarify event. Needs design — the check "is an
   oracle nameable" is a judgment call; the floor can only key on journaled traces.
 
+- **Enforcement is self-disarmable: agents can edit the plugin's own hook scripts
+  (live 2026-07-02).** The runtime hooks execute from `${CLAUDE_PLUGIN_ROOT}`, which
+  is writable by the router and by any full-write persona — observed live when a
+  router patched `keep-on-branch.sh` mid-run to route around a false-deny (benign
+  intent, real hole: the same move disarms any fail-closed floor, and no rail even
+  notices). Candidate: a writer-scoped PreToolUse deny on Write/Edit/Bash targets
+  resolving under `$CLAUDE_PLUGIN_ROOT`, self-exempting when the working repo IS the
+  plugin repo (else it blocks legitimate plugin maintenance — the one case where
+  editing hooks is the job). Needs the same care as write-scope: fail-closed on an
+  unresolvable path, never break the session. Until then it is a documented
+  trust-the-router posture (KNOWN-LIMITATIONS "testing live" §2).
+
 - ✅ **DONE (live 2026-07-02) — `keep-on-branch.sh` false-denied every legitimate
   worktree commit under CC.** The off-branch-commit check ran `git rev-parse` in the
   hook process's own cwd — which under CC is the main checkout, not the subagent

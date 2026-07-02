@@ -24,9 +24,15 @@ REPO_ROOT="$(cd "$PLUGIN_DIR/../.." && pwd)"          # agent-skills (has .claud
 
 have_claude(){ command -v claude >/dev/null 2>&1; }
 have_api(){ [ -n "${ANTHROPIC_API_KEY:-}" ]; }
-# Live auth that survives a HOME sandbox: either an explicit ANTHROPIC_API_KEY, or a
-# copyable OAuth credential we clone into the sandbox. No auth -> live tiers skip.
-have_live_auth(){ have_api || [ -f "$HOME/.claude/.credentials.json" ]; }
+# Live auth that survives a HOME sandbox: an explicit ANTHROPIC_API_KEY, a copyable
+# OAuth credential we clone into the sandbox, or env/FD-carried OAuth (managed/remote
+# environments, e.g. Claude Code on the web: the token rides CLAUDE_CODE_OAUTH_TOKEN*
+# env inherited by child processes, so no credential file exists and none needs
+# copying — a probe `claude -p` just works). Checking only the file made the live
+# tiers self-skip in exactly those environments (live 2026-07-02 finding).
+# No auth -> live tiers skip.
+have_live_auth(){ have_api || [ -f "$HOME/.claude/.credentials.json" ] \
+  || [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] || [ -n "${CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR:-}" ]; }
 
 # --- Codex (codex-cli) tier ---------------------------------------------------
 # Mirror of the Claude-side probes for the Codex harness. Same isolation contract:
