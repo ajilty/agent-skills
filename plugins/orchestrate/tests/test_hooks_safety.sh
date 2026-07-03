@@ -25,6 +25,20 @@ PERSONA=implementer TOOL_INPUT='git checkout -b foo' bash "$RT/keep-on-branch.sh
 assert_eq "$rc" "2" "keep-on-branch: denies implementer branch-create with exit 2"
 PERSONA=implementer ASSIGNED_BRANCH= TOOL_INPUT='git commit -m x' bash "$RT/keep-on-branch.sh" >/dev/null 2>&1; rc=$?
 assert_eq "$rc" "0" "keep-on-branch: allows commit when no assigned branch"
+# Off-branch commit check resolves the EFFECTIVE commit dir, not the hook's own cwd
+# (live 2026-07-02 finding: under CC the hook cwd is the main checkout, so a bare
+# rev-parse false-denied every legit `cd <worktree> && git commit`) — and not the
+# assigned worktree's HEAD either (that is on the branch by construction; a vacuous
+# check would let a main-checkout commit through).
+r="$(mktemp_repo)"
+( cd "$r" && git commit -qm init --allow-empty && git worktree add -q -b worktree-agent-T9-implementer .agents/worktrees/T9-implementer HEAD ) 2>/dev/null
+( cd "$r" && PERSONA=implementer ASSIGNED_BRANCH=worktree-agent-T9-implementer TOOL_INPUT='cd .agents/worktrees/T9-implementer && git commit -m x' bash "$RT/keep-on-branch.sh" ) </dev/null >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "keep-on-branch: allows worktree commit via cd-compound (hook cwd = main checkout)"
+( cd "$r" && PERSONA=implementer ASSIGNED_BRANCH=worktree-agent-T9-implementer TOOL_INPUT='git -C .agents/worktrees/T9-implementer commit -m x' bash "$RT/keep-on-branch.sh" ) </dev/null >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "keep-on-branch: allows worktree commit via git -C <worktree>"
+( cd "$r" && PERSONA=implementer ASSIGNED_BRANCH=worktree-agent-T9-implementer TOOL_INPUT='git commit -m x' bash "$RT/keep-on-branch.sh" ) </dev/null >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "keep-on-branch: still denies a bare main-checkout commit off the assigned branch"
+rm -rf "$r"
 
 # --- gate-prod-apply.sh ---
 o="$(PERSONA= bash "$RT/gate-prod-apply.sh" 2>/dev/null)"; rc=$?

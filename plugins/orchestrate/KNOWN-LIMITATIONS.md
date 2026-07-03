@@ -54,6 +54,23 @@ enforce "no credentials for an unleased target" from inside the harness. The
 guaranteed layer is lease **serialization** (single-writer per target). Scope the
 actuator lane's creds to its leased targets in your deployment.
 
+## Testing the plugin live (gotchas for the next tester)
+
+Learned running 4 parallel real-world scenarios (headless `claude -p --plugin-dir`,
+sonnet, isolated scratch repos) on 2026-07-02. None of these are orchestrate bugs,
+but all three will confuse you if you don't know them going in:
+
+| # | Behavior | What to do about it |
+|---|----------|---------------------|
+| 1 | **Task-list leakage into the parent session (CC).** Driving `claude -p` scenario sessions from *inside* a Claude Code session leaks the children's task items (TaskCreate) into the parent's task list via inherited session env — you'll see phantom "Implementer: …" / "Verifier: …" tasks that belong to dead child sessions and never complete. | Cosmetic; ignore or run the fleet from a plain shell. Don't chase the "stuck" tasks — their sessions are gone. |
+| 2 | **A shared `--plugin-dir` is shared *mutable* enforcement.** Agents under test can edit the plugin's own hook scripts. Observed live: a router patched `keep-on-branch.sh` mid-run to unblock a (real) false-deny — with parallel scenarios sharing the dir, the patch leaked across scenarios *and into the plugin repo's working tree*, contaminating both the experiment and the checkout. | Give each scenario its **own copy** of the plugin dir, and `git diff` the real plugin dir after any live run. (The self-disarm hole itself is tracked in TODO.md as a hardening item.) |
+| 3 | **Managed/remote environments carry OAuth in env, not in `~/.claude/.credentials.json`.** `claude -p` works fine, but any auth gate that only checks the credentials file (as `have_live_auth` did) makes live tiers self-skip while a hand-run probe succeeds — a confusing split. | Fixed in `tests/integration/lib.sh` (`have_live_auth` now also accepts `CLAUDE_CODE_OAUTH_TOKEN*` env). If you write new live gates, probe capability, not one credential shape. |
+
+Also useful to know: a live fleet like this is the layer that catches what unit
+tests structurally can't — the `keep-on-branch.sh` false-deny (hook cwd ≠ subagent
+cwd under CC) shipped green through 292 unit assertions and fell over in the first
+20 minutes of live dispatch. Budget a live pass before calling hook changes done.
+
 ## Codex-specific (codex-cli 0.142.1)
 
 A live probe (`codex exec` headless) confirmed Codex's PreToolUse hooks **block for

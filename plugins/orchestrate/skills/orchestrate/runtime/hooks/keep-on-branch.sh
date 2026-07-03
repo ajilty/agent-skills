@@ -5,9 +5,12 @@
 # fall back to env for Codex/OpenCode. Contract: ALLOW = exit 0 no stdout; DENY =
 # stderr + exit 2. Self-guards; never errors.
 #
-# NOTE: the off-branch-commit check needs the per-dispatch ASSIGNED_BRANCH, which
-# CC does not pass to subagent hooks via env — until that reads from on-disk ticket
-# state (see TODO), only branch create/switch is enforced under CC.
+# The off-branch-commit check reads the per-dispatch ASSIGNED_BRANCH from the
+# on-disk active-writer record (ADR-0006; CC passes no router env to subagent
+# hooks) and resolves the branch at the dir where the commit EFFECTIVELY runs —
+# never this hook process's own cwd, which under CC is the main checkout, not the
+# subagent shell's (live 2026-07-02 finding: a bare `git rev-parse` here read the
+# main checkout's `master` and false-denied every legitimate worktree commit).
 set -uo pipefail
 RT="$(cd "$(dirname "$0")/.." && pwd)"
 in=""; [ -t 0 ] || in="$(cat 2>/dev/null || true)"
@@ -22,8 +25,23 @@ case "$cmd" in
 esac
 if printf '%s' "$cmd" | grep -q 'git commit'; then
   ab="${ASSIGNED_BRANCH:-$(bash "$RT/ledger.sh" writer-ctx get assigned_branch)}"
-  if [ -n "$ab" ] && [ "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)" != "$ab" ]; then
-    echo "orchestrate: HEAD off assigned branch ($ab)" >&2; exit 2
+  if [ -n "$ab" ]; then
+    # Effective commit dir, in precedence order: an explicit `git -C <dir>`, else the
+    # last `cd <dir>` in a compound command (the implementer's normal shape:
+    # `cd <worktree> && git commit`), else the payload cwd (the subagent shell's),
+    # else this process's cwd. NOT the assigned worktree's own HEAD — that is on the
+    # assigned branch by construction, which would make this check vacuous and let a
+    # main-checkout commit through. Best-effort dir parse (denylist posture, ADR-0002);
+    # an unresolvable dir fails closed via the branch compare below.
+    base="$(J .cwd)"; [ -n "$base" ] || base="$PWD"
+    d="$(printf '%s' "$cmd" | grep -oE 'git +-C +[^ ]+' | head -1 | awk '{print $3}')"
+    [ -n "$d" ] || d="$(printf '%s' "$cmd" | grep -oE '(^|[;&|] *)cd +[^ ;&|]+' | tail -1 | sed 's/.*cd  *//')"
+    d="$(printf '%s' "$d" | tr -d '"'"'")"
+    case "$d" in "") wd="$base";; /*) wd="$d";; *) wd="$base/$d";; esac
+    head_branch="$(git -C "$wd" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+    if [ "$head_branch" != "$ab" ]; then
+      echo "orchestrate: HEAD off assigned branch ($ab) — commit resolves to '$wd' on '${head_branch:-?}'" >&2; exit 2
+    fi
   fi
 fi
 exit 0

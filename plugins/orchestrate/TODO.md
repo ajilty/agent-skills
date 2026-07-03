@@ -24,6 +24,45 @@ fresh-context Verifier) — validated on its own construction.
 
 ## High priority
 
+- **§2b clarify gate silently passed a fuzzy goal (live 2026-07-02, sonnet router).**
+  Real-world probe: `/orchestrate:start Improve the logging in this repo.` — no
+  nameable acceptance oracle, headless session. Expected: `clarify inline` journaled
+  + lane HALTed open. Observed: no `clarify` event; the Planner invented a spec AND
+  its own acceptance script (`scripts/verify_logging.py` — a self-authored oracle,
+  exactly the plausible-but-wrong-spec failure §2b exists to stop), and an
+  Implementer lane started. Downstream rails held (worktree isolated, nothing
+  merged, reground HALTs with OPEN WRITER + leases), but the front-door gate is
+  pure loop discipline with no enforcement backstop and it missed on first live
+  contact. Candidate fix: a done/merge-time floor (refuse to close a lane whose
+  board has neither a `clarify` event nor a pre-existing oracle reference for the
+  ticket), or a dispatch-time hook that blocks the first Planner dispatch when the
+  work-item has no oracle and no clarify event. Needs design — the check "is an
+  oracle nameable" is a judgment call; the floor can only key on journaled traces.
+
+- **Enforcement is self-disarmable: agents can edit the plugin's own hook scripts
+  (live 2026-07-02).** The runtime hooks execute from `${CLAUDE_PLUGIN_ROOT}`, which
+  is writable by the router and by any full-write persona — observed live when a
+  router patched `keep-on-branch.sh` mid-run to route around a false-deny (benign
+  intent, real hole: the same move disarms any fail-closed floor, and no rail even
+  notices). Candidate: a writer-scoped PreToolUse deny on Write/Edit/Bash targets
+  resolving under `$CLAUDE_PLUGIN_ROOT`, self-exempting when the working repo IS the
+  plugin repo (else it blocks legitimate plugin maintenance — the one case where
+  editing hooks is the job). Needs the same care as write-scope: fail-closed on an
+  unresolvable path, never break the session. Until then it is a documented
+  trust-the-router posture (KNOWN-LIMITATIONS "testing live" §2).
+
+- ✅ **DONE (live 2026-07-02) — `keep-on-branch.sh` false-denied every legitimate
+  worktree commit under CC.** The off-branch-commit check ran `git rev-parse` in the
+  hook process's own cwd — which under CC is the main checkout, not the subagent
+  shell's worktree — so with `ASSIGNED_BRANCH` set (writer-ctx, ADR-0006) it saw
+  `master`, denied all four commit attempts of a live implementer, and in a parallel
+  lane likely caused the `REJECTED(uncommitted-work)` verdict (the ADR-0019 backstop
+  caught what the broken rail blocked). Fix: resolve the branch at the EFFECTIVE
+  commit dir (`git -C <dir>` > last `cd <dir>` in the compound command > payload
+  `.cwd` > hook cwd), fail-closed on mismatch; regression tests cover cd-compound,
+  `git -C`, and the rogue main-checkout commit. Found only by live testing — the
+  unit tests ran the hook with cwd already inside a worktree.
+
 - ✅ **DONE — Hooks read CC's stdin JSON (not env); PreToolUse enforcement is REAL
   under CC.** Landed part-1 (03a3ced, stdin parse) + part-2 (40bcf5b, ADR-0006
   on-disk active-writer record); the live smoke test (2026-06-19) confirmed all 3
