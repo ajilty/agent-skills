@@ -55,8 +55,11 @@ cat > "$PLUGIN_ROOT/hooks/hooks.json" <<JSON
         { "type": "command", "command": "$H/write-scope.sh" } ] },
       { "matcher": "Task|Agent", "hooks": [
         { "type": "command", "command": "$H/on-writer-dispatch.sh" } ] } ],
-    "SessionStart": [ { "matcher": "compact", "hooks": [
-        { "type": "command", "command": "$H/on-compaction.sh" } ] } ]
+    "SessionStart": [
+      { "matcher": "compact", "hooks": [
+        { "type": "command", "command": "$H/on-compaction.sh" } ] },
+      { "matcher": "startup|resume", "hooks": [
+        { "type": "command", "command": "$H/warn-agent-teams.sh" } ] } ]
   }
 }
 JSON

@@ -248,3 +248,12 @@ git worktree add -q -b wtX "$gco-wtX" HEAD 2>/dev/null
 ( cd "$gco-wtX" && printf '{"tool_input":{"command":"git reset --hard HEAD"}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1; exit $? )
 assert_eq "$?" "0" "shared-checkout: allow reset --hard in a LINKED worktree (not the shared checkout)"
 cd /; git -C "$gco" worktree remove --force "$gco-wtX" 2>/dev/null; rm -rf "$gco" "$gco-wtX"
+
+# --- warn-agent-teams.sh: SessionStart advisory when Claude Code agent teams is on (ADR-0023).
+#     Warn, never block; Claude-Code-only (silent no-op when the env var is unset). ---
+o="$(CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 bash "$RT/warn-agent-teams.sh" 2>&1)"; rc=$?
+assert_eq "$rc" "0" "warn-agent-teams: exit 0 (advisory, never blocks)"
+case "$o" in *"agent teams"*) pass;; *) fail "warn-agent-teams: warns when CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1";; esac
+o2="$(CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS= bash "$RT/warn-agent-teams.sh" 2>&1)"; rc2=$?
+assert_eq "$rc2" "0" "warn-agent-teams: exit 0 when unset"
+assert_eq "$o2" "" "warn-agent-teams: SILENT no-op when agent teams is off (Claude-only)"

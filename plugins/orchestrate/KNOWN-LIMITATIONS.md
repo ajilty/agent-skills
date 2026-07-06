@@ -47,6 +47,23 @@ Existing stale worktrees are not retroactively fixed; if you upgraded into the f
 run `git remote set-head origin <your-canonical-branch>` and `git worktree prune`
 once.
 
+## Agent teams undermines isolation (Claude Code)
+
+Claude Code's experimental **agent teams** (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`,
+off by default) turns dispatched subagents into peer-messaging *teammates* with a shared
+task list and `SendMessage`. That is the opposite of orchestrate's model — isolated
+dispatch-and-return personas whose only channel is disk, and control-state that lives only
+in the board (ADR-0012). Under agent teams a persona can message peers and relay a control
+signal (a "halt", a "commit now") the router must never take secondhand.
+
+Unlike the other rows here, orchestrate **cannot compensate**: there is no per-dispatch
+opt-out to force isolated subagents (verified 2026-07-06). The only lever is detection — a
+`SessionStart` hook (`warn-agent-teams.sh`) warns when the variable is set (ADR-0023).
+**Recommendation:** disable agent teams in any repo where you run orchestrate (unset
+`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`, or remove it from `.claude/settings.json`); with it
+on, treat orchestrate's single-writer / no-peer-control / disk-only-control guarantees as
+advisory, not enforced.
+
 ## Credential confinement is advisory (all harnesses)
 
 The actuator's credential scoping is **advisory** (ADR-0002): orchestrate cannot

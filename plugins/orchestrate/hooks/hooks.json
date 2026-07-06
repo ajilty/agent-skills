@@ -12,7 +12,10 @@
         { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks/write-scope.sh" } ] },
       { "matcher": "Task|Agent", "hooks": [
         { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks/on-writer-dispatch.sh" } ] } ],
-    "SessionStart": [ { "matcher": "compact", "hooks": [
-        { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks/on-compaction.sh" } ] } ]
+    "SessionStart": [
+      { "matcher": "compact", "hooks": [
+        { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks/on-compaction.sh" } ] },
+      { "matcher": "startup|resume", "hooks": [
+        { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks/warn-agent-teams.sh" } ] } ]
   }
 }
