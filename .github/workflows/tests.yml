@@ -12,3 +12,9 @@ jobs:
           yq --version
       - name: Run orchestrate suite (unit + drift guard + allowlist + manifest)
         run: bash plugins/orchestrate/tests/run.sh
+  beacon-weather:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Beacon forecast selftest (offline, no network)
+        run: python3 scripts/beacon-weather/beacon_forecast.py selftest
