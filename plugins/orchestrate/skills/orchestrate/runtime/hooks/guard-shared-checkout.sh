@@ -26,12 +26,21 @@ cmd="$(J .tool_input.command)"; [ -n "$cmd" ] || cmd="${TOOL_INPUT:-${CODEX_TOOL
 norm=" ${cmd//[;|&()\`]/ } "
 case "$norm" in *" git "*) ;; *) exit 0 ;; esac   # not a git command -> not our concern
 
-# Working-tree / committed-history DISCARDING ops (the "eats local work" set).
+# Working-tree / committed-history DISCARDING ops (the "eats local work" set). Check each
+# STATEMENT's OWN args, not the whole compound line: a token in one statement (an unrelated
+# path, or a commit-message heredoc) must not trip a verb in another. Live 2026-07-06:
+# `git checkout -b X && git commit …` was false-denied because a `.`/`--` elsewhere in the
+# line matched the checkout case. Split on shell separators, then run the per-verb checks
+# per segment (the same token logic, just scoped).
 destructive=0
-case "$norm" in *" reset "*)  case "$norm" in *" --hard "*) destructive=1 ;; esac ;; esac
-case "$norm" in *" clean "*)  case "$norm" in *" -f"*)     destructive=1 ;; esac ;; esac   # -f / -fd / -ffdx
-case "$norm" in *" checkout "*) case "$norm" in *" -f "*|*" --force "*|*" . "*|*" -- "*) destructive=1 ;; esac ;; esac
-case "$norm" in *" switch "*)  case "$norm" in *" --discard-changes "*|*" -f "*) destructive=1 ;; esac ;; esac
+while IFS= read -r seg; do
+  n=" $seg "
+  case "$n" in *" git "*) ;; *) continue ;; esac
+  case "$n" in *" reset "*)    case "$n" in *" --hard "*) destructive=1 ;; esac ;; esac
+  case "$n" in *" clean "*)    case "$n" in *" -f"*)     destructive=1 ;; esac ;; esac   # -f / -fd / -ffdx
+  case "$n" in *" checkout "*) case "$n" in *" -f "*|*" --force "*|*" . "*|*" -- "*) destructive=1 ;; esac ;; esac
+  case "$n" in *" switch "*)   case "$n" in *" --discard-changes "*|*" -f "*) destructive=1 ;; esac ;; esac
+done <<< "$(printf '%s' "$cmd" | tr ';|&()`' '\n')"
 [ "$destructive" = 1 ] || exit 0
 
 # Only block on the PRIMARY (shared main) worktree. In a linked worktree, git-dir is

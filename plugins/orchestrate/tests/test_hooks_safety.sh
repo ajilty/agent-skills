@@ -234,6 +234,13 @@ printf '{"tool_input":{"command":"git worktree add -b wt /tmp/x origin/main"}}' 
 assert_eq "$?" "0" "shared-checkout: allow git worktree add (the §9a flow) on PRIMARY"
 printf '{"tool_input":{"command":"git status"}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1
 assert_eq "$?" "0" "shared-checkout: allow read-only git on PRIMARY (no over-denial)"
+# regression (live 2026-07-06): a benign `checkout -b` compound must NOT false-deny because a
+# `.`/`--`/`-f` token appears in ANOTHER statement (an unrelated path or a commit message).
+printf '{"tool_input":{"command":"git checkout -b feat/x && git add a.b docs/adr && git commit -m \"fix -- do the thing. done\""}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1
+assert_eq "$?" "0" "shared-checkout: allow 'checkout -b' compound (tokens in other statements don't trip it)"
+# but a REAL destructive checkout is still denied even when bundled into a compound
+printf '{"tool_input":{"command":"git status && git checkout -- ."}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1
+assert_eq "$?" "2" "shared-checkout: still deny 'checkout -- .' even inside a compound"
 printf '{"tool_input":{"command":"rm -rf build"}}' | bash "$RT/guard-shared-checkout.sh" >/dev/null 2>&1
 assert_eq "$?" "0" "shared-checkout: ignore non-git commands"
 # linked worktree (writer's own sandbox): destructive ops are its business -> ALLOW
