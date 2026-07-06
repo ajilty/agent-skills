@@ -1,0 +1,3 @@
+__pycache__/
+*.pyc
+beacon_weather.db
