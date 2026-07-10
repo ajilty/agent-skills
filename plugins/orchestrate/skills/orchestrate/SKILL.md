@@ -134,6 +134,12 @@ Run these in order on every invocation. Steps reference the detailed sections.
    on the board. Verification is *not optional* (the router's measured habit is to
    self-verify inline and skip the Verifier; this gate makes that impossible). T0
    baseline lanes are exempt — the acceptance oracle is their check.
+   **Boundary nudge:** a closed lane with a quiescent board is the cheapest possible
+   compaction point — everything durable is on disk and reground rebuilds the picture
+   from nothing. If the session has grown long, tell the operator now (you cannot
+   trigger compaction yourself): *\"clean boundary — good time for `/compact keep the
+   goal and open lanes; the board on disk is authoritative`\"*. Mid-lane auto-compaction
+   at a full context is the damaging case this pre-empts.
 5. **Escalate, don't thrash.** `DECISION_FORK` / quarantine halt their lane and
    surface to the operator (§3b). Metrics derive from the ledger (§8).
 

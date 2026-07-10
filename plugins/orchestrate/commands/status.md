@@ -33,3 +33,7 @@ pace 🟢 moving · 🟡 slow · 🔴 stalled; lane ✅ done · 🔄 running · 
 Edge cases: no board → `no orchestrate run in this repo`. A clean board with a `goal` and no
 open lanes → report it, but add the ADR-0020 caveat: a clean board is **not** "done" until the
 plan is complete. Keep it skimmable; drill-in happens conversationally if the operator asks.
+
+When the board is quiescent (no in-flight dispatch) **and** the session has grown long, add one
+footer line: `💡 clean boundary — good time for /compact keep the goal and open lanes; the board
+on disk is authoritative`. Compaction is operator-triggered only; this surfaces the cheap moment.

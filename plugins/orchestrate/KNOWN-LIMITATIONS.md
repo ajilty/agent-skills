@@ -64,6 +64,26 @@ opt-out to force isolated subagents (verified 2026-07-06). The only lever is det
 on, treat orchestrate's single-writer / no-peer-control / disk-only-control guarantees as
 advisory, not enforced.
 
+## Compaction cannot be triggered or timed by a plugin (Claude Code)
+
+Auto-compaction fires near the model's context limit, often mid-lane — the worst moment.
+No plugin/model path can trigger `/compact` (user-only), and the documented early-trigger
+env vars (`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` + `CLAUDE_CODE_AUTO_COMPACT_WINDOW`) are
+**not production-grade** as of v2.1.2xx: shell-export only (a `settings.json` `env` block is
+silently ignored, issue #63186), unreliable on 1M-context models (#53801), and sometimes
+inert (#52390, #36381). Verified 2026-07-10.
+
+orchestrate compensates on both sides instead:
+- **Recovery** — control state is disk-first and the `SessionStart(compact)` hook injects a
+  reground board as authoritative, telling the router to **re-invoke the orchestrate skill**
+  (compaction re-injects invoked skill bodies truncated at ~5k tokens, so the post-compaction
+  router brain is otherwise a stump).
+- **Timing** — the router and `/orchestrate:status` surface the cheap moment: a closed lane
+  with a quiescent board, where everything durable is on disk. When the session is long, they
+  prompt the operator to run `/compact keep the goal and open lanes; the board on disk is
+  authoritative` (check fill with `/context`). The operator stays the trigger; orchestrate
+  contributes the timing judgment.
+
 ## Credential confinement is advisory (all harnesses)
 
 The actuator's credential scoping is **advisory** (ADR-0002): orchestrate cannot

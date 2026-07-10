@@ -13,6 +13,9 @@ board="$(bash "$RT/ledger.sh" reground 2>&1)"; rc=$?
 msg="ORCHESTRATE: context was compacted. The board below is AUTHORITATIVE — treat it
 as ground truth over anything summarized. Resume open lanes per the reconciliation;
 retry budgets are counted from disk (ledger.sh retries <ticket>), not memory.
+FIRST: re-invoke the orchestrate skill to reload the full router brain — compaction
+re-injects invoked skill bodies truncated (~5k-token cap per skill), so the SKILL.md
+you are holding now is a stump; do not route from it.
 
 $board"
 [ "$rc" != 0 ] && msg="$msg
