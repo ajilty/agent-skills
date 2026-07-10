@@ -21,7 +21,9 @@ pace 🟢 moving · 🟡 slow · 🔴 stalled; lane ✅ done · 🔄 running · 
 1. 🎯 **Headline** — the goal (from the `goal` event), pace (🟢/🟡/🔴 from event recency +
    done-ratio), progress (`N done / M lanes`), and 📋 the plan pointer (spec/ADR path).
 2. 🌳 **Lanes** — a tree, one node per ticket with its status glyph; parallel lanes are
-   siblings; writer lanes show worktree commits-ahead.
+   siblings; writer lanes show worktree commits-ahead. When the `dispatched` events carry
+   `model`/`effort`, show them inline per lane (e.g. `verifier opus/max`) — the operator
+   uses this to verify horsepower was right-sized.
 3. 🙋 **Needs you** — render this section **only if non-empty**: halted `DECISION_FORK`s,
    clarify-halts, pending pre-apply prod acks, `INCONSISTENT_ORACLE`, reground ambiguous-writer
    HALTs. Each is one line (the ask) + 📄 pointer to the ticket file. If nothing is pending,

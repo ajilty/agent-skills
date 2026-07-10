@@ -103,6 +103,10 @@ Run these in order on every invocation. Steps reference the detailed sections.
       `writer_writeahead` hook; for read-only personas append `dispatched` yourself,
       recording `dispatch_id` (and for a **Researcher** a ticket-unique `<slug>`, its
       research topic) so 3c and reground can locate the result (§5 artifact 2).
+      Also record `model` and `effort` — the persona's tier default, or the override
+      when you escalated this dispatch (§2a′) — so the board carries the horsepower
+      actually spent (`metrics model_mix`; surfaced by status + feedback to verify
+      usage was right-sized).
       **Tell each read-only persona to WRITE its result to the scoped path you give
       it**, ending with the `<!-- orchestrate:complete -->` sentinel: a Researcher →
       `…/findings/_quarantine/<slug>.<dispatch_id>.md` (RAW); a Verifier →

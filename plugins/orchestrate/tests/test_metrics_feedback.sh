@@ -3,8 +3,11 @@
 R="$HERE/../skills/orchestrate/runtime/ledger.sh"
 d="$(mktemp_repo)"; cd "$d"
 
-# Plant a board with a representative mix of events.
-bash "$R" append '{"ticket":"T1","event":"dispatched","persona":"implementer"}'
+# Plant a board with a representative mix of events (model/effort are OPTIONAL on
+# dispatched — journaled horsepower for right-sizing verification).
+bash "$R" append '{"ticket":"T1","event":"dispatched","persona":"implementer","model":"sonnet","effort":"high"}'
+bash "$R" append '{"ticket":"T1","event":"dispatched","persona":"verifier","model":"opus","effort":"max"}'
+bash "$R" append '{"ticket":"T2","event":"dispatched","persona":"researcher"}'
 bash "$R" append '{"ticket":"T1","event":"verdict","verdict":"REJECTED"}'
 bash "$R" append '{"ticket":"T1","event":"verdict","verdict":"APPROVED"}'
 bash "$R" append '{"ticket":"T1","event":"done"}'
@@ -19,6 +22,10 @@ case "$m" in *"forks=1"*)     pass;; *) fail "metrics forks=1 ($m)";; esac
 case "$m" in *"decisions=1"*) pass;; *) fail "metrics decisions=1 ($m)";; esac
 # friction = rejects(1) + oracle_inconsistent(0) + lease_conflicts(1) = 2
 case "$m" in *"friction=2"*)  pass;; *) fail "metrics friction=2 ($m)";; esac
+# model_mix: journaled horsepower per persona (persona:model:effort:count; '-' when absent)
+case "$m" in *"implementer:sonnet:high:1"*) pass;; *) fail "model_mix carries implementer:sonnet:high:1 ($m)";; esac
+case "$m" in *"verifier:opus:max:1"*)       pass;; *) fail "model_mix carries verifier:opus:max:1 ($m)";; esac
+case "$m" in *"researcher:-:-:1"*)          pass;; *) fail "model_mix marks missing model/effort as '-' ($m)";; esac
 # ticket filter narrows the replay
 mt="$(bash "$R" metrics T2)"
 case "$mt" in *"shipped=0"*"forks=1"*) pass;; *) fail "metrics ticket-filter ($mt)";; esac
@@ -30,5 +37,11 @@ assert_file "$FB"
 grep -q '"event":"feedback"' "$FB"        && pass || fail "feedback record written"
 grep -q '"shipped":1'        "$FB"        && pass || fail "feedback embeds metrics snapshot"
 grep -q 'smooth run, one healthy fork' "$FB" && pass || fail "feedback embeds the operator note"
+grep -q '"model_mix":"' "$FB"             && pass || fail "feedback embeds model_mix (quoted string)"
+# the record must be VALID JSON: non-integer metric values (verify_coverage=1/2,
+# model_mix=...) are quoted; previously they'd have emitted bare 1/2 (invalid)
+if command -v python3 >/dev/null 2>&1; then
+  tail -1 "$FB" | python3 -c 'import json,sys; json.loads(sys.stdin.read())' 2>/dev/null && pass || fail "feedback record is valid JSON"
+fi
 
 cd /; rm -rf "$d"

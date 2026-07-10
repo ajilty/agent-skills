@@ -35,21 +35,34 @@ case "$cmd" in
     # delegation health (the infra-log finding: verification is the least-delegated function).
     dr=$(c '"event":"dispatched".*"persona":"researcher"'); dp=$(c '"event":"dispatched".*"persona":"planner"')
     dimp=$(c '"event":"dispatched".*"persona":"implementer"'); da=$(c '"event":"dispatched".*"persona":"actuator"')
+    # Horsepower actually spent (verify optimal usage): persona:model:effort:count over
+    # dispatched events that journaled model/effort (optional fields; '-' when absent).
+    # Escalated dispatches (§2a′) show up as a distinct triple next to the tier default.
+    mix="$(src | grep '"event":"dispatched"' | sed -n 's/.*"persona":"\([^"]*\)".*/\1 &/p' | while read -r p line; do
+      m="$(printf '%s' "$line" | sed -n 's/.*"model":"\([^"]*\)".*/\1/p')"
+      e="$(printf '%s' "$line" | sed -n 's/.*"effort":"\([^"]*\)".*/\1/p')"
+      printf '%s:%s:%s\n' "$p" "${m:--}" "${e:--}"
+    done | sort | uniq -c | awk '{print $2":"$1}' | paste -sd, -)"; mix="${mix:--}"
     dv=$(src | grep -cE '"event":"dispatched".*"persona":"(verifier|validator)"' 2>/dev/null || true)
     # verify_coverage: of shipped (done) lanes, how many actually got a verifier verdict?
     verified=0; total=0
     while IFS= read -r tk; do [ -n "$tk" ] || continue; total=$((total+1))
       src | grep -q "\"ticket\":\"$tk\".*\"event\":\"verdict\"" && verified=$((verified+1))
     done < <(src | grep '"event":"done"' | sed -n 's/.*"ticket":"\([^"]*\)".*/\1/p' | sort -u)
-    printf 'shipped=%s dispatches=%s forks=%s decisions=%s rejects=%s oracle_inconsistent=%s lease_conflicts=%s friction=%s disp_researcher=%s disp_planner=%s disp_implementer=%s disp_verifier=%s disp_actuator=%s verify_coverage=%s/%s\n' \
-      "$sh" "$di" "$fk" "$de" "$rj" "$oi" "$lc" "$fr" "$dr" "$dp" "$dimp" "$dv" "$da" "$verified" "$total" ;;
+    printf 'shipped=%s dispatches=%s forks=%s decisions=%s rejects=%s oracle_inconsistent=%s lease_conflicts=%s friction=%s disp_researcher=%s disp_planner=%s disp_implementer=%s disp_verifier=%s disp_actuator=%s verify_coverage=%s/%s model_mix=%s\n' \
+      "$sh" "$di" "$fk" "$de" "$rj" "$oi" "$lc" "$fr" "$dr" "$dp" "$dimp" "$dv" "$da" "$verified" "$total" "$mix" ;;
 
   feedback)  # Tier 3c, Layer 3: append a durable operator-feedback record (a ledger
              # metrics snapshot + a free-text rating) to the eval log, and echo it. This
              # is the live, observational complement to the headless A/B (tests/eval).
     note="${*:-}"; ed="$ROOT/eval"; mkdir -p "$ed"
     m="$(bash "$0" metrics)"
-    json=""; for kv in $m; do json="$json,\"${kv%%=*}\":${kv#*=}"; done
+    # Quote non-integer values (verify_coverage=1/2, model_mix=...) so the record stays
+    # valid JSON; bare integers stay numeric.
+    json=""; for kv in $m; do v="${kv#*=}"
+      case "$v" in ''|*[!0-9]*) v="\"$v\"" ;; esac
+      json="$json,\"${kv%%=*}\":$v"
+    done
     nl="${note//\\/\\\\}"; nl="${nl//\"/\\\"}"
     printf '{"ts":"%s","event":"feedback","note":"%s"%s}\n' "$(date -u +%FT%TZ)" "$nl" "$json" >> "$ed/feedback.jsonl"
     printf 'feedback recorded -> %s\n%s\nnote: %s\n' "$ed/feedback.jsonl" "$m" "${note:-<none>}" ;;
