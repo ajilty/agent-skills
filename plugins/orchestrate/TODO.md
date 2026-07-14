@@ -93,6 +93,16 @@ fresh-context Verifier) — validated on its own construction.
     `test_hooks_safety.sh` floor catches the crash class; making enforcement real
     needs the stdin-parse + disk-lookup above.
 
+- **run-scope hook blocks legitimate verifier scratch rehearsals (live 2026-07-14).**
+  Two fresh-context verifiers reported the run-scope floor denied their rehearsal
+  attempts: one stubbed-aws rehearsal fell back to static analysis (weaker than a
+  function-proof — the ADR-0022 bar), another had to assemble its result sentinel via
+  `chr(62)` to get past matching. Verification quality degrades exactly where the
+  safety mechanism lives. Candidate fix: a scratch carve-out in `run-scope.sh` (allow
+  mutations confined to the session scratchpad / a rehearsal tmpdir, deny everything
+  else as today), or a dedicated rehearsal lane shape for verifications that need to
+  execute. Needs the same fail-closed care as write-scope: an unresolvable path denies.
+
 - **Codex / OpenCode command parity (still open).** The Claude Code plugin ships
   `commands/start.md` → `/orchestrate:start`; the other two harnesses don't yet.
   Add a Codex prompt (`~/.codex/prompts/orchestrate.md`) and an OpenCode command
@@ -129,8 +139,12 @@ fresh-context Verifier) — validated on its own construction.
   dispatches the loop or its tooling spawns. Define the naming pattern and apply it
   wherever the router (or supporting scripts/workflows) dispatches a subagent.
 
-- **Standard `/orchestrate:status` command — read-only board/WIP summary for
-  returning operators.** A slash command (sibling to `/orchestrate:start`) that
+- ✅ **DONE (0.8.6, spec `docs/specs/2026-07-02-orchestrate-status-command-design.md`) —
+  standard `/orchestrate:status` command.** Read-only projection over reground +
+  board + metrics: goal/pace headline, lane tree, conditional needs-you, next; renders
+  per-lane model/effort (0.8.9) and the clean-boundary compaction nudge (0.8.10).
+  Codex/OpenCode mirror still follows the command-parity item. Original spec:
+  a slash command (sibling to `/orchestrate:start`) that
   prints the current work-board at a glance *without dispatching or advancing any
   lane*: open lanes + their persona/column, in-flight writer(s), halted
   `DECISION_FORK`s / quarantines awaiting the operator, held leases, and anything

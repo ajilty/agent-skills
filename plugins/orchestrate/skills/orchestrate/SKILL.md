@@ -103,8 +103,10 @@ Run these in order on every invocation. Steps reference the detailed sections.
       `writer_writeahead` hook; for read-only personas append `dispatched` yourself,
       recording `dispatch_id` (and for a **Researcher** a ticket-unique `<slug>`, its
       research topic) so 3c and reground can locate the result (§5 artifact 2).
-      Also record `model` and `effort` — the persona's tier default, or the override
-      when you escalated this dispatch (§2a′) — so the board carries the horsepower
+      **Pass `model` + `effort` explicitly on the dispatch itself** (§2a′ table —
+      the registered definition's model does not reliably bind; harness bug), then
+      record the same values on the `dispatched` event — the persona's tier default,
+      or the override when you escalated (§2a′) — so the board carries the horsepower
       actually spent (`metrics model_mix`; surfaced by status + feedback to verify
       usage was right-sized).
       **Tell each read-only persona to WRITE its result to the scoped path you give
@@ -296,14 +298,35 @@ scary or looks like a quick grind. The measured leak is exactly this: the failur
 *looked* hard got a debugger (clean); three same-class failures that *looked* like
 one-liners got 4–6 verbose inline calls each (bloat).
 
-**Horsepower is right-sized per persona, not per task.** Each persona's model +
-reasoning effort are fixed by its *role* in the contract (`agents.yaml` `tier:`,
-compiled per harness): *premium/max* for the Verifier (correctness is the whole
-point), *economy* for the Researcher (reduction work). That static default is the
-load-bearing choice — it can't be forgotten the way a per-dispatch decision can. You
-*may* **escalate** a single dispatch's model/effort for a known-hard instance (pass it
-on the dispatch, the same way you'd promote a tier on a counted signal) — but treat
-that as the exception, never the primary mechanism.
+**Horsepower is right-sized per persona, not per task — and binds AT DISPATCH.**
+Each persona's model + reasoning effort are fixed by its *role* in the contract
+(`agents.yaml` `tier:`): *premium/max* for the Verifier (correctness is the whole
+point), *economy* for the Researcher (reduction work). Do **not** rely on the
+registered agent definition to carry this: a measured harness bug ignores an agent's
+compiled `model` frontmatter and silently inherits the parent session's model
+(Claude Code #44385 — a live run billed every persona at the flagship). **Pass the
+persona's model + effort explicitly on every dispatch**, and journal exactly what you
+passed (the `dispatched` event's `model`/`effort`; `metrics model_mix` audits it):
+
+| Persona | model | effort |
+|---|---|---|
+| researcher | haiku | medium |
+| planner | opus | high |
+| implementer | sonnet | high |
+| actuator | sonnet | high |
+| verifier | opus | max |
+
+You *may* **escalate** a single dispatch for a *named* known-hard item (pass the
+higher tier, journal it) — the exception, never the default. "This platform is
+correctness-critical" justifies escalating that item, not blanket-inheriting the
+flagship for every dispatch: that is the measured anti-pattern (live 2026-07-14),
+and rework-cost arguments apply to the sharp item you can name, not to `+x`-bit
+mechanical work.
+
+**Batch by tier.** A dispatch runs at its hardest item's tier, so bundling
+mechanical items with sharp ones silently drags trivial work up to flagship pricing
+(the measured case: a `+x` mode-bit fix bundled with a subtle secrets-path fix).
+Split mixed-difficulty batches and route the mechanical half at the economy default.
 
 ---
 

@@ -64,6 +64,18 @@ opt-out to force isolated subagents (verified 2026-07-06). The only lever is det
 on, treat orchestrate's single-writer / no-peer-control / disk-only-control guarantees as
 advisory, not enforced.
 
+## Agent-definition `model:` frontmatter is ignored (Claude Code)
+
+A plugin agent's compiled `model:` (and the documented resolution order) does not bind:
+subagents silently inherit the parent session's model unless the **caller passes `model`
+on the dispatch call itself** (issues #44385 / #43869, confirmed bugs, no fix ETA as of
+2026-07-14). Measured impact: a live run billed every persona at the parent flagship while
+the definitions said haiku/sonnet/opus. `effort:` frontmatter appears to bind; only
+`model:` is broken. orchestrate compensates: the router passes each persona's tier model +
+effort **explicitly on every dispatch** (SKILL §2a′ table) and journals them on the
+`dispatched` event, so `metrics model_mix` makes any drift visible. If the bug is fixed
+upstream, the explicit param remains correct (it takes precedence by design).
+
 ## Compaction cannot be triggered or timed by a plugin (Claude Code)
 
 Auto-compaction fires near the model's context limit, often mid-lane — the worst moment.
