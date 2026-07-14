@@ -245,6 +245,16 @@ the diff/plan, `#UNKNOWN` presence, and the §6 disjointness check. A task may b
 **promoted** mid-flight (a T0 that fails its oracle, or surfaces an `#UNKNOWN`,
 escalates to T2) but never silently **demoted**.
 
+**Refactor-shaped T1 needs a spec, not a bigger implementer.** A T1 lane has no
+Planner, so the Implementer designs from the work-item. When the work is
+*refactor-shaped* (behavior preservation across call sites, a reuse/consolidation
+criterion), a thin work-item produces design drift that **no implementer model tier
+buys back** — measured: a flagship-model T1 implementer still produced bespoke-script
+drift because the work-item lacked the reuse criterion (ADR-0025). The lever is
+structural: the router either writes the work-item to planner grade (explicit
+criteria, named invariants) before dispatching, or inserts a cheap Planner pass —
+never escalates the implementer model for this failure mode.
+
 **Pair the Verifier by default; T0 is the exception, and its oracle carries the
 burden.** T0 drops the independent Verifier *only* because its oracle already
 certifies the change on its own (§2). So a **presence/status probe is not a T0
@@ -308,13 +318,18 @@ compiled `model` frontmatter and silently inherits the parent session's model
 persona's model + effort explicitly on every dispatch**, and journal exactly what you
 passed (the `dispatched` event's `model`/`effort`; `metrics model_mix` audits it):
 
-| Persona | model | effort |
-|---|---|---|
-| researcher | haiku | medium |
-| planner | opus | high |
-| implementer | sonnet | high |
-| actuator | sonnet | high |
-| verifier | opus | max |
+| Dispatch | model | effort | select when |
+|---|---|---|---|
+| researcher — sweep/inventory | haiku | medium | mechanical extraction; output is a list/map the router consumes directly |
+| researcher — judgment | sonnet | high | findings feed an ADR/spec or **eliminate design options** — a silently wrong elimination poisons the Planner downstream (field-calibrated 2026-07-14, ADR-0025) |
+| researcher — troubleshooter (§2a′ tripwire) | sonnet | high | diagnosis is reduction with a **sharp conclusion**; escalate to opus for livelock/corruption-class chains |
+| planner | opus | high | |
+| implementer | sonnet | high | more model does not buy back a missing spec — see the T1 refactor rule (§2a) |
+| actuator | sonnet | high | |
+| verifier | opus | max | mechanical verifications don't belong here — batch by tier so the expensive verifier never sees them |
+
+The researcher rows are one persona, two dispatch flavors — pick by **what consumes
+the output**, not by the persona name.
 
 You *may* **escalate** a single dispatch for a *named* known-hard item (pass the
 higher tier, journal it) — the exception, never the default. "This platform is

@@ -30,3 +30,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0022](0022-oracle-must-be-a-function-probe.md) | A valid oracle is an independent function probe; pair the Verifier by default | active |
 | [0023](0023-agent-teams-incompatible-detect-and-warn.md) | Agent teams is incompatible with orchestrate's isolation; detect and warn (no opt-out) | active |
 | [0024](0024-horsepower-binds-at-dispatch.md) | Per-persona horsepower binds at dispatch, not at agent registration | active |
+| [0025](0025-researcher-is-two-jobs-spec-gaps-not-bought-back.md) | Researcher is two jobs; a T1 spec gap is not bought back by implementer model tier | active |
