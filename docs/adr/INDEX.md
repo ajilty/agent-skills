@@ -34,3 +34,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0026](0026-verifier-scratch-carveout.md) | The verifier run-scope floor carves out scratch roots for rehearsals | active |
 | [0027](0027-merge-lands-on-journaled-base.md) | Merges on the shared checkout must land on the journaled integration base | active |
 | [0028](0028-feedback-lands-durably.md) | Run feedback lands durably: review sidecar, version stamp, dev-side harvest | active |
+| [0029](0029-worktree-base-from-journaled-goal.md) | Writer worktrees cut from the journaled goal base, not the operator's current checkout | active |

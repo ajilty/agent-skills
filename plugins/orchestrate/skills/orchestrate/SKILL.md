@@ -137,7 +137,11 @@ Run these in order on every invocation. Steps reference the detailed sections.
    journaled integration base (goal event `base`) — a lane merge landing on a
    bystander branch the operator happened to have checked out is a measured ×2
    failure; the `guard-merge-base` floor denies it when the base is journaled
-   (ADR-0027). Then merge by
+   (ADR-0027). **And persist before you merge:** confirm the verdict file exists on
+   disk *before* any merge, and never chain persist + merge in one compound command —
+   a failed persist (e.g. a missing `verdicts/` dir) must stop the sequence, not let
+   `&&`-chained merge+push proceed without the verdict on disk (measured 2026-07-15).
+   Then merge by
    the deterministic branch glob; close the lane with `ledger.sh done
    <ticket>` — **fail-closed**: it refuses a T1/T2 ship that has no Verifier verdict
    on the board. Verification is *not optional* (the router's measured habit is to
@@ -239,6 +243,15 @@ probe** — a file exists, a pod is `Running`, a status reads green — can be g
 the feature still broken; it does **not** count as the check (`#GAP(presence-probe)`).
 If the only available oracle is a presence probe, the baseline is not certified: it
 needs an independent Verifier (§2a, ≥T1), not the writer's own green.
+
+**Refactor-class goals: capture the rejection bar at intake.** For behavior-preserving
+work (dedup, consolidation, generalization), an oracle that checks artifact *shape* is
+not enough — ask **"what would the operator reject?"** and write the answer into the
+oracle before dispatch. Measured failure: a dedup lane's criterion accepted wrapper/glue
+verbs when the operator's actual bar was *same-verb-on-both-surfaces*; the bar was added
+reactively mid-verify, and its first version was still wrong (override journaled). The
+intent question costs one intake exchange; the reactive path cost a reopened lane
+(companion to the §2a refactor-shaped-T1 rule, ADR-0025).
 
 ### 2a. Right-sizing: tiers, not "always the full chain" (field-report rough edge 4)
 

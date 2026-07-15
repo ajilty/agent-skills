@@ -18,10 +18,16 @@ set -uo pipefail
 
 cmd="${1:-}"; shift || true
 t="${1:-}"; p="${2:-}"; base="${3:-}"
-# Base resolution (ADR-0013): explicit arg > the CURRENT checked-out branch > main.
-# NEVER the repo default branch / origin/HEAD — that's the stale-orphan trap (a repo
-# whose canonical branch is e.g. "blank-slate" has origin/HEAD pointing at a stale
-# "master", and cutting worktrees from it pins every lane hundreds of commits behind).
+# Base resolution: explicit arg > the JOURNALED goal base > the CURRENT checked-out
+# branch > main. The goal base (board `goal` event, ADR-0027) outranks the current
+# branch because the current-branch default is exactly what inherited a stale operator
+# checkout (ADR-0029: a writer worktree cut from a parked cutover branch — only the
+# Verifier's downstream check stopped the merge from dragging gated work into master).
+# NEVER the repo default branch / origin/HEAD — the stale-orphan trap (ADR-0013).
+if [ -z "$base" ]; then
+  b=".agents/runs/orchestrate/board.jsonl"
+  [ -f "$b" ] && base="$(grep '"event":"goal"' "$b" 2>/dev/null | tail -1 | sed -n 's/.*"base":"\([^"]*\)".*/\1/p')"
+fi
 if [ -z "$base" ]; then
   base="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
   { [ -n "$base" ] && [ "$base" != HEAD ]; } || base="main"

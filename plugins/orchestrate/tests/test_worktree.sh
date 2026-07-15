@@ -48,6 +48,20 @@ test -f "$wt2/work.txt" && pass || fail "uncommitted work preserved (not destroy
 bash "$RT/worktree.sh" staleness T9 implementer >/dev/null 2>&1
 assert_eq "$?" "4" "staleness on a non-existent worktree -> exit 4 (missing)"
 
+# --- ADR-0029: the JOURNALED goal base outranks the CURRENT branch (the current-branch
+#     default is what inherited a stale operator checkout — parked-cutover near-miss).
+#     Fixture state: operator is ON blank-slate; journal goal base=master -> a create
+#     with no explicit base must cut from master (no NEWFILE.txt), not blank-slate. ---
+mkdir -p .agents/runs/orchestrate
+bash "$RT/ledger.sh" goal "adr-0029 fixture" "" "master" >/dev/null 2>&1
+wt29="$(bash "$RT/worktree.sh" create T29 implementer 2>/dev/null)"
+test -f "$wt29/base.txt"     && pass || fail "goal-base create still has base content"
+test ! -f "$wt29/NEWFILE.txt" && pass || fail "goal base (master) OUTRANKS current branch (blank-slate) when no explicit base"
+# explicit arg still outranks the journaled goal base
+wt29b="$(bash "$RT/worktree.sh" create T29B implementer blank-slate 2>/dev/null)"
+test -f "$wt29b/NEWFILE.txt" && pass || fail "explicit base arg outranks the journaled goal base"
+rm -rf .agents   # clear the board so the remaining cases keep their current-branch default
+
 # --- ADR-0019: `committed` proves the work IS the commit (clean tree + commit ahead) ---
 # fresh worktree, nothing committed yet -> exit 5 (nothing ahead of base)
 bash "$RT/worktree.sh" create T3 implementer >/dev/null 2>&1
