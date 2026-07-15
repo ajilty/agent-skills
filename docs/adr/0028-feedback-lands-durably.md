@@ -17,10 +17,13 @@ ever read the files — the operator was the transport.
   journaling is a SKILL wrap-up loop step (step 6), not only an operator invocation; when
   shell is unavailable, the command prints the exact `ledger.sh feedback` line for the
   operator (bare name resolves via the ADR-0018 shims).
-- **Dev side (this repo):** a `/harvest-feedback` project command reads the local live
-  repos' `feedback.jsonl` + review sidecars read-only, correlates each improvement item
-  against ADRs/TODO (fixed / ticketed / NEW / recurrence — recurrence promotes to fix,
-  per the ADR-0026 precedent), and proposes ranked changes.
+- **Dev side (this repo):** a documented harvest **convention** (plugin README, "Field
+  feedback → improving the plugin"): read the local live repos' `feedback.jsonl` + review
+  sidecars read-only, correlate each improvement item against ADRs/TODO (fixed / ticketed
+  / NEW / recurrence — recurrence promotes to fix, per the ADR-0026 precedent), propose
+  ranked changes. *(Amended same-day: initially shipped as a `/harvest-feedback` project
+  command; the operator cut it — generic name, and a convention an LLM both writes and
+  follows needs no artifact. Convention over command.)*
 
 ## Considered options
 - **Central spool (`~/.local/share/orchestrate/feedback.jsonl`)** — deferred, not

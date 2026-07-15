@@ -73,6 +73,27 @@ tests/run.sh                  # zero-dependency suite: runtime behavior + allowl
 tests/integration/run.sh      # live tier (real claude CLI + agent sessions); self-skips without auth
 ```
 
+## Field feedback → improving the plugin (ADR-0028)
+
+Every run journals its own review, durably and version-stamped, in the **target** repo
+(gitignored axis): `.agents/runs/orchestrate/eval/feedback.jsonl` — one row per run with
+the metrics snapshot (shipped / friction / verify_coverage / `model_mix` /
+`plugin_version`) — plus the full qualitative review in `eval/reviews/<UTC-ts>.md`, each
+point tied to a specific dispatch with evidence.
+
+To improve the plugin from the field, harvest those files **read-only** from the live
+repos on this machine (no command needed — this is a convention, not an artifact):
+
+1. Gather: `ls ~/gits/**/.agents/runs/orchestrate/eval/feedback.jsonl` + the review
+   sidecars the notes point at.
+2. Correlate each improvement item against `docs/adr/INDEX.md` and `TODO.md`: already
+   fixed (name the ADR/version), ticketed, NEW, or a **recurrence** — recurrence of a
+   ticketed item promotes it to a fix (precedent: ADR-0026).
+3. Watch the standing drift signals: `model_mix` all-flagship (ADR-0024), all-sonnet
+   researchers with no judgment-shaped output (ADR-0025), `verify_coverage` dropping on
+   code-bearing lanes (ADR-0022).
+4. Propose ranked changes (SKILL prose / hook / tier table / test), each with an ADR call.
+
 ## Known limitations & filing bugs
 
 Some Claude Code harness behaviors (subagent result notifications, worktree
