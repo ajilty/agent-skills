@@ -38,11 +38,13 @@ case "$cmd" in
     # Horsepower actually spent (verify optimal usage): persona:model:effort:count over
     # dispatched events that journaled model/effort (optional fields; '-' when absent).
     # Escalated dispatches (§2a′) show up as a distinct triple next to the tier default.
+    # `|| true` is load-bearing: with ZERO dispatched events grep exits 1, and under
+    # set -euo pipefail that killed metrics (and feedback with it) on a fresh board.
     mix="$(src | grep '"event":"dispatched"' | sed -n 's/.*"persona":"\([^"]*\)".*/\1 &/p' | while read -r p line; do
       m="$(printf '%s' "$line" | sed -n 's/.*"model":"\([^"]*\)".*/\1/p')"
       e="$(printf '%s' "$line" | sed -n 's/.*"effort":"\([^"]*\)".*/\1/p')"
       printf '%s:%s:%s\n' "$p" "${m:--}" "${e:--}"
-    done | sort | uniq -c | awk '{print $2":"$1}' | paste -sd, -)"; mix="${mix:--}"
+    done | sort | uniq -c | awk '{print $2":"$1}' | paste -sd, - || true)"; mix="${mix:--}"
     dv=$(src | grep -cE '"event":"dispatched".*"persona":"(verifier|validator)"' 2>/dev/null || true)
     # verify_coverage: of shipped (done) lanes, how many actually got a verifier verdict?
     verified=0; total=0
@@ -55,7 +57,10 @@ case "$cmd" in
   feedback)  # Tier 3c, Layer 3: append a durable operator-feedback record (a ledger
              # metrics snapshot + a free-text rating) to the eval log, and echo it. This
              # is the live, observational complement to the headless A/B (tests/eval).
+             # Stamped with the plugin version (ADR-0028) so cross-run trends attribute
+             # behavior to releases instead of the operator's memory of "before/after".
     note="${*:-}"; ed="$ROOT/eval"; mkdir -p "$ed"
+    pv="$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' "$(cd "$(dirname "$0")/../../.." && pwd)/.claude-plugin/plugin.json" 2>/dev/null | head -1)"; [ -n "$pv" ] || pv="-"
     m="$(bash "$0" metrics)"
     # Quote non-integer values (verify_coverage=1/2, model_mix=...) so the record stays
     # valid JSON; bare integers stay numeric.
@@ -64,7 +69,7 @@ case "$cmd" in
       json="$json,\"${kv%%=*}\":$v"
     done
     nl="${note//\\/\\\\}"; nl="${nl//\"/\\\"}"
-    printf '{"ts":"%s","event":"feedback","note":"%s"%s}\n' "$(date -u +%FT%TZ)" "$nl" "$json" >> "$ed/feedback.jsonl"
+    printf '{"ts":"%s","event":"feedback","plugin_version":"%s","note":"%s"%s}\n' "$(date -u +%FT%TZ)" "$pv" "$nl" "$json" >> "$ed/feedback.jsonl"
     printf 'feedback recorded -> %s\n%s\nnote: %s\n' "$ed/feedback.jsonl" "$m" "${note:-<none>}" ;;
 
   conformance)  # Tier 3c trace conformance: assert the ledger contains the expected

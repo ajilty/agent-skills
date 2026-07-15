@@ -151,6 +151,13 @@ Run these in order on every invocation. Steps reference the detailed sections.
    at a full context is the damaging case this pre-empts.
 5. **Escalate, don't thrash.** `DECISION_FORK` / quarantine halt their lane and
    surface to the operator (§3b). Metrics derive from the ledger (§8).
+6. **Wrap up — feedback lands durably (ADR-0028).** When the goal closes or the
+   operator winds the session down, capture the run review: the full qualitative
+   review to `eval/reviews/<UTC-ts>.md` (each point tied to a specific dispatch with
+   evidence) and `ledger.sh feedback "<rating> review:<path>"` for the version-stamped
+   row + metrics snapshot (the `/orchestrate:feedback` shape). Chat-only feedback is
+   lost to the improvement loop; if you cannot run shell, print the exact command for
+   the operator instead.
 
 Quarantine (§4) and the trust rule (§0) apply throughout. No config file is read.
 

@@ -38,10 +38,22 @@ grep -q '"event":"feedback"' "$FB"        && pass || fail "feedback record writt
 grep -q '"shipped":1'        "$FB"        && pass || fail "feedback embeds metrics snapshot"
 grep -q 'smooth run, one healthy fork' "$FB" && pass || fail "feedback embeds the operator note"
 grep -q '"model_mix":"' "$FB"             && pass || fail "feedback embeds model_mix (quoted string)"
+grep -qE '"plugin_version":"[0-9]' "$FB"  && pass || fail "feedback stamped with the plugin version (ADR-0028)"
 # the record must be VALID JSON: non-integer metric values (verify_coverage=1/2,
 # model_mix=...) are quoted; previously they'd have emitted bare 1/2 (invalid)
 if command -v python3 >/dev/null 2>&1; then
   tail -1 "$FB" | python3 -c 'import json,sys; json.loads(sys.stdin.read())' 2>/dev/null && pass || fail "feedback record is valid JSON"
 fi
+
+# EMPTY board (regression): metrics + feedback must work before any dispatch — grep's
+# exit-1 on zero dispatched events killed both under pipefail (latent since model_mix).
+d2="$(mktemp_repo)"; cd "$d2"
+me="$(bash "$R" metrics)"; rc=$?
+assert_eq "$rc" "0" "metrics exits 0 on an EMPTY board"
+case "$me" in *"model_mix=-"*) pass;; *) fail "empty-board model_mix is '-' ($me)";; esac
+bash "$R" feedback "early feedback, nothing dispatched yet" >/dev/null 2>&1
+assert_eq "$?" "0" "feedback exits 0 on an EMPTY board"
+assert_file ".agents/runs/orchestrate/eval/feedback.jsonl"
+cd /; rm -rf "$d2"
 
 cd /; rm -rf "$d"

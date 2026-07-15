@@ -1,16 +1,33 @@
 ---
-description: Record a one-line effectiveness rating + a ledger-derived metrics snapshot for the current run (Tier 3c feedback loop).
+description: Record run feedback durably — full qualitative review to eval/reviews/ + a version-stamped rating row in feedback.jsonl (Tier 3c feedback loop).
 ---
-Capture operator feedback on the current orchestrate run and append a durable record
-to the eval log — the live, observational complement to the headless A/B eval.
+Capture operator feedback on the current orchestrate run **durably** — feedback that only
+lives in chat is lost to the plugin's improvement loop (ADR-0028). Two artifacts, both
+under `.agents/runs/orchestrate/eval/` in the repo root:
 
-From the repo root (where `.agents/runs/orchestrate/board.jsonl` lives), run:
+1. **The full qualitative review** → write it to `eval/reviews/<UTC-ts>.md`. Shape it the
+   way reviews are actionable (each point tied to a SPECIFIC dispatch/lane with evidence,
+   never vibes):
+   - **Rating:** one line (e.g. "strong — 4 lanes shipped, verifier caught real defects").
+   - **What worked:** each item names the lane/dispatch and the concrete catch or win.
+   - **What to improve:** each item names the dispatch, the defect/friction, and the
+     evidence; say which existing rule it violates (batch-by-tier, §2b, ADR-00xx) or
+     whether it is a NEW gap.
+   - **Open at feedback time:** anything in flight the next session must know.
+   Fold in whatever the operator said verbatim — their phrasing is signal.
 
-`bash ${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/ledger.sh feedback "$ARGUMENTS"`
+2. **The durable row** → from the repo root run:
+   `ledger.sh feedback "$ARGUMENTS review:eval/reviews/<UTC-ts>.md"`
+   (bare `ledger.sh` resolves via the plugin bin shims, ADR-0018). This appends a
+   version-stamped record embedding the metrics snapshot — shipped, friction,
+   verify_coverage, model_mix — alongside the note + review pointer.
 
-Then read back the printed snapshot and give the operator a two-line read of how the
-run went, per SKILL §8: **shipped** changes, and **healthy** escalations
-(forks/decisions — the tool correctly surfacing hard calls) versus **friction**
-(rejects, oracle-inconsistencies, lease-conflicts — the number to drive down). The
-record is appended to `.agents/runs/orchestrate/eval/feedback.jsonl` for trend
-tracking; the free-text note is whatever the operator passed as arguments.
+Then give the operator the two-line read per SKILL §8: **shipped** changes and
+**healthy** escalations (forks/decisions — the tool correctly surfacing hard calls)
+versus **friction** (rejects, oracle-inconsistencies, lease-conflicts — the number to
+drive down).
+
+**If you cannot execute shell here** (no Bash in this context): still produce the review
+text in chat, and print the exact command for the operator to run themselves:
+`! ledger.sh feedback "<rating> review:eval/reviews/<ts>.md"` — and ask them to paste the
+review into that file. Never let the review evaporate in chat.
