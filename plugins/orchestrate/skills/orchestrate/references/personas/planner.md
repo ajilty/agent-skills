@@ -98,8 +98,12 @@ mark the group serial.
 ## Sign-off
 
 No open `#UNKNOWN`. Every hypothesis has a verify-at-impl check. Oracle present.
-Decisions trace to trusted-origin reasons. Then hand to Verifier (plan-mode)
-before Execution.
+Decisions trace to trusted-origin reasons. **Identifiers are cited, never inferred:**
+when the Researcher's findings carry the real names (workflow job keys, resource
+ids, paths), the spec uses those verbatim — a guessed key the findings could have
+answered is at best an `#ASSUMPTION` and at worst silent rework (measured: a spec
+guessed `apply-env`/`apply-shared` where the real YAML said `apply`/`shared`).
+Then hand to Verifier (plan-mode) before Execution.
 
 ## Judgment memory (read the decision index first)
 

@@ -249,6 +249,49 @@ git worktree add -q -b wtX "$gco-wtX" HEAD 2>/dev/null
 assert_eq "$?" "0" "shared-checkout: allow reset --hard in a LINKED worktree (not the shared checkout)"
 cd /; git -C "$gco" worktree remove --force "$gco-wtX" 2>/dev/null; rm -rf "$gco" "$gco-wtX"
 
+# --- run-scope.sh scratch carve-out (ADR-0026): verifier rehearsal writes to throwaway
+#     scratch roots are allowed; repo/git mutation stays sealed. ---
+PERSONA=verifier TOOL_INPUT='echo done > /tmp/claude-x/sentinel.md' bash "$RT/run-scope.sh" >/dev/null 2>&1
+assert_eq "$?" "0" "run-scope: allow redirect to /tmp (rehearsal sentinel)"
+PERSONA=verifier TOOL_INPUT='tee /var/tmp/stub/aws' bash "$RT/run-scope.sh" >/dev/null 2>&1
+assert_eq "$?" "0" "run-scope: allow tee into /var/tmp (stub binary)"
+PERSONA=verifier TMPDIR=/scratchy TOOL_INPUT='printf x > /scratchy/probe.sh' bash "$RT/run-scope.sh" >/dev/null 2>&1
+assert_eq "$?" "0" "run-scope: allow redirect under \$TMPDIR"
+PERSONA=verifier TOOL_INPUT='rm /tmp/rehearsal/f' bash "$RT/run-scope.sh" >/dev/null 2>&1
+assert_eq "$?" "0" "run-scope: allow rm confined to scratch"
+PERSONA=verifier TOOL_INPUT='echo x > out.txt' bash "$RT/run-scope.sh" >/dev/null 2>&1
+assert_eq "$?" "2" "run-scope: still deny redirect to a repo-relative path"
+PERSONA=verifier TOOL_INPUT='echo a > /tmp/a && echo b > b.txt' bash "$RT/run-scope.sh" >/dev/null 2>&1
+assert_eq "$?" "2" "run-scope: mixed targets deny (one non-scratch poisons the command)"
+PERSONA=verifier TOOL_INPUT='sed -i s/a/b/ src/main.c' bash "$RT/run-scope.sh" >/dev/null 2>&1
+assert_eq "$?" "2" "run-scope: still deny sed -i on repo paths"
+PERSONA=verifier TOOL_INPUT='rm -rf src' bash "$RT/run-scope.sh" >/dev/null 2>&1
+assert_eq "$?" "2" "run-scope: still deny relative-path rm (fail-closed: not provably scratch)"
+PERSONA=verifier TOOL_INPUT='git -C /tmp/x commit -m y' bash "$RT/run-scope.sh" >/dev/null 2>&1
+assert_eq "$?" "2" "run-scope: git mutation denied even under a scratch path"
+
+# --- guard-merge-base.sh (ADR-0027): merges on the PRIMARY checkout must land on the
+#     journaled integration base (goal event `base`); fail-open without one. ---
+gmb="$(mktemp_repo)"; cd "$gmb"; git commit --allow-empty -q -m init
+git checkout -q -b integration 2>/dev/null || git switch -q -c integration
+L="$RT/../ledger.sh"
+printf '{"tool_input":{"command":"git merge lane-x"}}' | bash "$RT/guard-merge-base.sh" >/dev/null 2>&1
+assert_eq "$?" "0" "merge-base: fail-open when no goal/base journaled"
+bash "$L" goal "ship it" "docs/spec.md" "integration" >/dev/null 2>&1
+printf '{"tool_input":{"command":"git merge lane-x"}}' | bash "$RT/guard-merge-base.sh" >/dev/null 2>&1
+assert_eq "$?" "0" "merge-base: allow merge when HEAD == journaled base"
+git checkout -q -b bystander
+printf '{"tool_input":{"command":"git merge lane-x"}}' | bash "$RT/guard-merge-base.sh" >/dev/null 2>&1
+assert_eq "$?" "2" "merge-base: DENY merge when HEAD is a bystander branch (measured drift)"
+o="$(printf '{"tool_input":{"command":"git merge lane-x"}}' | bash "$RT/guard-merge-base.sh" 2>/dev/null)"
+assert_eq "$o" "" "merge-base: empty stdout on DENY (stderr-only)"
+printf '{"tool_input":{"command":"git status"}}' | bash "$RT/guard-merge-base.sh" >/dev/null 2>&1
+assert_eq "$?" "0" "merge-base: non-merge git untouched"
+git worktree add -q -b wtM "$gmb-wtM" HEAD 2>/dev/null
+( cd "$gmb-wtM" && printf '{"tool_input":{"command":"git merge lane-x"}}' | bash "$RT/guard-merge-base.sh" >/dev/null 2>&1; exit $? )
+assert_eq "$?" "0" "merge-base: linked worktree exempt (writer's own sandbox)"
+cd /; git -C "$gmb" worktree remove --force "$gmb-wtM" 2>/dev/null; rm -rf "$gmb" "$gmb-wtM"
+
 # --- warn-agent-teams.sh: SessionStart advisory when Claude Code agent teams is on (ADR-0023).
 #     Warn, never block; Claude-Code-only (silent no-op when the env var is unset). ---
 o="$(CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 bash "$RT/warn-agent-teams.sh" 2>&1)"; rc=$?

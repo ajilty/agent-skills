@@ -23,6 +23,10 @@ bash "$L" goal "wire up rate limiting" "docs/adr/0080-final.md"
 out2="$(bash "$L" reground 2>&1)"
 case "$out2" in *"0080-final.md"*) pass;; *) fail "reground surfaces the LATEST goal (tail -1)";; esac
 
+# optional base (integration branch, guard-merge-base floor ADR-0027) journals when given
+bash "$L" goal "wire up rate limiting" "docs/adr/0080-final.md" "blank-slate"
+grep -q '"base":"blank-slate"' "$board" && pass || fail "goal records the integration base"
+
 # missing note -> nonzero (don't journal an empty goal)
 bash "$L" goal >/dev/null 2>&1
 [ "$?" -ne 0 ] && pass || fail "goal with no note -> nonzero"

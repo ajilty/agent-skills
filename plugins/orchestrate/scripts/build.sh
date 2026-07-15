@@ -50,6 +50,7 @@ cat > "$PLUGIN_ROOT/hooks/hooks.json" <<JSON
         { "type": "command", "command": "$H/gate-prod-apply.sh" },
         { "type": "command", "command": "$H/run-scope.sh" },
         { "type": "command", "command": "$H/guard-shared-checkout.sh" },
+        { "type": "command", "command": "$H/guard-merge-base.sh" },
         { "type": "command", "command": "$H/guard-done.sh" } ] },
       { "matcher": "Write|Edit", "hooks": [
         { "type": "command", "command": "$H/write-scope.sh" } ] },

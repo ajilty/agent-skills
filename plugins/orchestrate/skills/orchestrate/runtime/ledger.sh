@@ -205,9 +205,9 @@ case "$cmd" in
               # north star + next-step location across compaction — resume then depends on
               # an external prose doc. This event anchors the board to the goal (ADR-0020).
               # Run-level, so no ticket field (reground's lane loop skips no-ticket lines).
-    note="${1:?goal note}"; spec="${2:-}"; mkdir -p "$ROOT"
+    note="${1:?goal note}"; spec="${2:-}"; base="${3:-}"; mkdir -p "$ROOT"
     nl="${note//\\/\\\\}"; nl="${nl//\"/\\\"}"          # escape backslash + quote in free text
-    printf '{"ts":"%s","event":"goal","note":"%s","spec":"%s"}\n' "$(date -u +%FT%TZ)" "$nl" "$spec" >> "$LEDGER" ;;
+    printf '{"ts":"%s","event":"goal","note":"%s","spec":"%s","base":"%s"}\n' "$(date -u +%FT%TZ)" "$nl" "$spec" "$base" >> "$LEDGER" ;;
 
   done)       # close a lane FAIL-CLOSED on unverified ships: a verifying tier (T1/T2)
               # may not be marked done without a verdict for that ticket. T0 (one

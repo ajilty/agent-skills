@@ -31,3 +31,5 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0023](0023-agent-teams-incompatible-detect-and-warn.md) | Agent teams is incompatible with orchestrate's isolation; detect and warn (no opt-out) | active |
 | [0024](0024-horsepower-binds-at-dispatch.md) | Per-persona horsepower binds at dispatch, not at agent registration | active |
 | [0025](0025-researcher-is-two-jobs-spec-gaps-not-bought-back.md) | Researcher is two jobs; a T1 spec gap is not bought back by implementer model tier | active |
+| [0026](0026-verifier-scratch-carveout.md) | The verifier run-scope floor carves out scratch roots for rehearsals | active |
+| [0027](0027-merge-lands-on-journaled-base.md) | Merges on the shared checkout must land on the journaled integration base | active |

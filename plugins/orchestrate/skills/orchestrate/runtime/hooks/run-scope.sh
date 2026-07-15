@@ -28,6 +28,13 @@ cmd="$(J .tool_input.command)"; [ -n "$cmd" ] || cmd="${TOOL_INPUT:-${CODEX_TOOL
 
 deny() { echo "orchestrate: verifier is tests-only — workspace/git mutation is refused (run_scope): $cmd" >&2; exit 2; }
 
+# Scratch carve-out (ADR-0026): rehearsal writes confined to throwaway scratch roots are
+# legitimate verification work (stub binaries, probe scripts, result sentinels). Two live
+# runs saw verifiers degrade — falling back to static analysis, assembling sentinels via
+# chr(62) — because ANY write was refused. Scratch roots only; repo + git stay sealed.
+is_scratch(){ case "$1" in /tmp/*|/var/tmp/*) return 0 ;; esac
+  [ -n "${TMPDIR:-}" ] && case "$1" in "${TMPDIR%/}"/*) return 0 ;; esac; return 1; }
+
 # Normalize shell separators to spaces and wrap in spaces, so verb checks are
 # word-bounded (\" rm \" never matches \"confirm\"). Redirection is checked on raw.
 norm=" ${cmd//[;|&()\`]/ } "
@@ -40,16 +47,33 @@ case "$norm" in
       *" checkout "*|*" reset "*|*" restore "*|*" switch "*|*" branch "*|*" push "*|*" merge "*|*" rebase "*|*" apply "*|*" stash "*|*" commit "*|*" clean "*) deny ;;
     esac ;;
 esac
+# File-mutation verbs: allowed ONLY when every path-shaped argument (contains "/")
+# resolves under a scratch root. A relative or repo path anywhere -> deny as before
+# (fail-closed: an unparseable target reads as non-scratch).
 case "$norm" in
-  *" rm "*|*" rmdir "*|*" mv "*|*" truncate "*|*" dd "*|*" tee "*) deny ;;
-  *" sed -i"*|*" perl -i"*) deny ;;
+  *" rm "*|*" rmdir "*|*" mv "*|*" truncate "*|*" dd "*|*" tee "*|*" sed -i"*|*" perl -i"*)
+    saw_path=0; ok=1
+    for w in $norm; do
+      wq="${w%\"}"; wq="${wq#\"}"; wq="${wq%\'}"; wq="${wq#\'}"
+      case "$wq" in -*|*=*) continue ;; esac
+      case "$wq" in */*) saw_path=1; is_scratch "$wq" || ok=0 ;; esac
+    done
+    { [ "$saw_path" = 1 ] && [ "$ok" = 1 ]; } || deny ;;
 esac
 
-# Output redirection to a file = a write. Strip benign /dev/null + fd-dup forms,
-# then any remaining > (or >>) is a write to a real path.
+# Output redirection to a file = a write. Strip benign /dev/null + fd-dup forms; any
+# remaining > (or >>) must target a scratch root, else deny.
 red="$cmd"
 red="${red//2>&1/}"; red="${red//&>\/dev\/null/}"; red="${red//2>\/dev\/null/}"
 red="${red//1>\/dev\/null/}"; red="${red//>\/dev\/null/}"; red="${red//> \/dev\/null/}"
-case "$red" in *">"*) deny ;; esac
+case "$red" in *">"*)
+  ok=1; saw=0
+  while IFS= read -r t; do
+    [ -n "$t" ] || continue; saw=1
+    t="${t%\"}"; t="${t#\"}"; t="${t%\'}"; t="${t#\'}"
+    is_scratch "$t" || ok=0
+  done <<< "$(printf '%s' "$red" | grep -oE '>>?[[:space:]]*[^[:space:]<>]+' | sed -E 's/^>>?[[:space:]]*//')"
+  { [ "$saw" = 1 ] && [ "$ok" = 1 ]; } || deny ;;
+esac
 
 exit 0

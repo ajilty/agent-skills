@@ -81,8 +81,10 @@ Run these in order on every invocation. Steps reference the detailed sections.
    file, a pasted spec — and pull what you need with whatever tools are available;
    otherwise treat the input itself as the work-item. Write it to
    `…/tickets/<ticket>/work-item.md`. Don't assume any particular tracker.
-   Journal the run-level goal: `ledger.sh goal "<goal>" [spec-path]` (add the spec
-   path once the Planner signs it — the latest goal wins on reground). This anchors
+   Journal the run-level goal: `ledger.sh goal "<goal>" [spec-path] [base-branch]`
+   (add the spec path once the Planner signs it — the latest goal wins on reground;
+   `base-branch` is the integration branch merges must land on, enforced by the
+   `guard-merge-base` floor, ADR-0027). This anchors
    the board to the north star, so a **clean** board (no open lanes, or between
    phases) still points a resumed run at the goal + plan instead of an external prose
    doc (§10, ADR-0020).
@@ -130,7 +132,12 @@ Run these in order on every invocation. Steps reference the detailed sections.
       deliver — re-dispatch; never accept a bare idle/return ping as completion.
    d. Route per §3. The retry budget is **counted from the ledger**
       (`ledger.sh retries <ticket>`), not remembered.
-4. **Verify, resolve, merge, close (§7, §9).** Resolve every open tag; merge by
+4. **Verify, resolve, merge, close (§7, §9).** Resolve every open tag. **Before any
+   merge, assert the checkout**: `git rev-parse --abbrev-ref HEAD` must equal the
+   journaled integration base (goal event `base`) — a lane merge landing on a
+   bystander branch the operator happened to have checked out is a measured ×2
+   failure; the `guard-merge-base` floor denies it when the base is journaled
+   (ADR-0027). Then merge by
    the deterministic branch glob; close the lane with `ledger.sh done
    <ticket>` — **fail-closed**: it refuses a T1/T2 ship that has no Verifier verdict
    on the board. Verification is *not optional* (the router's measured habit is to
