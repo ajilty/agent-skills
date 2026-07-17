@@ -80,6 +80,19 @@ order. Any failure short-circuits to the stated route.
 Also resolve **every open tag**: no `#ASSUMED`/`#ASSUMPTION`/`#GAP` may remain
 open at approval.
 
+## Scratch rehearsals leave no bulk behind (ADR-0026)
+
+Rehearsals (a `terraform init` + `validate`, a dry-run build) belong under the
+scratch roots (`/tmp`, `$TMPDIR`) the run-scope floor carves out. Scratch is a
+**quota-bounded tmpfs**: bulk it up and every session on the host starts failing
+writes (measured 2026-07-17: 4.2G of leftover `.terraform/` provider binaries
+exhausted the user quota and silently swallowed all command output). So before
+you write your verdict, delete the re-downloadable bulk your rehearsals
+materialized — provider/dependency trees (`.terraform/`, `node_modules/`),
+fetched images, extracted archives. One `rm -rf` of each rehearsal dir as your
+last scratch action is enough; keep only what backs the verdict, quoted or
+copied into the verdict file itself.
+
 ## Verdicts — persist to disk, then return
 
 Write your verdict **and the backing for it** to the verdict file path your
