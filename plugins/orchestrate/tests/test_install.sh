@@ -2,7 +2,7 @@ SK="$HERE/.."   # plugins/orchestrate
 have_yq4 || { echo "(skip test_install: $YQ4_SKIP)"; return 0 2>/dev/null || true; }
 d="$(mktemp_repo)"; cd "$d"
 # codex: emits ALL five personas, honors --dir (no AGENTS.orchestrate.md in cwd), ships runtime
-o="/tmp/p4cx.$$"; rm -rf "$o"; bash "$SK/scripts/install-codex.sh" --scope project --dir "$o" >/dev/null 2>&1
+o="${TMPDIR:-/tmp}/p4cx.$$"; rm -rf "$o"; bash "$SK/scripts/install-codex.sh" --scope project --dir "$o" >/dev/null 2>&1
 for p in researcher planner implementer verifier actuator; do assert_file "$o/agents/$p.toml"; done
 assert_no_file "AGENTS.orchestrate.md"
 test -x "$o/orchestrate-runtime/ledger.sh" && pass || fail "codex ships ledger.sh executable"
@@ -19,7 +19,7 @@ for p in researcher planner implementer verifier actuator; do assert_file "$o/or
 grep -qE '^[[:space:]]*network_access[[:space:]]*=[[:space:]]*true' "$o/config.toml" && pass || fail "codex config sets network_access=true (ADR-0017)"
 rm -rf "$o"
 # opencode: emits ALL five personas AND honors --dir
-o="/tmp/p4oc.$$"; rm -rf "$o"; bash "$SK/scripts/install-opencode.sh" --scope project --dir "$o" >/dev/null 2>&1
+o="${TMPDIR:-/tmp}/p4oc.$$"; rm -rf "$o"; bash "$SK/scripts/install-opencode.sh" --scope project --dir "$o" >/dev/null 2>&1
 for p in researcher planner implementer verifier actuator; do assert_file "$o/agent/$p.md"; done
 assert_no_file "AGENTS.orchestrate.md"
 rm -rf "$o"

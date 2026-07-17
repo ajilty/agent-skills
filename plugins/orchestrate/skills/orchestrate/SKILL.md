@@ -87,7 +87,12 @@ Run these in order on every invocation. Steps reference the detailed sections.
    `guard-merge-base` floor, ADR-0027). This anchors
    the board to the north star, so a **clean** board (no open lanes, or between
    phases) still points a resumed run at the goal + plan instead of an external prose
-   doc (§10, ADR-0020).
+   doc (§10, ADR-0020). **Goal boundary = feedback boundary:** before journaling a
+   *new* goal onto a board that already has `done` lanes newer than the last row in
+   `eval/feedback.jsonl` (or with no row at all), capture step 6's feedback for the
+   *outgoing* goal first — a multi-day run that rolls goal-to-goal never reaches
+   wrap-up, and its lessons are lost (measured: three goal cycles, 14 shipped lanes,
+   zero rows).
 2. **Baseline + right-size (§2, §2a), then clarify-gate (§2b).** Attempt the baseline;
    on failure pick the cheapest tier the counted signals allow (T0/T1/T2), defaulting
    down. **Before the first dispatch**, run the §2b front-door gate: if no acceptance
@@ -95,7 +100,10 @@ Run these in order on every invocation. Steps reference the detailed sections.
    err toward asking. A clear goal of any altitude proceeds without pausing.
 3. **Drive each lane:** *(As you drive, journal only the **canonical** ledger events —
    `goal`, `intake`, `clarify`, `dispatched`, `returned`, `verdict`, `fork`, `decision`,
-   `lane`, `done` — via the `ledger.sh` helpers. The board is machine-read: an
+   `lane`, `done` — via the `ledger.sh` helpers, **never a raw `echo >>` to the board**:
+   `ledger.sh append '<json>'` stamps `ts` when absent and flags a non-canonical event
+   (measured: hand-echoed lines shipped without `ts`, degrading status pace and
+   cross-run trends). The board is machine-read: an
    invented event name is invisible to reground, metrics, and conformance. Full
    vocabulary in `references/resume.md`.)*
    a. Dispatch. Mint a unique `dispatch_id` for **every** dispatch — read-only
@@ -161,7 +169,8 @@ Run these in order on every invocation. Steps reference the detailed sections.
    evidence) and `ledger.sh feedback "<rating> review:<path>"` for the version-stamped
    row + metrics snapshot (the `/orchestrate:feedback` shape). Chat-only feedback is
    lost to the improvement loop; if you cannot run shell, print the exact command for
-   the operator instead.
+   the operator instead. A session that rolls into a **new goal** instead of winding
+   down owes this too — the step-1 goal-boundary rule fires it for the outgoing goal.
 
 Quarantine (§4) and the trust rule (§0) apply throughout. No config file is read.
 

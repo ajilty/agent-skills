@@ -13,6 +13,8 @@ Gather — keep raw output OUT of your reply (§2a′: glance, don't dump):
   `verdict`/`fork`/`decision`/`done`, and the run-level `goal` event.
 - Only for lanes that are active or need input: the ticket file behind them
   (`tickets/<ticket>/fork.md`, verdicts, `work-item.md`) and the writer worktree's commits-ahead.
+- `.agents/runs/orchestrate/eval/feedback.jsonl` — ts of the last feedback row (if any),
+  to spot a feedback gap.
 
 Render top-down and glanceable, with these emojis —
 🎯 goal · 📋 plan · 🌳 lanes · 🙋 needs you · ⏭️ next · 📄 file;
@@ -37,3 +39,8 @@ plan is complete. Keep it skimmable; drill-in happens conversationally if the op
 When the board is quiescent (no in-flight dispatch) **and** the session has grown long, add one
 footer line: `💡 clean boundary — good time for /compact keep the goal and open lanes; the board
 on disk is authoritative`. Compaction is operator-triggered only; this surfaces the cheap moment.
+
+When `done` lanes postdate the last feedback row (or `eval/feedback.jsonl` has none), add one
+footer line: `💬 N lanes shipped since the last feedback row — capture at the next goal boundary
+or wrap-up (/orchestrate:feedback)`. Multi-day runs that roll goal-to-goal are the measured
+leak: they never reach wrap-up, so the row never lands (ADR-0028).

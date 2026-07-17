@@ -35,3 +35,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0027](0027-merge-lands-on-journaled-base.md) | Merges on the shared checkout must land on the journaled integration base | active |
 | [0028](0028-feedback-lands-durably.md) | Run feedback lands durably: review sidecar, version stamp, dev-side harvest | active |
 | [0029](0029-worktree-base-from-journaled-goal.md) | Writer worktrees cut from the journaled goal base, not the operator's current checkout | active |
+| [0030](0030-append-stamps-ts-and-flags-noncanonical-events.md) | `ledger.sh append` stamps ts and flags non-canonical events; helpers must out-earn raw echo | active |

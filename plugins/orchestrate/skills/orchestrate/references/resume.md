@@ -23,8 +23,9 @@ drives** (loop steps in SKILL.md, not background hooks).
 (reground, `metrics`, `conformance` all match on these exact `event` values). An
 event outside this set is **invisible** to every consumer — it neither reconstructs
 on resume, counts in metrics, nor satisfies a conformance check. Journal **only**
-these, via the `ledger.sh` helpers (`goal` / `clarify` / `decision` / `append`); do not coin
-ad-hoc events like `clarification_halt`. Use `intake` for work-item recording (it is
+these, via the `ledger.sh` helpers (`goal` / `clarify` / `decision` / `append` — `append`
+stamps `ts` when absent and warns on a non-canonical event; never `echo >>` the board
+directly); do not coin ad-hoc events like `clarification_halt`. Use `intake` for work-item recording (it is
 what the router naturally emits — adopted as canonical) and `clarify` for any
 clarification (its `skill` records the mechanism actually used — `inline` when the
 interactive grill skills can't run, e.g. a non-interactive session).
@@ -39,6 +40,7 @@ interactive grill skills can't run, e.g. a non-interactive session).
 {"ts","ticket","event":"fork","state":"halted","fork_id"}
 {"ts","ticket","event":"decision","fork_id","adr"}                      # fork resolved -> judgment memory (adr set iff promoted, §11)
 {"ts","ticket","event":"lease-conflict","persona","key"}               # actuator denied: mutation target held by another lane
+{"ts","ticket","event":"gate-blocked","persona","key"}                 # hook-journaled: prod-apply gate denied an unacked actuator dispatch (§9)
 {"ts","ticket","event":"lane","state":"open|closed","branch"}
 {"ts","ticket","event":"done"}                                          # write via `ledger.sh done <ticket>` — FAIL-CLOSED: refuses a T1/T2 lane with no verdict (verification not optional); T0 exempt (oracle is the check)
 ```

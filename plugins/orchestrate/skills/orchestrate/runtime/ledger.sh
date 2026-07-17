@@ -17,7 +17,22 @@ val() { sed -n "s/.*\"$2\":\"\([^\"]*\)\".*/\1/p" <<< "$1"; }
 cmd="${1:-}"; shift || true
 case "$cmd" in
   append)
-    mkdir -p "$ROOT"; printf '%s\n' "$*" >> "$LEDGER" ;;
+    # The helper must out-earn `echo >>` or routers bypass it (measured: 311/503
+    # field board lines had no ts; only `done`, whose helper does real work, hit
+    # 100%). Stamps ts when absent and flags a non-canonical event name — but
+    # NEVER drops the line: on an append-only journal a mis-named event beats a
+    # lost one.
+    mkdir -p "$ROOT"; line="$*"
+    case "$line" in
+      '{'*'"ts":'*) ;;
+      '{'*) line="{\"ts\":\"$(date -u +%FT%TZ)\",${line#?}" ;;
+    esac
+    ev="$(val "$line" event)"
+    case "$ev" in
+      goal|intake|clarify|dispatched|returned|verdict|fork|decision|lease-conflict|gate-blocked|lane|done|feedback) ;;
+      *) echo "ledger.sh append: WARNING event '${ev:-<missing>}' is not canonical — invisible to reground/metrics/conformance (vocabulary: references/resume.md)" >&2 ;;
+    esac
+    printf '%s\n' "$line" >> "$LEDGER" ;;
 
   retries)   # derived, never held: compaction can't corrupt a disk count
     t="${1:?ticket}"; [ -f "$LEDGER" ] || { echo 0; exit 0; }
