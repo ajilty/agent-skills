@@ -38,6 +38,16 @@ pin plugin ≤0.8.19).
   loading inside `codex exec` / `opencode run` (matters for nested persona dispatch),
   OpenCode's `subagent.start` event name, and OpenCode permission-key coverage for
   `write`. First live run should confirm and report drift.
+- **2026-07-21 resolution: `subagent.start` probe.** Verified against the official
+  OpenCode plugin docs (opencode.ai/docs/plugins/): `subagent.start` is not in the
+  documented event list. `install-opencode.sh`'s emitted `orchestrate.ts` no longer
+  references it — the emitted plugin now uses only documented hooks
+  (`tool.execute.before`, `shell.env`, `session.compacted`) with the documented
+  `async ({ $, ... }) => ({...})` signature. Write-ahead for the writer moved
+  in-loop: the router runs `on-writer-dispatch.sh` itself immediately before
+  dispatching an implementer/actuator on OpenCode (ADR-0011 spirit), rather than
+  relying on an undocumented event. The remaining two probe items (skills loading
+  inside `opencode run`, permission-key coverage for `write`) are still open.
 
 ## Status
 
