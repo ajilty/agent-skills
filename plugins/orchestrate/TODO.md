@@ -25,7 +25,7 @@ fresh-context Verifier) — validated on its own construction.
 ## High priority
 
 - **§2b clarify gate silently passed a fuzzy goal (live 2026-07-02, sonnet router).**
-  Real-world probe: `/orchestrate:start Improve the logging in this repo.` — no
+  Real-world probe: `/orchestrate:init Improve the logging in this repo.` — no
   nameable acceptance oracle, headless session. Expected: `clarify inline` journaled
   + lane HALTed open. Observed: no `clarify` event; the Planner invented a spec AND
   its own acceptance script (`scripts/verify_logging.py` — a self-authored oracle,
@@ -104,7 +104,7 @@ fresh-context Verifier) — validated on its own construction.
   execute. Needs the same fail-closed care as write-scope: an unresolvable path denies.
 
 - **Codex / OpenCode command parity (still open).** The Claude Code plugin ships
-  `commands/start.md` → `/orchestrate:start`; the other two harnesses don't yet.
+  `commands/init.md` → `/orchestrate:init`; the other two harnesses don't yet.
   Add a Codex prompt (`~/.codex/prompts/orchestrate.md`) and an OpenCode command
   so the typed entry point works everywhere. (`SKILL.md` is already the shared
   brain; these are thin wrappers.)
@@ -144,7 +144,7 @@ fresh-context Verifier) — validated on its own construction.
   board + metrics: goal/pace headline, lane tree, conditional needs-you, next; renders
   per-lane model/effort (0.8.9) and the clean-boundary compaction nudge (0.8.10).
   Codex/OpenCode mirror still follows the command-parity item. Original spec:
-  a slash command (sibling to `/orchestrate:start`) that
+  a slash command (sibling to `/orchestrate:init`) that
   prints the current work-board at a glance *without dispatching or advancing any
   lane*: open lanes + their persona/column, in-flight writer(s), halted
   `DECISION_FORK`s / quarantines awaiting the operator, held leases, and anything

@@ -31,7 +31,7 @@ clarification (its `skill` records the mechanism actually used — `inline` when
 interactive grill skills can't run, e.g. a non-interactive session).
 
 ```
-{"ts","event":"goal","note","spec","base"}                              # run-level north star + pointer to where the plan lives (spec/ADR) + integration base branch (guard-merge-base floor, ADR-0027); NO ticket. reground surfaces the latest so a clean board still carries the goal + plan location (§10, ADR-0020)
+{"ts","event":"goal","note","spec","base","model_policy"}               # run-level north star + pointer to where the plan lives (spec/ADR) + integration base branch (guard-merge-base floor, ADR-0027) + optional §2a′ dispatch policy (dynamic|quick|inherit, ADR-0033); NO ticket. reground surfaces the latest so a clean board still carries the goal + plan location (§10, ADR-0020). The anchor text MUST be in "note" — a hand-built {"goal": ...} field is invisible to reground (append warns on it)
 {"ts","ticket","event":"intake","tier","note"}                          # work item recorded + right-sized; tier = chosen lane (T0/T1/T2)
 {"ts","ticket","event":"dispatched","persona","branch","dispatch_id","slug","model","effort"}   # write-ahead: BEFORE the persona runs. persona: one of the five CANONICAL names (researcher|planner|implementer|verifier|actuator) — the troubleshooter flavor journals as "researcher" (its model/effort row shows the flavor); a coined name like "debugger" is invisible to disp_* metrics (measured ×2). branch: writer personas only; dispatch_id: EVERY dispatch (result→agent attribution, ADR-0014); slug: ticket-unique research topic, read-only personas only (RAW → findings/_quarantine/<slug>.<dispatch_id>.md, promoted → findings/<slug>.md). model/effort: OPTIONAL — the horsepower this dispatch actually ran with (tier default, or the §2a′ escalation override), so `metrics model_mix` / status / feedback can verify usage was right-sized
 {"ts","ticket","event":"returned","persona","status","artifact"}        # artifact: the PROMOTED findings path (read-only). The persona wrote the RAW quarantine file itself; the router read it from disk, gated, and promoted it (§5, ADR-0014)
@@ -41,6 +41,7 @@ interactive grill skills can't run, e.g. a non-interactive session).
 {"ts","ticket","event":"decision","fork_id","adr"}                      # fork resolved -> judgment memory (adr set iff promoted, §11)
 {"ts","ticket","event":"lease-conflict","persona","key"}               # actuator denied: mutation target held by another lane
 {"ts","ticket","event":"gate-blocked","persona","key"}                 # hook-journaled: prod-apply gate denied an unacked actuator dispatch (§9)
+{"ts","event":"denied","hook","persona","note"}                         # hook-journaled on EVERY enforcement denial (ADR-0032): which hook refused which persona, first ~80 chars of the refused command/path. Friction telemetry — counted by metrics (denials=N), surfaced by status, harvested by feedback; the router never writes this itself
 {"ts","ticket","event":"lane","state":"open|closed","branch"}
 {"ts","ticket","event":"done"}                                          # write via `ledger.sh done <ticket>` — FAIL-CLOSED: refuses a T1/T2 lane with no verdict (verification not optional); T0 exempt (oracle is the check)
 ```

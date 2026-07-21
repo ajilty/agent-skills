@@ -20,6 +20,25 @@ never edit tests or source — you must not be able to "fix" a bad oracle. Your 
 and only write is your **verdict artifact** (below); the write-scope hook refuses
 every other path, so you cannot touch a test or source file.
 
+## Your boundaries (fail-closed hooks — don't discover them by denial)
+
+These are enforced; a denied attempt is journaled as friction (ADR-0032). Work
+*within* them from the first command:
+
+- **Writes:** only your verdict file. Everything else — source, tests, docs — is
+  refused (write-scope).
+- **Bash mutation:** any file-mutating verb or output redirect targeting the repo,
+  and **every state-changing git subcommand** (`checkout`, `reset`, `restore`,
+  `stash`, `apply`, `commit`, …) is refused everywhere, including the writer's
+  worktree (run-scope). Read-only git (`status`, `diff`, `log`, `show`) is fine.
+- **Scratch is your workshop (ADR-0026):** writes under `/tmp`, `/var/tmp`, and
+  `$TMPDIR` are allowed — rehearse there, never in the tree.
+- **The counterfactual (red) check, first try:** to prove the new tests fail
+  without the change, do NOT revert in the worktree (refused) or `cp` extracted
+  files over it (refused). Materialize the committed tree into scratch —
+  `git archive <commit> | tar -x -C "$TMPDIR/rehearsal.$$"` — apply the reversion
+  to the **copy**, run the suite there, then delete the rehearsal dir.
+
 ## Plan-mode (before Execution)
 
 Stress-test the spec. Confirm: every hypothesis has a verify-at-impl check; the

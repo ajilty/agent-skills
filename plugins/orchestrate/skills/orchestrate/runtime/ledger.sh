@@ -29,9 +29,15 @@ case "$cmd" in
     esac
     ev="$(val "$line" event)"
     case "$ev" in
-      goal|intake|clarify|dispatched|returned|verdict|fork|decision|lease-conflict|gate-blocked|lane|done|feedback) ;;
+      goal|intake|clarify|dispatched|returned|verdict|fork|decision|lease-conflict|gate-blocked|denied|lane|done|feedback) ;;
       *) echo "ledger.sh append: WARNING event '${ev:-<missing>}' is not canonical — invisible to reground/metrics/conformance (vocabulary: references/resume.md)" >&2 ;;
     esac
+    # A hand-built goal with the wrong field name is a measured drift ("goal": instead
+    # of "note":) that makes the anchor INVISIBLE to reground. Warn; the goal helper
+    # gets it right for free.
+    if [ "$ev" = goal ]; then case "$line" in *'"note":'*) ;;
+      *) echo "ledger.sh append: WARNING goal event without a \"note\" field — reground's goal anchor reads note (use: ledger.sh goal '<note>' [spec] [base] [policy])" >&2 ;;
+    esac; fi
     printf '%s\n' "$line" >> "$LEDGER" ;;
 
   retries)   # derived, never held: compaction can't corrupt a disk count
@@ -46,7 +52,7 @@ case "$cmd" in
     c(){ src | grep -c "$1" 2>/dev/null || true; }
     sh=$(c '"event":"done"'); di=$(c '"event":"dispatched"'); fk=$(c '"event":"fork"')
     de=$(c '"event":"decision"'); rj=$(c '"verdict":"REJECTED"'); oi=$(c '"verdict":"INCONSISTENT_ORACLE"')
-    lc=$(c '"event":"lease-conflict"'); fr=$(( rj + oi + lc ))
+    lc=$(c '"event":"lease-conflict"'); dn=$(c '"event":"denied"'); fr=$(( rj + oi + lc ))
     # delegation health (the infra-log finding: verification is the least-delegated function).
     dr=$(c '"event":"dispatched".*"persona":"researcher"'); dp=$(c '"event":"dispatched".*"persona":"planner"')
     dimp=$(c '"event":"dispatched".*"persona":"implementer"'); da=$(c '"event":"dispatched".*"persona":"actuator"')
@@ -66,8 +72,8 @@ case "$cmd" in
     while IFS= read -r tk; do [ -n "$tk" ] || continue; total=$((total+1))
       src | grep -q "\"ticket\":\"$tk\".*\"event\":\"verdict\"" && verified=$((verified+1))
     done < <(src | grep '"event":"done"' | sed -n 's/.*"ticket":"\([^"]*\)".*/\1/p' | sort -u)
-    printf 'shipped=%s dispatches=%s forks=%s decisions=%s rejects=%s oracle_inconsistent=%s lease_conflicts=%s friction=%s disp_researcher=%s disp_planner=%s disp_implementer=%s disp_verifier=%s disp_actuator=%s verify_coverage=%s/%s model_mix=%s\n' \
-      "$sh" "$di" "$fk" "$de" "$rj" "$oi" "$lc" "$fr" "$dr" "$dp" "$dimp" "$dv" "$da" "$verified" "$total" "$mix" ;;
+    printf 'shipped=%s dispatches=%s forks=%s decisions=%s rejects=%s oracle_inconsistent=%s lease_conflicts=%s denials=%s friction=%s disp_researcher=%s disp_planner=%s disp_implementer=%s disp_verifier=%s disp_actuator=%s verify_coverage=%s/%s model_mix=%s\n' \
+      "$sh" "$di" "$fk" "$de" "$rj" "$oi" "$lc" "$dn" "$fr" "$dr" "$dp" "$dimp" "$dv" "$da" "$verified" "$total" "$mix" ;;
 
   feedback)  # Tier 3c, Layer 3: append a durable operator-feedback record (a ledger
              # metrics snapshot + a free-text rating) to the eval log, and echo it. This
@@ -183,8 +189,8 @@ case "$cmd" in
     # never reads as "finished" and resume doesn't depend on external prose.
     gline=""; [ -f "$LEDGER" ] && gline="$(grep '"event":"goal"' "$LEDGER" 2>/dev/null | tail -1 || true)"
     if [ -n "$gline" ]; then
-      gn="$(val "$gline" note)"; gs="$(val "$gline" spec)"
-      echo "GOAL: ${gn:-?}${gs:+ -> resume from plan: $gs}"
+      gn="$(val "$gline" note)"; gs="$(val "$gline" spec)"; gp="$(val "$gline" model_policy)"
+      echo "GOAL: ${gn:-?}${gs:+ -> resume from plan: $gs}${gp:+ [models: $gp]}"
     fi
     [ "$printed" = 0 ] && echo "board: no open lanes${gline:+ (goal above is open unless the plan is complete — verify before concluding done)}"
     [ "$ambiguous" = 1 ] && { echo "REGROUND: ambiguous writer lane(s) -> HALT for human re-attach"; exit 3; }
@@ -225,9 +231,13 @@ case "$cmd" in
               # north star + next-step location across compaction — resume then depends on
               # an external prose doc. This event anchors the board to the goal (ADR-0020).
               # Run-level, so no ticket field (reground's lane loop skips no-ticket lines).
-    note="${1:?goal note}"; spec="${2:-}"; base="${3:-}"; mkdir -p "$ROOT"
+    note="${1:?goal note}"; spec="${2:-}"; base="${3:-}"; pol="${4:-}"; mkdir -p "$ROOT"
     nl="${note//\\/\\\\}"; nl="${nl//\"/\\\"}"          # escape backslash + quote in free text
-    printf '{"ts":"%s","event":"goal","note":"%s","spec":"%s","base":"%s"}\n' "$(date -u +%FT%TZ)" "$nl" "$spec" "$base" >> "$LEDGER" ;;
+    # model_policy (ADR-0033): dynamic (default, §2a′ tier table) | quick (dynamic,
+    # lean cheaper/faster) | inherit (subagents run the main loop's model/effort).
+    # Rides the goal anchor: latest goal wins on reground, survives compaction.
+    printf '{"ts":"%s","event":"goal","note":"%s","spec":"%s","base":"%s"%s}\n' \
+      "$(date -u +%FT%TZ)" "$nl" "$spec" "$base" "${pol:+,\"model_policy\":\"$pol\"}" >> "$LEDGER" ;;
 
   done)       # close a lane FAIL-CLOSED on unverified ships: a verifying tier (T1/T2)
               # may not be marked done without a verdict for that ticket. T0 (one

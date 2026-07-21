@@ -47,7 +47,7 @@ else
   for a in researcher planner implementer verifier actuator; do
     case "$det" in *"$a"*) pass;; *) fail "details lists agent: $a";; esac
   done
-  case "$det" in *"start"*) pass;; *) fail "details lists the start command/skill (/orchestrate:start)";; esac
+  case "$det" in *"init"*) pass;; *) fail "details lists the start command/skill (/orchestrate:init)";; esac
   case "$det" in *"Hooks (3)"*) pass;; *) fail "details reports 3 registered hook events";; esac
 
   # --- Isolation self-check: the test did not mutate real ~/.claude or the repo .claude ---

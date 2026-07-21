@@ -36,3 +36,6 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0028](0028-feedback-lands-durably.md) | Run feedback lands durably: review sidecar, version stamp, dev-side harvest | active |
 | [0029](0029-worktree-base-from-journaled-goal.md) | Writer worktrees cut from the journaled goal base, not the operator's current checkout | active |
 | [0030](0030-append-stamps-ts-and-flags-noncanonical-events.md) | `ledger.sh append` stamps ts and flags non-canonical events; helpers must out-earn raw echo | active |
+| [0031](0031-personas-carry-their-boundaries.md) | Personas carry their boundaries up front; hooks are the backstop, not the syllabus | active |
+| [0032](0032-denials-are-journaled-friction.md) | Every enforcement denial is journaled to the board; instrumentation over a verbose mode | active |
+| [0033](0033-model-policy-rides-goal-anchor.md) | Dispatch model policy is a run-level operator toggle riding the goal anchor | active |

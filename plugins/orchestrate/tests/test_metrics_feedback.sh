@@ -14,6 +14,7 @@ bash "$R" append '{"ticket":"T1","event":"done"}'
 bash "$R" append '{"ticket":"T2","event":"fork","state":"halted","fork_id":"F1"}'
 bash "$R" append '{"ticket":"T2","event":"decision","fork_id":"F1","adr":"0099"}'
 bash "$R" append '{"ticket":"T2","event":"lease-conflict","persona":"actuator","key":"db"}'
+bash "$R" append '{"event":"denied","hook":"run-scope","persona":"verifier","note":"git checkout -- x"}'
 
 m="$(bash "$R" metrics)"
 case "$m" in *"shipped=1"*)   pass;; *) fail "metrics shipped=1 ($m)";; esac
@@ -22,6 +23,8 @@ case "$m" in *"forks=1"*)     pass;; *) fail "metrics forks=1 ($m)";; esac
 case "$m" in *"decisions=1"*) pass;; *) fail "metrics decisions=1 ($m)";; esac
 # friction = rejects(1) + oracle_inconsistent(0) + lease_conflicts(1) = 2
 case "$m" in *"friction=2"*)  pass;; *) fail "metrics friction=2 ($m)";; esac
+# denials (ADR-0032): hook-journaled enforcement refusals, counted separately
+case "$m" in *"denials=1"*)   pass;; *) fail "metrics denials=1 ($m)";; esac
 # model_mix: journaled horsepower per persona (persona:model:effort:count; '-' when absent)
 case "$m" in *"implementer:sonnet:high:1"*) pass;; *) fail "model_mix carries implementer:sonnet:high:1 ($m)";; esac
 case "$m" in *"verifier:opus:max:1"*)       pass;; *) fail "model_mix carries verifier:opus:max:1 ($m)";; esac

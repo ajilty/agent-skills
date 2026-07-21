@@ -12,6 +12,17 @@
 # subagent shell's (live 2026-07-02 finding: a bare `git rev-parse` here read the
 # main checkout's `master` and false-denied every legitimate worktree commit).
 set -uo pipefail
+# ADR-0032: a denial is FEEDBACK — journal it to the board (event "denied") so
+# metrics/status/harvest see the friction without operator relay. Fires on ANY
+# exit-2 path via the EXIT trap; never blocks, never alters the deny (explicit
+# exit codes survive the trap), never touches stdout.
+_journal_denial(){ rc=$?; [ "$rc" = 2 ] || return 0
+  [ -f ".agents/runs/orchestrate/board.jsonl" ] || return 0   # wrong cwd -> skip
+  rt="$(cd "$(dirname "$0")/.." && pwd)" || return 0
+  n="$(printf '%.80s' "${cmd:-${p:-}}" | tr '\n' ' ' | tr '"\\' "'/")"
+  bash "$rt/ledger.sh" append "{\"event\":\"denied\",\"hook\":\"keep-on-branch\",\"persona\":\"${persona:--}\",\"note\":\"$n\"}" >/dev/null 2>&1 || true
+  return 0; }
+trap _journal_denial EXIT
 RT="$(cd "$(dirname "$0")/.." && pwd)"
 in=""; [ -t 0 ] || in="$(cat 2>/dev/null || true)"
 J(){ [ -n "$in" ] && command -v jq >/dev/null 2>&1 && printf '%s' "$in" | jq -r "$1 // empty" 2>/dev/null || true; }

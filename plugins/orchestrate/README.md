@@ -18,8 +18,8 @@ From this repo's self-marketplace:
 ## Use
 
 ```
-/orchestrate:start <goal>     # start a goal of any altitude
-/orchestrate:start            # no args → resume open lanes (regrounds first)
+/orchestrate:init <goal>     # start a goal of any altitude
+/orchestrate:init            # no args → resume open lanes (regrounds first)
 ```
 
 Export `HELDOUT_ROOT` (the path where held-out tests / live-probe oracles live,
@@ -28,7 +28,7 @@ held-out-deny hook fails closed against reads under it.
 
 ## What ships
 
-- **`commands/start.md`** — the `/orchestrate:start` entry point (thin wrapper; the
+- **`commands/init.md`** — the `/orchestrate:init` entry point (thin wrapper; the
   router brain is `skills/orchestrate/SKILL.md`).
 - **`agents/{researcher,planner,implementer,verifier,actuator}.md`** — the five
   capability-subtracted subagents. **Generated** (see below).
@@ -91,7 +91,10 @@ repos on this machine (no command needed — this is a convention, not an artifa
    ticketed item promotes it to a fix (precedent: ADR-0026).
 3. Watch the standing drift signals: `model_mix` all-flagship (ADR-0024), all-sonnet
    researchers with no judgment-shaped output (ADR-0025), `verify_coverage` dropping on
-   code-bearing lanes (ADR-0022).
+   code-bearing lanes (ADR-0022), `denials` rising — read the board's `denied` rows to
+   split "persona missing its boundary context" (ADR-0031) from "hook misfiring"
+   (ADR-0032), and check `model_policy` on the goal vs the `model_mix` actually spent
+   (ADR-0033).
 4. Propose ranked changes (SKILL prose / hook / tier table / test), each with an ADR call.
 
 ## Known limitations & filing bugs

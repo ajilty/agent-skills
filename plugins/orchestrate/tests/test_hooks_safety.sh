@@ -300,3 +300,27 @@ case "$o" in *"agent teams"*) pass;; *) fail "warn-agent-teams: warns when CLAUD
 o2="$(CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS= bash "$RT/warn-agent-teams.sh" 2>&1)"; rc2=$?
 assert_eq "$rc2" "0" "warn-agent-teams: exit 0 when unset"
 assert_eq "$o2" "" "warn-agent-teams: SILENT no-op when agent teams is off (Claude-only)"
+
+# --- ADR-0032: every enforcement denial is journaled to the board as a `denied` event ---
+d032="$(mktemp_repo)"; pushd "$d032" >/dev/null
+B032=".agents/runs/orchestrate/board.jsonl"
+: > "$B032"   # board exists -> denials journal
+PERSONA=verifier TOOL_INPUT='git checkout -- src/app.py' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "ADR-0032: run-scope still denies (exit 2) with journaling active"
+grep -q '"event":"denied".*"hook":"run-scope".*"persona":"verifier"' "$B032" && pass || fail "ADR-0032: run-scope denial journaled (hook+persona)"
+tail -1 "$B032" | grep -q '"ts":"20' && pass || fail "ADR-0032: denied event carries ts (via append)"
+tail -1 "$B032" | grep -q 'git checkout' && pass || fail "ADR-0032: denied event notes the refused command"
+n0="$(grep -c '"event":"denied"' "$B032")"
+PERSONA=verifier TOOL_INPUT='bash tests/run.sh' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "ADR-0032: allow path still exits 0"
+assert_eq "$(grep -c '"event":"denied"' "$B032")" "$n0" "ADR-0032: allow path journals NOTHING"
+PERSONA=implementer HELDOUT_ROOT=/tmp/ho RESOLVED_PATH=/tmp/ho/secret bash "$RT/deny-heldout-read.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "ADR-0032: deny-heldout still denies with journaling active"
+grep -q '"event":"denied".*"hook":"deny-heldout-read".*"persona":"implementer"' "$B032" && pass || fail "ADR-0032: deny-heldout denial journaled"
+popd >/dev/null; rm -rf "$d032"
+# no board in cwd -> denial still fires, journaling silently skips (no stray board created)
+d032b="$(mktemp -d)"; pushd "$d032b" >/dev/null
+PERSONA=verifier TOOL_INPUT='git checkout -- x' bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "ADR-0032: deny works without a board"
+assert_no_file ".agents/runs/orchestrate/board.jsonl"
+popd >/dev/null; rm -rf "$d032b"

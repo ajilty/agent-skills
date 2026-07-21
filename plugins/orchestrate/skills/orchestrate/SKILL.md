@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-user-invocable: false   # router brain: hidden from the / menu (no /orchestrate:orchestrate stutter); still auto-triggers via description and is driven by /orchestrate:start
+user-invocable: false   # router brain: hidden from the / menu (no /orchestrate:orchestrate stutter); still auto-triggers via description and is driven by /orchestrate:init
 description: >-
   Phase-gated, single-writer delegation pipeline for coding work. Multiplies
   intelligence (research, planning, verification) while keeping writes
@@ -81,10 +81,11 @@ Run these in order on every invocation. Steps reference the detailed sections.
    file, a pasted spec — and pull what you need with whatever tools are available;
    otherwise treat the input itself as the work-item. Write it to
    `…/tickets/<ticket>/work-item.md`. Don't assume any particular tracker.
-   Journal the run-level goal: `ledger.sh goal "<goal>" [spec-path] [base-branch]`
+   Journal the run-level goal: `ledger.sh goal "<goal>" [spec-path] [base-branch] [model-policy]`
    (add the spec path once the Planner signs it — the latest goal wins on reground;
    `base-branch` is the integration branch merges must land on, enforced by the
-   `guard-merge-base` floor, ADR-0027). This anchors
+   `guard-merge-base` floor, ADR-0027; `model-policy` is the §2a′ dispatch policy —
+   dynamic | quick | inherit — when the operator sets one). This anchors
    the board to the north star, so a **clean** board (no open lanes, or between
    phases) still points a resumed run at the goal + plan instead of an external prose
    doc (§10, ADR-0020). **Goal boundary = feedback boundary:** before journaling a
@@ -378,6 +379,23 @@ mechanical work.
 mechanical items with sharp ones silently drags trivial work up to flagship pricing
 (the measured case: a `+x` mode-bit fix bundled with a subtle secrets-path fix).
 Split mixed-difficulty batches and route the mechanical half at the economy default.
+
+**Model policy — a run-level operator toggle (ADR-0033).** The table above is the
+`dynamic` policy, the default. The operator can set a policy at intake ("models:
+quick") or flip it mid-run; it **rides the goal anchor** — `ledger.sh goal "<note>"
+[spec] [base] [policy]` — so the latest goal wins on reground, it survives
+compaction, and status shows it in the header:
+
+- `dynamic` (default): the table + escalation tripwires, exactly as above.
+- `quick`: dynamic, but lean cheaper/faster — shift each row one step down (model
+  first: opus→sonnet, sonnet→haiku; already-haiku rows drop effort high→medium
+  instead). Escalation rules stay live, so a *named* sharp item still climbs.
+  Floor: a T2 verifier never drops below sonnet/high.
+- `inherit`: pass **no** model/effort at dispatch — every persona runs the main
+  loop's model; journal `model:"inherit"` on the `dispatched` event so
+  `model_mix` stays honest. On a flagship main loop this recreates the
+  all-flagship spend ADR-0024 fought, so status flags the mode visibly; choose it
+  deliberately, not by default.
 
 ---
 

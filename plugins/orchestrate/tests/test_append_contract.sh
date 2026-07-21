@@ -25,5 +25,15 @@ tail -1 "$B" | grep -q '"event":"debugging_note"' && pass || fail "a non-canonic
 w="$(bash "$R" append '{"ticket":"T1","note":"free-form"}' 2>&1)"
 case "$w" in *"not canonical"*) pass;; *) fail "warns when the event field is missing ($w)";; esac
 
+# denied (ADR-0032) is canonical -> silent
+w="$(bash "$R" append '{"event":"denied","hook":"run-scope","persona":"verifier","note":"git checkout"}' 2>&1)"
+[ -z "$w" ] && pass || fail "denied is a canonical event ($w)"
+
+# goal drift guard: a goal without "note" warns (reground's anchor reads note); with note, silent
+w="$(bash "$R" append '{"event":"goal","goal":"hand-built wrong field","base":"master"}' 2>&1)"
+case "$w" in *'without a "note"'*) pass;; *) fail "warns on a goal event missing note ($w)";; esac
+w="$(bash "$R" append '{"event":"goal","note":"proper anchor","base":"master"}' 2>&1)"
+[ -z "$w" ] && pass || fail "goal with note is silent ($w)"
+
 # suite invariant that would have caught the field gap: every line carries ts
 assert_eq "$(grep -cv '"ts":"' "$B" || true)" 0 "every board line carries ts"

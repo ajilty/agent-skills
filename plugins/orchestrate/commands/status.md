@@ -15,6 +15,12 @@ Gather — keep raw output OUT of your reply (§2a′: glance, don't dump):
   (`tickets/<ticket>/fork.md`, verdicts, `work-item.md`) and the writer worktree's commits-ahead.
 - `.agents/runs/orchestrate/eval/feedback.jsonl` — ts of the last feedback row (if any),
   to spot a feedback gap.
+- Runtime freshness: read the `version` from the executing runtime's `plugin.json`
+  (three levels above the `ledger.sh` you just ran) and compare it against the newest
+  version directory installed for this plugin (Claude Code keeps versioned installs
+  side by side, e.g. `~/.claude/plugins/cache/<marketplace>/orchestrate/<version>/`).
+  A long-lived session keeps executing its loaded copy after `plugin update` —
+  measured: six days on a stale runtime that silently lacked three releases of fixes.
 
 Render top-down and glanceable, with these emojis —
 🎯 goal · 📋 plan · 🌳 lanes · 🙋 needs you · ⏭️ next · 📄 file;
@@ -22,6 +28,11 @@ pace 🟢 moving · 🟡 slow · 🔴 stalled; lane ✅ done · 🔄 running · 
 
 1. 🎯 **Headline** — the goal (from the `goal` event), pace (🟢/🟡/🔴 from event recency +
    done-ratio), progress (`N done / M lanes`), and 📋 the plan pointer (spec/ADR path).
+   When the goal carries a `model_policy`, show it (`models: quick`); flag `inherit`
+   explicitly (`models: inherit ⚠️ all personas run the main-loop model`). When
+   `metrics` shows `denials>0`, add one line: `⛔ N denials (hook/persona from the
+   board's denied events)` — repeated denials on one lane mean a persona is missing
+   its boundary context, not that the hook is wrong.
 2. 🌳 **Lanes** — a tree, one node per ticket with its status glyph; parallel lanes are
    siblings; writer lanes show worktree commits-ahead. When the `dispatched` events carry
    `model`/`effort`, show them inline per lane (e.g. `verifier opus/max`) — the operator
@@ -44,3 +55,7 @@ When `done` lanes postdate the last feedback row (or `eval/feedback.jsonl` has n
 footer line: `💬 N lanes shipped since the last feedback row — capture at the next goal boundary
 or wrap-up (/orchestrate:feedback)`. Multi-day runs that roll goal-to-goal are the measured
 leak: they never reach wrap-up, so the row never lands (ADR-0028).
+
+When the executing runtime's version is older than the newest installed version, add one
+footer line: `🔄 runtime <executing> < installed <newest> — /reload-plugins (or restart) to
+apply`. The one-shot nudge after `plugin update` is missable; this is the persistent signal.
