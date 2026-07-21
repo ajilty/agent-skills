@@ -381,10 +381,11 @@ mechanical items with sharp ones silently drags trivial work up to flagship pric
 Split mixed-difficulty batches and route the mechanical half at the economy default.
 
 **Model policy — a run-level operator toggle (ADR-0033).** The table above is the
-`dynamic` policy, the default. The operator can set a policy at intake ("models:
-quick") or flip it mid-run; it **rides the goal anchor** — `ledger.sh goal "<note>"
-[spec] [base] [policy]` — so the latest goal wins on reground, it survives
-compaction, and status shows it in the header:
+`dynamic` policy, the default. The operator sets a policy with the init flag
+(`/orchestrate:init --models=quick <goal>`) or flips it mid-run in plain words;
+either way it **rides the goal anchor** — `ledger.sh goal "<note>" [spec] [base]
+[policy]` — so the latest goal wins on reground, it survives compaction, and
+status shows it in the header:
 
 - `dynamic` (default): the table + escalation tripwires, exactly as above.
 - `quick`: dynamic, but lean cheaper/faster — shift each row one step down (model

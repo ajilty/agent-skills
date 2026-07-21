@@ -18,8 +18,9 @@ From this repo's self-marketplace:
 ## Use
 
 ```
-/orchestrate:init <goal>     # start a goal of any altitude
-/orchestrate:init            # no args → resume open lanes (regrounds first)
+/orchestrate:init <goal>                  # start a goal of any altitude
+/orchestrate:init --models=quick <goal>   # dispatch policy: dynamic (default) | quick | inherit (ADR-0033)
+/orchestrate:init                         # no args → resume open lanes (regrounds first)
 ```
 
 Export `HELDOUT_ROOT` (the path where held-out tests / live-probe oracles live,
