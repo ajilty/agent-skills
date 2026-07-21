@@ -128,7 +128,13 @@ Run these in order on every invocation. Steps reference the detailed sections.
       exactly that path. This **reverses** the old "never instruct a read-only persona
       to write" rule: a read-only result must be durable on disk, never only in a
       returned message a harness can drop, mislabel, or fail to replay.
-   b. Run the persona with only its artifact (§5).
+   b. Run the persona with only its artifact (§5). **Narrate long writer lanes:**
+      when a writer has been out ~20+ minutes, give the operator one mid-flight
+      line derived from durable signals — the worktree's commits-ahead
+      (`git -C <worktree> log --oneline <base>..HEAD`, read-only) names the last
+      finished task — rather than silence (measured operator signal: "what's
+      taking so long?" on a 38-minute build with no narration). One line at the
+      midpoint; not a poll loop.
    c. On return, **read the result from disk, not from the chat reply** — poll the
       scoped path for the file + its `<!-- orchestrate:complete -->` sentinel,
       independent of any completion/idle notification (which may be dropped,
@@ -398,6 +404,12 @@ status shows it in the header:
   `model_mix` stays honest. On a flagship main loop this recreates the
   all-flagship spend ADR-0024 fought, so status flags the mode visibly; choose it
   deliberately, not by default.
+
+A policy change **applies at the next dispatch boundary** — in-flight personas
+keep the horsepower they were dispatched with. Never kill a running writer to
+apply a policy switch unless the operator explicitly asks (measured: a mid-lane
+kill for `--models=inherit` cost ~10 minutes of correct work); acknowledge with
+"policy registered; applies from the next dispatch".
 
 ---
 

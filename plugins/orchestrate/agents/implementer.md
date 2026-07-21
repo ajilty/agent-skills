@@ -71,6 +71,12 @@ job is the task, not worktree hygiene.
 - One task. Smallest correct change. Don't expand scope.
 - Run visible tests; they must pass **against the committed HEAD**, not merely an
   unsaved working tree.
+- **A spec-mandated test may never be weakened, replaced, or deleted silently.**
+  If you believe a test is wrong, keep it failing and flag the conflict as a
+  deviation (`#GAP(oracle-conflict)` with your reasoning) — the Verifier and the
+  human arbitrate. Rewriting a test so your implementation passes is
+  carving the oracle to fit the code (measured: spec said clamp, impl shipped
+  wrap AND rewrote the test to bless it; 217 green tests were blind to it).
 - Commit with the task id; keep history clean (you have `git`).
 - **Prove the commit IS the artifact (ADR-0019).** After committing, confirm
   `git status --porcelain` is empty (nothing substantive left uncommitted) and

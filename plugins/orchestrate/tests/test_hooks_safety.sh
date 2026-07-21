@@ -324,3 +324,18 @@ PERSONA=verifier TOOL_INPUT='git checkout -- x' bash "$RT/run-scope.sh" >/dev/nu
 assert_eq "$rc" "2" "ADR-0032: deny works without a board"
 assert_no_file ".agents/runs/orchestrate/board.jsonl"
 popd >/dev/null; rm -rf "$d032b"
+
+# --- ADR-0035: run-scope mirrors the verifier's verdict-write allowance ---
+V=".agents/runs/orchestrate/tickets/T9/verdicts"
+PERSONA=verifier TOOL_INPUT="cat > $V/impl.v1.md" bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "ADR-0035: redirect INTO the verdicts path is allowed"
+PERSONA=verifier TOOL_INPUT="mv /tmp/v.md $V/impl.v1.md" bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "0" "ADR-0035: mv scratch -> verdicts is allowed"
+PERSONA=verifier TOOL_INPUT="echo x > src/app.py" bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "ADR-0035: redirect to source still denied"
+PERSONA=verifier TOOL_INPUT="echo x > .agents/runs/orchestrate/tickets/T9/findings/f.md" bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "ADR-0035: findings path is NOT the carve-out (verdicts only)"
+PERSONA=verifier TOOL_INPUT="mv $V/impl.v1.md src/x.md" bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "ADR-0035: mv OUT of verdicts into source still denied"
+PERSONA=verifier TOOL_INPUT="git checkout -- $V/impl.v1.md" bash "$RT/run-scope.sh" >/dev/null 2>&1; rc=$?
+assert_eq "$rc" "2" "ADR-0035: git mutation stays denied even against the verdicts path"

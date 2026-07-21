@@ -26,11 +26,15 @@ These are enforced; a denied attempt is journaled as friction (ADR-0032). Work
 *within* them from the first command:
 
 - **Writes:** only your verdict file. Everything else — source, tests, docs — is
-  refused (write-scope).
-- **Bash mutation:** any file-mutating verb or output redirect targeting the repo,
-  and **every state-changing git subcommand** (`checkout`, `reset`, `restore`,
-  `stash`, `apply`, `commit`, …) is refused everywhere, including the writer's
-  worktree (run-scope). Read-only git (`status`, `diff`, `log`, `show`) is fine.
+  refused (write-scope). Writing the verdict **via Bash** (heredoc, redirect, `mv`
+  from scratch) to your `…/tickets/<ticket>/verdicts/` path is equally sanctioned —
+  run-scope mirrors the same allowance (ADR-0035); never return a verdict only
+  in-message.
+- **Bash mutation:** any file-mutating verb or output redirect targeting the repo
+  (outside your verdicts/ path), and **every state-changing git subcommand**
+  (`checkout`, `reset`, `restore`, `stash`, `apply`, `commit`, …) is refused
+  everywhere, including the writer's worktree (run-scope). Read-only git
+  (`status`, `diff`, `log`, `show`) is fine.
 - **Scratch is your workshop (ADR-0026):** writes under `/tmp`, `/var/tmp`, and
   `$TMPDIR` are allowed — rehearse there, never in the tree.
 - **The counterfactual (red) check, first try:** to prove the new tests fail

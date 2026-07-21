@@ -268,6 +268,11 @@ SEED_STATUS=unknown
 seed_hook_trust() {
   write_hooks_json
   ensure_hooks_feature "$CONFIG_TOML"
+  # Hermetic-install escape (tests/CI): skip the live codex oracle + self-verify
+  # probe (minutes of real codex exec). Floor lands docs-only, like no-codex hosts.
+  if [ -n "${ORCHESTRATE_NO_SELFVERIFY:-}" ]; then
+    strip_seed_block "$CONFIG_TOML"; SEED_STATUS=docs-only; return 0
+  fi
   strip_seed_block "$CONFIG_TOML"
   # Oracle unavailable (no codex/auth)? Leave docs-only; floor needs manual trust.
   if ! command -v codex >/dev/null 2>&1 \

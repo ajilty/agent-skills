@@ -3,7 +3,7 @@ have_yq4 || { echo "(skip test_install: $YQ4_SKIP)"; return 0 2>/dev/null || tru
 d="$(mktemp_repo)"; cd "$d"
 # codex: emits ALL five personas, honors --dir (no AGENTS.orchestrate.md anywhere — the
 # brain is now a NATIVE skill under .agents/skills, ADR-0034), ships runtime inside it
-o="${TMPDIR:-/tmp}/p4cx.$$"; rm -rf "$o"; bash "$SK/scripts/install-codex.sh" --scope project --dir "$o" >/dev/null 2>&1
+o="${TMPDIR:-/tmp}/p4cx.$$"; rm -rf "$o"; ORCHESTRATE_NO_SELFVERIFY=1 bash "$SK/scripts/install-codex.sh" --scope project --dir "$o" >/dev/null 2>&1
 SKD="$o/.agents/skills/orchestrate"
 for p in researcher planner implementer verifier actuator; do assert_file "$o/agents/$p.toml"; done
 assert_no_file "AGENTS.orchestrate.md"

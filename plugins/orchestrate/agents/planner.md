@@ -69,6 +69,16 @@ acceptance_oracle:           # review finding 5 — never "no tests"
 open: [ #UNKNOWN(...) ]      # any unresolved #UNKNOWN blocks sign-off
 ```
 
+## User-facing tasks state "user-complete" explicitly (field-measured 2026-07-21)
+
+For any task whose output a user sees or touches (UI, page, rendered artifact),
+the task's done-criterion must say so in full: **user-complete = markup + CSS +
+wiring + tests** (adapt the list to the stack, but enumerate it). Measured
+failure: an implementer shipped raw markup and reported DONE, treating styling
+as optional polish, because the spec never said styling was in scope. A visual
+feature without its presentation is not a smaller version of done; it is not
+done.
+
 ## Acceptance oracle is mandatory (review finding 5)
 
 Every spec ships an oracle. If the codebase has real coverage, point to the

@@ -45,6 +45,14 @@ deny() { echo "orchestrate: verifier is tests-only — workspace/git mutation is
 # chr(62) — because ANY write was refused. Scratch roots only; repo + git stay sealed.
 is_scratch(){ case "$1" in /tmp/*|/var/tmp/*) return 0 ;; esac
   [ -n "${TMPDIR:-}" ] && case "$1" in "${TMPDIR%/}"/*) return 0 ;; esac; return 1; }
+# Verdict carve-out (ADR-0035): the verifier's ONE sanctioned write is its verdict file,
+# and it typically lands via Bash (heredoc/redirect/mv), not the Write tool. write-scope
+# always allowed the verdicts path; run-scope never mirrored it — measured x2: verifiers
+# either routed around via cp (a smell) or returned verdicts in-message (violating
+# disk-first, ADR-0014). Mirror exactly the tickets/<t>/verdicts/ subtree; nothing else.
+is_verdict(){ case "$1" in
+  */.agents/runs/orchestrate/tickets/*/verdicts/*|.agents/runs/orchestrate/tickets/*/verdicts/*) return 0 ;; esac; return 1; }
+allowed_target(){ is_scratch "$1" || is_verdict "$1"; }
 
 # Normalize shell separators to spaces and wrap in spaces, so verb checks are
 # word-bounded (\" rm \" never matches \"confirm\"). Redirection is checked on raw.
@@ -67,7 +75,7 @@ case "$norm" in
     for w in $norm; do
       wq="${w%\"}"; wq="${wq#\"}"; wq="${wq%\'}"; wq="${wq#\'}"
       case "$wq" in -*|*=*) continue ;; esac
-      case "$wq" in */*) saw_path=1; is_scratch "$wq" || ok=0 ;; esac
+      case "$wq" in */*) saw_path=1; allowed_target "$wq" || ok=0 ;; esac
     done
     { [ "$saw_path" = 1 ] && [ "$ok" = 1 ]; } || deny ;;
 esac
@@ -82,7 +90,7 @@ case "$red" in *">"*)
   while IFS= read -r t; do
     [ -n "$t" ] || continue; saw=1
     t="${t%\"}"; t="${t#\"}"; t="${t%\'}"; t="${t#\'}"
-    is_scratch "$t" || ok=0
+    allowed_target "$t" || ok=0
   done <<< "$(printf '%s' "$red" | grep -oE '>>?[[:space:]]*[^[:space:]<>]+' | sed -E 's/^>>?[[:space:]]*//')"
   { [ "$saw" = 1 ] && [ "$ok" = 1 ]; } || deny ;;
 esac
