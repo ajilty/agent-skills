@@ -16,8 +16,11 @@
 set -euo pipefail
 persona="${1:?usage: dispatch-persona.sh <persona> <ticket_dir> [repo_root]}"
 ticket_dir="${2:?ticket_dir}"; repo_root="${3:-$PWD}"
-RT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"          # .../orchestrate-runtime
-agents_dir="$(cd "$RT/../agents" 2>/dev/null && pwd || true)"  # sibling agents/ (model/effort)
+RT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"          # runtime dir (inside the installed skill, ADR-0034)
+# Persona TOMLs (model/effort): sibling agents/ (legacy layout), else the codex-native
+# location — the skill-native install keeps TOMLs at $CODEX_HOME/agents.
+agents_dir="$(cd "$RT/../agents" 2>/dev/null && pwd || true)"
+[ -n "$agents_dir" ] && [ -f "$agents_dir/$persona.toml" ] || agents_dir="${CODEX_HOME:-$HOME/.codex}/agents"
 
 # persona -> (cwd that bounds its OS-writable subtree, sandbox mode)
 case "$persona" in

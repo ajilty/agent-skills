@@ -14,7 +14,8 @@ description: >-
   session. No config file; compaction recovers automatically.
 compatibility: >-
   Harness-agnostic. The plugin-root generators in ../../scripts/ require yq (v4,
-  mikefarah) and git: install-codex.sh / install-opencode.sh write generated
+  mikefarah) and git: install-codex.sh / install-opencode.sh install this skill
+  NATIVELY into the cross-tool .agents/skills root (ADR-0034) and write generated
   subagents + fail-closed hooks into the target harness's config dir ($CODEX_HOME /
   $XDG_CONFIG_HOME/opencode), while build.sh emits Claude Code's committed plugin
   artifacts (agents/ + hooks/hooks.json, which auto-register). Runtime expects

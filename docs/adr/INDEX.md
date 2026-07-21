@@ -39,3 +39,4 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0031](0031-personas-carry-their-boundaries.md) | Personas carry their boundaries up front; hooks are the backstop, not the syllabus | active |
 | [0032](0032-denials-are-journaled-friction.md) | Every enforcement denial is journaled to the board; instrumentation over a verbose mode | active |
 | [0033](0033-model-policy-rides-goal-anchor.md) | Dispatch model policy is a run-level operator toggle riding the goal anchor | active |
+| [0034](0034-skill-native-installs-via-agents-skills.md) | Codex and OpenCode installs are skill-native via the cross-tool .agents/skills root | active |

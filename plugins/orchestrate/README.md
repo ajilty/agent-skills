@@ -65,7 +65,13 @@ marketplace catalog are hand-authored, not generated.
 
 Codex and OpenCode compile the same `agents.yaml` contract into their native
 formats with `scripts/install-codex.sh` / `scripts/install-opencode.sh`
-(`--scope user|project`). See the repo root README for details.
+(`--scope user|project`). Both install the skill **natively** into the cross-tool
+`.agents/skills/orchestrate/` root (repo scope) or `~/.agents/skills/` (user
+scope) — both harnesses auto-discover it there (ADR-0034; no AGENTS.md include
+step). Harness config dirs get only native surfaces: Codex — persona TOMLs +
+wired hooks with trust seeding (read the installer's HOOK TRUST status line);
+OpenCode — agents/ + enforcement plugin + `/orchestrate-{init,status,feedback}`
+commands. See the repo root README for details.
 
 ## Tests
 
