@@ -67,13 +67,22 @@ Runtime helpers live in THIS skill's directory. First Bash action of the session
     export PATH="$RT_DEST:\$PATH"
 
 so \`ledger.sh\` / \`worktree.sh\` / \`adr.sh\` resolve by bare name (ADR-0018). (The
-orchestrate plugin also prepends this at load; the export is the fallback.)
+orchestrate plugin also prepends this via the documented \`shell.env\` hook at
+every shell invocation; the export above is the load-time fallback.)
 
 On OpenCode, dispatch personas via the native task tool / \`@<persona>\` mention —
 the installed agents/ definitions carry each persona's tool subtraction, and the
 orchestrate plugin's \`tool.execute.before\` floor fail-closes scope violations
 (a thrown error blocks the call). Confinement here is permission+hook based, not
 an OS sandbox: the write-scope/run-scope hooks are the enforcement layer.
+
+Write-ahead (ADR-0011 spirit): OpenCode's documented event list has no
+subagent-start hook, so write-ahead is NOT plugin-driven here. Immediately
+before dispatching an implementer or actuator, the router runs
+\`$RT_DEST/hooks/on-writer-dispatch.sh\` itself (in-loop, deterministic) so
+the ledger 'dispatched' entry and lease land on disk before the writer's
+first tool call — same guarantee the plugin gives for free on harnesses where
+a subagent-start-style event does fire.
 BRAINADD
 
 for p in $(yq '.personas | keys | .[]' "$AGENTS"); do
@@ -95,33 +104,53 @@ oc_command "$CMD_DIR/feedback.md" "$CMDS_DEST/orchestrate-feedback.md" "Capture 
 
 # Plugin: per-agent allow/deny is real subtraction; the plugin enforces path/branch
 # scope AND drives the durable ledger by shelling out to the single-source runtime.
-# A THROWN error in tool.execute.before blocks the call (documented fail-closed).
+# Bun's $ throws on a nonzero exit by default, which is how a hook DENY blocks the
+# call (documented fail-closed) — no try/catch needed. Only documented hook names
+# appear below (tool.execute.before, shell.env, session.compacted); subagent.start
+# is NOT in the documented event list (verified 2026-07-21) and is deliberately
+# absent — see the SKILL.md OpenCode addendum for where write-ahead moved instead.
 cat > "$PLUGIN_DEST/orchestrate.ts" <<TS
 // orchestrate.ts — calls the shared runtime so policy stays single-source.
-import { execFileSync } from "node:child_process";
 const RT = "$RT_DEST";
 // Runtime helpers (ledger.sh/adr.sh/worktree.sh) resolve by bare name in persona/router
-// Bash; the plugin loads once at session start, so prepend the runtime dir to PATH here
-// (ADR-0018). Confirm env propagates to the bash tool in your OpenCode version.
+// Bash; this prepends the runtime dir to PATH at plugin-load time as a fallback. The
+// DOCUMENTED mechanism is the shell.env hook below, which runs on every shell OpenCode
+// spawns (ADR-0018) — this load-time assignment only covers this plugin process itself.
 process.env.PATH = \`\${RT}:\${process.env.PATH ?? ""}\`;
-const sh = (p: string) => { try { execFileSync("bash", [p], { stdio: "inherit" }); } catch (e) { throw e; } };
-export const orchestrate = async () => ({
-  "tool.execute.before": async (input: any) => {
-    const tool = input?.tool ?? "";
-    process.env.RESOLVED_PATH = String(input?.args?.path ?? input?.args?.filePath ?? "");
-    process.env.TOOL_INPUT = String(input?.args?.command ?? "");
-    if (["read","grep","glob"].includes(tool)) sh(\`\${RT}/hooks/deny-heldout-read.sh\`);
-    if (tool === "bash") { sh(\`\${RT}/hooks/keep-on-branch.sh\`); sh(\`\${RT}/hooks/gate-prod-apply.sh\`); sh(\`\${RT}/hooks/run-scope.sh\`); }  // gate is the hard floor; run-scope confines verifier Bash
-    if (tool === "write" || tool === "edit") sh(\`\${RT}/hooks/write-scope.sh\`);  // planner spec/ADR + researcher findings_quarantine + verifier verdicts confinement (self-guards, ADR-0014)
-  },
-  // Write-ahead for the writer (deterministic): runs before an implementer subagent.
-  // The script self-guards on persona=implementer. Event name UNVERIFIED for current
-  // OpenCode; if subagent-start isn't exposed, the orchestrator does this in-loop.
-  "subagent.start": async () => sh(\`\${RT}/hooks/on-writer-dispatch.sh\`),
-  // Automatic compaction recovery: reground + inject authoritative board; halt if
-  // ambiguous. session.compacted is the DOCUMENTED post-compaction event.
-  "session.compacted": async () => sh(\`\${RT}/hooks/on-compaction.sh\`),
-});
+
+export const orchestrate = async ({ \$ }: any) => {
+  // Run a hook script with a PER-CALL env object, never global process.env mutation
+  // (which would race across concurrent tool calls). Nonzero exit throws (Bun \$
+  // default) so the call is blocked.
+  const sh = async (script: string, env: Record<string, string>) => {
+    await \$\`bash \${script}\`.env({ ...process.env, ...env });
+  };
+  return {
+    "tool.execute.before": async (input: any, output: any) => {
+      const tool = input?.tool ?? "";
+      const env = {
+        RESOLVED_PATH: String(output?.args?.filePath ?? ""),
+        TOOL_INPUT: String(output?.args?.command ?? ""),
+      };
+      if (["read","grep","glob"].includes(tool)) await sh(\`\${RT}/hooks/deny-heldout-read.sh\`, env);
+      if (tool === "bash") {
+        await sh(\`\${RT}/hooks/keep-on-branch.sh\`, env);
+        await sh(\`\${RT}/hooks/gate-prod-apply.sh\`, env);   // hard floor
+        await sh(\`\${RT}/hooks/run-scope.sh\`, env);          // confines verifier Bash
+      }
+      if (tool === "write" || tool === "edit") await sh(\`\${RT}/hooks/write-scope.sh\`, env);  // planner spec/ADR + researcher findings_quarantine + verifier verdicts confinement (self-guards, ADR-0014)
+    },
+    // Documented hook: injects PATH into every shell OpenCode spawns (ADR-0018),
+    // so ledger.sh/adr.sh/worktree.sh resolve by bare name inside persona Bash too,
+    // not just this plugin process. Keep the load-time prepend above as a fallback.
+    "shell.env": async (input: any, output: any) => {
+      output.env.PATH = \`\${RT}:\${output.env.PATH ?? process.env.PATH ?? ""}\`;
+    },
+    // Automatic compaction recovery: reground + inject authoritative board; halt if
+    // ambiguous. session.compacted is the DOCUMENTED post-compaction event.
+    "session.compacted": async () => sh(\`\${RT}/hooks/on-compaction.sh\`, {}),
+  };
+};
 TS
 echo "  plugin   -> $PLUGIN_DEST/orchestrate.ts"
 
@@ -141,7 +170,7 @@ only guaranteed layer.
 
 Set HELDOUT_ROOT and ASSIGNED_BRANCH in the env OpenCode runs under. No config
 file — /orchestrate-init to start or resume; compaction recovers via the plugin's
-session.compacted hook. UNVERIFIED against a live install: the subagent.start
-event name, permission-key coverage for write, and skills loading inside
-'opencode run' — probe once and report drift. Ledger: .agents/runs/orchestrate/board.jsonl.
+session.compacted hook. UNVERIFIED against a live install: permission-key coverage
+for write, and skills loading inside 'opencode run' — probe once and report drift.
+Ledger: .agents/runs/orchestrate/board.jsonl.
 EOF
