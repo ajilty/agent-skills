@@ -104,15 +104,36 @@ const RT = "$RT_DEST";
 // Bash; the plugin loads once at session start, so prepend the runtime dir to PATH here
 // (ADR-0018). Confirm env propagates to the bash tool in your OpenCode version.
 process.env.PATH = \`\${RT}:\${process.env.PATH ?? ""}\`;
-const sh = (p: string) => { try { execFileSync("bash", [p], { stdio: "inherit" }); } catch (e) { throw e; } };
+// env: process.env is NOT cosmetic -- live-probed against 1.18.4 (opencode-live-tier):
+// execFileSync's default (no explicit \`env\`) did NOT inherit the live process.env in
+// this Bun-compiled build, so every process.env.RESOLVED_PATH/TOOL_INPUT/PATH mutation
+// above was invisible to the hook subprocess and EVERY hook silently failed open (a
+// read of \$HELDOUT_ROOT leaked with no error). Passing env explicitly is load-bearing.
+const sh = (p: string) => { try { execFileSync("bash", [p], { stdio: "inherit", env: process.env }); } catch (e) { throw e; } };
 export const orchestrate = async () => ({
-  "tool.execute.before": async (input: any) => {
+  // NOTE (live-probed against 1.18.4, opencode-live-tier): the Hooks type is
+  // (input: {tool,sessionID,callID}, output: {args}) => Promise<void> -- args
+  // live on the SECOND (output) parameter, not input. A single-arg callback
+  // reading input.args always saw undefined, so RESOLVED_PATH/TOOL_INPUT were
+  // always "" and every path/command-based hook below silently failed OPEN.
+  // Confirmed live: tool.execute.before fired with
+  //   input={tool:"read",...} output={args:{filePath:"..."}}
+  // for the read tool, and output={args:{command:"...",workdir:"..."}} for bash.
+  "tool.execute.before": async (input: any, output: any) => {
     const tool = input?.tool ?? "";
-    process.env.RESOLVED_PATH = String(input?.args?.path ?? input?.args?.filePath ?? "");
-    process.env.TOOL_INPUT = String(input?.args?.command ?? "");
+    const args = output?.args ?? input?.args ?? {};
+    process.env.RESOLVED_PATH = String(args?.path ?? args?.filePath ?? "");
+    process.env.TOOL_INPUT = String(args?.command ?? args?.patchText ?? "");
     if (["read","grep","glob"].includes(tool)) sh(\`\${RT}/hooks/deny-heldout-read.sh\`);
     if (tool === "bash") { sh(\`\${RT}/hooks/keep-on-branch.sh\`); sh(\`\${RT}/hooks/gate-prod-apply.sh\`); sh(\`\${RT}/hooks/run-scope.sh\`); }  // gate is the hard floor; run-scope confines verifier Bash
-    if (tool === "write" || tool === "edit") sh(\`\${RT}/hooks/write-scope.sh\`);  // planner spec/ADR + researcher findings_quarantine + verifier verdicts confinement (self-guards, ADR-0014)
+    // write/edit: legacy tool names some providers still expose. apply_patch: the
+    // ACTUAL write tool observed live for OpenAI models on this build (its args
+    // carry patchText, not a single path) -- route it too so an unresolved path
+    // fails CLOSED (write-scope's fail-closed default) instead of bypassing
+    // confinement entirely. Full multi-path apply_patch parsing on OpenCode is a
+    // separate gap (write-scope.sh's apply_patch parser only reads stdin JSON,
+    // which OpenCode's hook invocation never sends) -- see probe-results.md.
+    if (tool === "write" || tool === "edit" || tool === "apply_patch") sh(\`\${RT}/hooks/write-scope.sh\`);  // planner spec/ADR + researcher findings_quarantine + verifier verdicts confinement (self-guards, ADR-0014)
   },
   // Write-ahead for the writer (deterministic): runs before an implementer subagent.
   // The script self-guards on persona=implementer. Event name UNVERIFIED for current

@@ -67,3 +67,64 @@ mk_repo(){ local d; d="$(mk_tmp)"; ( cd "$d" && git init -q && git config user.e
 # credential cloned in (keeps sandbox state controlled). With ANTHROPIC_API_KEY set,
 # no copy is needed. Use for installed-plugin + live-dispatch tests.
 mk_authed_home(){ local h; h="$(mk_home)"; mkdir -p "$h/.claude"; [ -f "$HOME/.claude/.credentials.json" ] && cp "$HOME/.claude/.credentials.json" "$h/.claude/" 2>/dev/null; printf '%s\n' "$h"; }
+
+# --- OpenCode tier ---------------------------------------------------------
+# Mirror of the Claude/Codex probes for the OpenCode harness (ADR-0034). OpenCode
+# reads FIVE locations from the ambient environment: XDG_CONFIG_HOME (config),
+# XDG_DATA_HOME (auth.json/db/log), XDG_CACHE_HOME (provider bin cache),
+# XDG_STATE_HOME (frecency/locks), and HOME directly for skill discovery
+# (~/.agents/skills, ~/.claude/skills — documented, HOME-based, NOT XDG-based).
+#
+# INCIDENT (this worktree, 2026-07-21): an ambient shell that already exports
+# XDG_CONFIG_HOME/XDG_DATA_HOME (common — dotfiles, direnv, etc.) makes `HOME=...`
+# alone NOT sandbox opencode: DEST resolution falls back to
+# `${XDG_CONFIG_HOME:-$HOME/.config}`, so a pre-set XDG_CONFIG_HOME wins over the
+# HOME override and opencode writes the REAL ~/.config/opencode. This happened
+# live during this tier's own development and wrote real agents/plugins/commands
+# files into a real ~/.config/opencode — see probe-results.md for the incident
+# note and the exact cleanup. The fix: every opencode invocation below sets ALL
+# FIVE vars EXPLICITLY inline on the command (never `export`/`unset`, so the
+# isolation is request-scoped and can't leak between sourced test files, and
+# never omitted, so no ambient value can win).
+have_opencode(){ command -v opencode >/dev/null 2>&1; }
+# Live auth: the host's opencode auth.json (from `opencode auth login` / `opencode
+# providers`). No auth -> OpenCode live tiers skip. account.json is optional and
+# cloned in too when present (some providers use it alongside auth.json).
+have_opencode_auth(){ [ -f "$HOME/.local/share/opencode/auth.json" ]; }
+
+# Cheapest usable model on this host's authenticated provider set (probed
+# 2026-07-21): the `opencode` zen provider's models need a payment method,
+# github-copilot models are unlicensed here, and openai's nano/mini tier names
+# from `opencode models` don't exist under the openai/ prefix specifically —
+# openai/gpt-5.4-fast is the cheap+fast tier that actually answers. Override via
+# OC_MODEL if your environment differs. Live probes still keep prompts minimal
+# regardless of model cost (per the work item).
+OC_MODEL="${OC_MODEL:-openai/gpt-5.4-fast}"
+
+# Throwaway OpenCode "home root": ONE dir holding all five sandboxed locations.
+# ONLY auth.json (+ account.json if present) is cloned in from the host — never
+# any other host opencode state (never the real config/agents/plugins/db/log).
+# Use as `oc=$(mk_opencode_home)`.
+mk_opencode_home(){
+  local h; h="$(mk_tmp)"
+  mkdir -p "$h/.config" "$h/.local/share/opencode" "$h/.cache" "$h/.local/state"
+  [ -f "$HOME/.local/share/opencode/auth.json" ] && cp "$HOME/.local/share/opencode/auth.json" "$h/.local/share/opencode/auth.json" 2>/dev/null
+  [ -f "$HOME/.local/share/opencode/account.json" ] && cp "$HOME/.local/share/opencode/account.json" "$h/.local/share/opencode/account.json" 2>/dev/null
+  printf '%s\n' "$h"
+}
+# Run ANY command (opencode itself, or install-opencode.sh) fully sandboxed under
+# an mk_opencode_home dir — all 5 vars set inline, every call site, no ambient
+# leakage. NEVER invoke `opencode` or install-opencode.sh directly in this tier;
+# always route through this. Usage: oc_run "$oc" timeout 90 opencode run ...
+oc_run(){ # <oc_home> <cmd...>
+  local h="$1"; shift
+  XDG_CONFIG_HOME="$h/.config" XDG_DATA_HOME="$h/.local/share" \
+  XDG_CACHE_HOME="$h/.cache" XDG_STATE_HOME="$h/.local/state" HOME="$h" \
+  "$@"
+}
+# Install orchestrate into an mk_opencode_home dir (user scope — DEST/SKILLS_ROOT
+# resolve from the sandboxed XDG_CONFIG_HOME/HOME set by oc_run, so this lands
+# entirely inside $h; never the real ~/.config/opencode or ~/.agents/skills).
+opencode_install(){ # <oc_home>
+  oc_run "$1" bash "$PLUGIN_DIR/scripts/install-opencode.sh" --scope user >/dev/null 2>&1
+}
