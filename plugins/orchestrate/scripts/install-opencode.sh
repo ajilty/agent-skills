@@ -128,9 +128,12 @@ export const orchestrate = async ({ \$ }: any) => {
   return {
     "tool.execute.before": async (input: any, output: any) => {
       const tool = input?.tool ?? "";
+      // Live-probed on 1.18.4 (opencode-live-tier): args ride the SECOND (output)
+      // parameter — read tools carry filePath (some providers: path), bash carries
+      // command, and OpenAI models write via apply_patch whose args carry patchText.
       const env = {
-        RESOLVED_PATH: String(output?.args?.filePath ?? ""),
-        TOOL_INPUT: String(output?.args?.command ?? ""),
+        RESOLVED_PATH: String(output?.args?.path ?? output?.args?.filePath ?? ""),
+        TOOL_INPUT: String(output?.args?.command ?? output?.args?.patchText ?? ""),
       };
       if (["read","grep","glob"].includes(tool)) await sh(\`\${RT}/hooks/deny-heldout-read.sh\`, env);
       if (tool === "bash") {
@@ -138,7 +141,10 @@ export const orchestrate = async ({ \$ }: any) => {
         await sh(\`\${RT}/hooks/gate-prod-apply.sh\`, env);   // hard floor
         await sh(\`\${RT}/hooks/run-scope.sh\`, env);          // confines verifier Bash
       }
-      if (tool === "write" || tool === "edit") await sh(\`\${RT}/hooks/write-scope.sh\`, env);  // planner spec/ADR + researcher findings_quarantine + verifier verdicts confinement (self-guards, ADR-0014)
+      // apply_patch: the ACTUAL write tool observed live for OpenAI models — route it
+      // so an unresolved path fails CLOSED (write-scope's default) instead of bypassing
+      // confinement. Full multi-path apply_patch parsing is a journaled follow-up gap.
+      if (tool === "write" || tool === "edit" || tool === "apply_patch") await sh(\`\${RT}/hooks/write-scope.sh\`, env);  // planner spec/ADR + researcher findings_quarantine + verifier verdicts confinement (self-guards, ADR-0014)
     },
     // Documented hook: injects PATH into every shell OpenCode spawns (ADR-0018),
     // so ledger.sh/adr.sh/worktree.sh resolve by bare name inside persona Bash too,
@@ -170,7 +176,9 @@ only guaranteed layer.
 
 Set HELDOUT_ROOT and ASSIGNED_BRANCH in the env OpenCode runs under. No config
 file — /orchestrate-init to start or resume; compaction recovers via the plugin's
-session.compacted hook. UNVERIFIED against a live install: permission-key coverage
-for write, and skills loading inside 'opencode run' — probe once and report drift.
+session.compacted hook. Live-verified on 1.18.4 (tests/integration/test_opencode_*):
+plugin loads, the tool.execute.before floor blocks for real, and skills load inside
+'opencode run'. STILL UNVERIFIED: permission-key coverage for write, and whether
+session.compacted actually fires post-compaction (registration-only bounded).
 Ledger: .agents/runs/orchestrate/board.jsonl.
 EOF

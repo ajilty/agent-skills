@@ -54,11 +54,25 @@ codex_install(){ # <codex_home>
   CODEX_HOME="$ch" bash "$PLUGIN_DIR/scripts/install-codex.sh" --scope user --dir "$ch" >/dev/null 2>&1
 }
 
-# Throwaway dirs with EXIT-trap cleanup.
-_INT_TMP=()
-_int_cleanup(){ cd "$REPO_ROOT" 2>/dev/null || cd / ; local d; for d in "${_INT_TMP[@]:-}"; do [ -n "${d:-}" ] && rm -rf "$d"; done; }
+# Throwaway dirs with EXIT-trap cleanup — PLUS two backstops the trap can't give
+# (measured 2026-07-21: a SIGKILLed background rerun loop orphaned 214 sandboxes,
+# ~6G of per-sandbox package caches, and hit the per-user /tmp quota, which bricks
+# shell spawning session-wide):
+#  1. Sandboxes use a recognizable prefix, and lib load sweeps THIS USER'S stale
+#     ones (>2h old) — so leftovers self-heal on the next run even after SIGKILL.
+#  2. int_space_ok gates live probes on free /tmp space (SKIP, never fill).
+# All throwaway dirs nest under ONE per-run parent, created HERE in the parent
+# shell — mk_tmp is routinely called inside $(...) command substitutions, where a
+# trap-array append happens in a subshell the parent never sees (the second real
+# leak mechanism behind the 214-orphan incident). Nesting makes the single parent
+# trap remove every child regardless of which subshell created it.
+find "${TMPDIR:-/tmp}" -maxdepth 1 -name 'orch-int.*' -user "$(id -un)" -mmin +120 -exec rm -rf {} + 2>/dev/null
+_INT_RUN_DIR="$(mktemp -d "${TMPDIR:-/tmp}/orch-int.XXXXXXXX")"
+_int_cleanup(){ cd "$REPO_ROOT" 2>/dev/null || cd / ; rm -rf "$_INT_RUN_DIR"; }
 trap _int_cleanup EXIT
-mk_tmp(){ local d; d="$(mktemp -d)"; _INT_TMP+=("$d"); printf '%s\n' "$d"; }
+mk_tmp(){ mktemp -d "$_INT_RUN_DIR/t.XXXXXXXX"; }
+# >=1G free on the tmp filesystem, else callers SKIP (quota-exhaustion guard).
+int_space_ok(){ [ "$(df -Pk "${TMPDIR:-/tmp}" | awk 'NR==2{print $4}')" -ge 1048576 ]; }
 # Sandbox HOME (so the harness writes ALL its config/cache under here, not real ~).
 mk_home(){ mk_tmp; }
 # Isolated git repo with the orchestrate ledger dir pre-made (for ledger artifacts).
@@ -67,3 +81,71 @@ mk_repo(){ local d; d="$(mk_tmp)"; ( cd "$d" && git init -q && git config user.e
 # credential cloned in (keeps sandbox state controlled). With ANTHROPIC_API_KEY set,
 # no copy is needed. Use for installed-plugin + live-dispatch tests.
 mk_authed_home(){ local h; h="$(mk_home)"; mkdir -p "$h/.claude"; [ -f "$HOME/.claude/.credentials.json" ] && cp "$HOME/.claude/.credentials.json" "$h/.claude/" 2>/dev/null; printf '%s\n' "$h"; }
+
+# --- OpenCode tier ---------------------------------------------------------
+# Mirror of the Claude/Codex probes for the OpenCode harness (ADR-0034). OpenCode
+# reads FIVE locations from the ambient environment: XDG_CONFIG_HOME (config),
+# XDG_DATA_HOME (auth.json/db/log), XDG_CACHE_HOME (provider bin cache),
+# XDG_STATE_HOME (frecency/locks), and HOME directly for skill discovery
+# (~/.agents/skills, ~/.claude/skills — documented, HOME-based, NOT XDG-based).
+#
+# INCIDENT (this worktree, 2026-07-21): an ambient shell that already exports
+# XDG_CONFIG_HOME/XDG_DATA_HOME (common — dotfiles, direnv, etc.) makes `HOME=...`
+# alone NOT sandbox opencode: DEST resolution falls back to
+# `${XDG_CONFIG_HOME:-$HOME/.config}`, so a pre-set XDG_CONFIG_HOME wins over the
+# HOME override and opencode writes the REAL ~/.config/opencode. This happened
+# live during this tier's own development and wrote real agents/plugins/commands
+# files into a real ~/.config/opencode — see probe-results.md for the incident
+# note and the exact cleanup. The fix: every opencode invocation below sets ALL
+# FIVE vars EXPLICITLY inline on the command (never `export`/`unset`, so the
+# isolation is request-scoped and can't leak between sourced test files, and
+# never omitted, so no ambient value can win).
+# Live probes need the CLI AND headroom on /tmp — a quota-full /tmp bricks shell
+# spawning session-wide (measured 2026-07-21), so low space is a SKIP, never a fill.
+have_opencode(){ command -v opencode >/dev/null 2>&1 && int_space_ok; }
+# Live auth: the host's opencode auth.json (from `opencode auth login` / `opencode
+# providers`). No auth -> OpenCode live tiers skip. account.json is optional and
+# cloned in too when present (some providers use it alongside auth.json).
+have_opencode_auth(){ [ -f "$HOME/.local/share/opencode/auth.json" ]; }
+
+# Cheapest usable model on this host's authenticated provider set (probed
+# 2026-07-21): the `opencode` zen provider's models need a payment method,
+# github-copilot models are unlicensed here, and openai's nano/mini tier names
+# from `opencode models` don't exist under the openai/ prefix specifically —
+# openai/gpt-5.4-fast is the cheap+fast tier that actually answers. Override via
+# OC_MODEL if your environment differs. Live probes still keep prompts minimal
+# regardless of model cost (per the work item).
+OC_MODEL="${OC_MODEL:-openai/gpt-5.4-fast}"
+
+# Throwaway OpenCode "home root": ONE dir holding all five sandboxed locations.
+# ONLY auth.json (+ account.json if present) is cloned in from the host — never
+# any other host opencode state (never the real config/agents/plugins/db/log).
+# Use as `oc=$(mk_opencode_home)`.
+# Package/model caches are SHARED across sandboxes (one ~150M copy, not one per
+# sandbox — the per-sandbox copies are what filled /tmp). Cache is not config:
+# sharing it cannot leak config/state between sandboxes, only downloaded artifacts.
+_OC_CACHE="${TMPDIR:-/tmp}/orch-int-cache-$(id -u)"
+mk_opencode_home(){
+  local h; h="$(mk_tmp)"
+  mkdir -p "$h/.config" "$h/.local/share/opencode" "$h/.local/state" "$_OC_CACHE"
+  ln -s "$_OC_CACHE" "$h/.cache"
+  [ -f "$HOME/.local/share/opencode/auth.json" ] && cp "$HOME/.local/share/opencode/auth.json" "$h/.local/share/opencode/auth.json" 2>/dev/null
+  [ -f "$HOME/.local/share/opencode/account.json" ] && cp "$HOME/.local/share/opencode/account.json" "$h/.local/share/opencode/account.json" 2>/dev/null
+  printf '%s\n' "$h"
+}
+# Run ANY command (opencode itself, or install-opencode.sh) fully sandboxed under
+# an mk_opencode_home dir — all 5 vars set inline, every call site, no ambient
+# leakage. NEVER invoke `opencode` or install-opencode.sh directly in this tier;
+# always route through this. Usage: oc_run "$oc" timeout 90 opencode run ...
+oc_run(){ # <oc_home> <cmd...>
+  local h="$1"; shift
+  XDG_CONFIG_HOME="$h/.config" XDG_DATA_HOME="$h/.local/share" \
+  XDG_CACHE_HOME="$h/.cache" XDG_STATE_HOME="$h/.local/state" HOME="$h" \
+  "$@"
+}
+# Install orchestrate into an mk_opencode_home dir (user scope — DEST/SKILLS_ROOT
+# resolve from the sandboxed XDG_CONFIG_HOME/HOME set by oc_run, so this lands
+# entirely inside $h; never the real ~/.config/opencode or ~/.agents/skills).
+opencode_install(){ # <oc_home>
+  oc_run "$1" bash "$PLUGIN_DIR/scripts/install-opencode.sh" --scope user >/dev/null 2>&1
+}
