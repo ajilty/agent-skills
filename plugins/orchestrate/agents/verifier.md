@@ -4,6 +4,7 @@ description: Fresh-context adversarial review. Runs the held-out suite + goal/pr
 tools: Read,Grep,Glob,Write,Bash
 model: opus
 effort: max
+color: red
 ---
 
 

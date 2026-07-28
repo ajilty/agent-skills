@@ -21,12 +21,36 @@ done
 #     runtime — that's an operator env concern, not the compiled artifact.)
 declare -A WANT_MODEL=( [researcher]=haiku [planner]=opus [implementer]=sonnet [verifier]=opus [actuator]=sonnet )
 declare -A WANT_EFFORT=( [researcher]=medium [planner]=high [implementer]=high [verifier]=max [actuator]=high )
+# Compiled terminal accent (CC-only presentation; the map lives in build.sh, NOT agents.yaml
+# — see ADR-0007 / the contract's harness-neutrality header). The accent is a COST HEAT
+# DERIVED from the tier above: cold = cheap, hot = expensive, so a fan-out board shows where
+# the spend goes. Pinned here because the signal is only worth anything if it tracks the tier
+# — a color that stopped following model/effort would be a lie about cost, not a cosmetic bug.
+declare -A WANT_COLOR=( [researcher]=cyan [planner]=yellow [implementer]=green [verifier]=red [actuator]=green )
 for p in "${!WANT_MODEL[@]}"; do
   gm="$(awk -F': ' '/^model: /{print $2; exit}' "$SK/agents/$p.md" 2>/dev/null)"
   ge="$(awk -F': ' '/^effort: /{print $2; exit}' "$SK/agents/$p.md" 2>/dev/null)"
+  gc="$(awk -F': ' '/^color: /{print $2; exit}' "$SK/agents/$p.md" 2>/dev/null)"
   assert_eq "$gm" "${WANT_MODEL[$p]}" "model tier $p"
   assert_eq "$ge" "${WANT_EFFORT[$p]}" "effort tier $p"
+  assert_eq "$gc" "${WANT_COLOR[$p]}" "color $p"
 done
+# Monotonicity: the heat ladder must order the personas the way COST does. Duplicates are
+# correct here (implementer/actuator are the same tier, so they must look the same); what
+# must never happen is a cheap persona reading hotter than an expensive one. This is the
+# check that catches a well-meaning "let's make the actuator red" from re-tainting the
+# scale with a second, contradictory meaning.
+declare -A HEAT=( [cyan]=1 [green]=2 [yellow]=3 [red]=4 )
+ladder_ok=1
+for pair in "researcher<implementer" "implementer=actuator" "actuator<planner" "planner<verifier"; do
+  a="${pair%%[<=]*}"; b="${pair##*[<=]}"; op="${pair//[a-z]/}"
+  ha="${HEAT[${WANT_COLOR[$a]}]:-0}"; hb="${HEAT[${WANT_COLOR[$b]}]:-0}"
+  case "$op" in
+    '<') [ "$ha" -lt "$hb" ] || { ladder_ok=0; echo "  heat: $a ($ha) must be cooler than $b ($hb)" >&2; };;
+    '=') [ "$ha" -eq "$hb" ] || { ladder_ok=0; echo "  heat: $a ($ha) and $b ($hb) are the same tier, must match" >&2; };;
+  esac
+done
+[ "$ladder_ok" = 1 ] && pass || fail "color heat ladder must follow cost order"
 # Negatives (disk-first read lane, ADR-0014): read-only personas now carry a
 # PATH-SCOPED Write (results-only: findings/_quarantine for researcher, verdicts
 # for verifier; enforced by write-scope.sh) so their results survive interruption.

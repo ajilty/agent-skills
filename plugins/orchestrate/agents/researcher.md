@@ -4,6 +4,7 @@ description: Read-only explorer; returns confidence- and provenance-labeled find
 tools: Read,Grep,Glob,WebSearch,WebFetch,Write
 model: haiku
 effort: medium
+color: cyan
 ---
 
 

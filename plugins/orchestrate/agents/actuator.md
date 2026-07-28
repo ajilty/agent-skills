@@ -4,6 +4,7 @@ description: The single writer for downstream live-environment mutations (terraf
 tools: Read,Grep,Glob,Bash
 model: sonnet
 effort: high
+color: green
 ---
 
 

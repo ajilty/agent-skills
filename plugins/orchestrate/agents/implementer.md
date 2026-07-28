@@ -4,6 +4,7 @@ description: The single writer for coupled code (write + run + git). Builds one 
 tools: Read,Grep,Glob,Write,Edit,Bash
 model: sonnet
 effort: high
+color: green
 ---
 
 

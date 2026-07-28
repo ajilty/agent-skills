@@ -4,6 +4,7 @@ description: Turns findings into a committed spec/ADR with oracle and grep-backe
 tools: Read,Grep,Glob,Write
 model: opus
 effort: high
+color: yellow
 ---
 
 
