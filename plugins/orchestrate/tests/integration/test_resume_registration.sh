@@ -21,7 +21,7 @@ else
   h="$(mk_authed_home)"; work="$(mk_repo)"
   cc(){ ( cd "$work" && HOME="$h" claude "$@" ); }
   cc plugin marketplace add "$REPO_ROOT" >/dev/null 2>&1
-  cc plugin install orchestrate@agentic --scope user >/dev/null 2>&1
+  cc plugin install orchestrate@ajilty --scope user >/dev/null 2>&1
   probe='Use the Task tool to dispatch a subagent of type "orchestrate:researcher" with the instruction: reply with exactly the token RESEARCHER_OK. Output the subagent reply verbatim. If that agent type is not available, output exactly the token AGENT_NOT_FOUND.'
   s1="$(printf '%s' "$probe" | ( cd "$work" && HOME="$h" timeout 240 claude -p --allowedTools "Task" ) 2>&1)"
   s2="$(printf '%s' "$probe" | ( cd "$work" && HOME="$h" timeout 240 claude -p -c --allowedTools "Task" ) 2>&1)"
@@ -47,9 +47,9 @@ else
   printf '{"enabledPlugins":{"orchestrate@ghost-marketplace":true}}' > "$h2/.claude/settings.json"
   cc2(){ ( cd "$work2" && HOME="$h2" claude "$@" ); }
   cc2 plugin marketplace add "$REPO_ROOT" >/dev/null 2>&1 && pass || fail "stale-settings: marketplace add over a stale enable"
-  cc2 plugin install orchestrate@agentic --scope user >/dev/null 2>&1 && pass || fail "stale-settings: install over a stale enabledPlugins entry"
-  case "$(cc2 plugin list 2>/dev/null)" in *"orchestrate@agentic"*) pass;; *) fail "stale-settings: real plugin not listed (stale ghost entry broke it)";; esac
-  case "$(cc2 plugin details orchestrate@agentic 2>/dev/null)" in *"Agents (5)"*) pass;; *) fail "stale-settings: real plugin loads 5 agents despite stale ghost entry";; esac
+  cc2 plugin install orchestrate@ajilty --scope user >/dev/null 2>&1 && pass || fail "stale-settings: install over a stale enabledPlugins entry"
+  case "$(cc2 plugin list 2>/dev/null)" in *"orchestrate@ajilty"*) pass;; *) fail "stale-settings: real plugin not listed (stale ghost entry broke it)";; esac
+  case "$(cc2 plugin details orchestrate@ajilty 2>/dev/null)" in *"Agents (5)"*) pass;; *) fail "stale-settings: real plugin loads 5 agents despite stale ghost entry";; esac
 
   rm -rf "$HOME/.claude/projects/"-tmp-* 2>/dev/null || true
 fi

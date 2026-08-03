@@ -295,4 +295,4 @@ see `docs/adr/0012-subagents-not-agent-teams.md`.
 - The orchestrate plugin is merged to `main` and pushed to `origin`
   (github.com/ajilty/agentic); installable in any repo via
   `/plugin marketplace add ajilty/agentic` then
-  `/plugin install orchestrate@agentic`.
+  `/plugin install orchestrate@ajilty`.
