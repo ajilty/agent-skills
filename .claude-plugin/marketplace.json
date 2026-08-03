@@ -10,19 +10,19 @@
       "name": "orchestrate",
       "description": "Standing operator loop with capability-subtracted personas and fail-closed safety guarantees.",
       "source": "./plugins/orchestrate",
-      "author": { "name": "ajilty", "email": "github@ajilty.com" }
+      "author": {
+        "name": "ajilty",
+        "email": "github@ajilty.com"
+      }
     },
     {
       "name": "syntax-guard",
       "description": "Validate JSON/YAML syntax on every Edit/Write; parse errors are fed back to Claude for immediate self-correction.",
       "source": "./plugins/syntax-guard",
-      "author": { "name": "ajilty", "email": "github@ajilty.com" }
-    },
-    {
-      "name": "manager-brief",
-      "description": "Output style: research findings arrive as a manager brief, the call on top, evidence below.",
-      "source": "./plugins/manager-brief",
-      "author": { "name": "ajilty", "email": "github@ajilty.com" }
+      "author": {
+        "name": "ajilty",
+        "email": "github@ajilty.com"
+      }
     }
   ]
 }

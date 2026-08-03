@@ -64,3 +64,12 @@ decisions with a recommendation, verdict-exposure-next research answers, and
 Done/Doing/Next progress updates. One document by necessity: Claude Code allows
 a single active output style per session, so turn-type dispatch lives inside
 the style.
+
+## Outcome, 2026-08-03 (final)
+
+Plugin withdrawn. The delivery mechanism proved out (auto-discovery, strict
+validation, CI), but the elicited style is a personal-preference artifact and
+per the no-personal-identity principle it moved to private dotfiles as the
+user-level `ajilty` style. This PR keeps the repo-wide test/validation harness
+(ADR-0038) and the orchestrate frontmatter fix; the manager-brief plugin and
+its marketplace entry are removed.
