@@ -2,9 +2,14 @@ name: Claude Code Review
 
 on:
   pull_request:
-    # No `synchronize`: a review costs real money (~$6/run), so pushes to an
-    # open PR don't re-review. Comment `@claude review` for a fresh pass.
-    types: [opened, ready_for_review, reopened]
+    # A review costs real money (~$6/run), so it fires as late and as rarely as
+    # possible. No `opened` and no `synchronize`: drafts and pushes are free.
+    #
+    # Consequence worth knowing: `ready_for_review` only fires on a draft->ready
+    # transition, so a PR opened directly as non-draft is NEVER auto-reviewed.
+    # Either open it as a draft (`gh pr create --draft`) and mark it ready, or
+    # comment `@claude review` on it.
+    types: [ready_for_review, reopened]
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
