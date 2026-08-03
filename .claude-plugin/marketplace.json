@@ -10,13 +10,19 @@
       "name": "orchestrate",
       "description": "Standing operator loop with capability-subtracted personas and fail-closed safety guarantees.",
       "source": "./plugins/orchestrate",
-      "author": { "name": "ajilty", "email": "github@ajilty.com" }
+      "author": {
+        "name": "ajilty",
+        "email": "github@ajilty.com"
+      }
     },
     {
       "name": "syntax-guard",
       "description": "Validate JSON/YAML syntax on every Edit/Write; parse errors are fed back to Claude for immediate self-correction.",
       "source": "./plugins/syntax-guard",
-      "author": { "name": "ajilty", "email": "github@ajilty.com" }
+      "author": {
+        "name": "ajilty",
+        "email": "github@ajilty.com"
+      }
     }
   ]
 }
