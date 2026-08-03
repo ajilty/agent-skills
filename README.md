@@ -33,6 +33,16 @@ trust-seeding caveats live in the plugin README's
 - `git` and `yq` v4 (mikefarah) at build/install time. Installed runtime is pure
   git + coreutils, no other deps.
 
+## Contributing setup
+
+One-time per clone, activate the repo's git hooks (identity + content leak
+guard on every commit; contributors without a private blocklist get a warn,
+not a block):
+
+```
+git config core.hooksPath scripts/githooks
+```
+
 ## Where things live
 
 - Harness emitters (compile agents.yaml contracts to Claude Code / Codex /
