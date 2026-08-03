@@ -47,6 +47,15 @@ done
 grep -q "$SKD/runtime" "$o/plugins/orchestrate.ts" && pass || fail "opencode plugin points at the skill's runtime (single copy)"
 for c in init status feedback; do assert_file "$o/commands/orchestrate-$c.md"; done
 grep -q -- '--models=' "$o/commands/orchestrate-init.md" && pass || fail "opencode init command carries the --models flag contract"
+# command descriptions are parsed from the commands/*.md source frontmatter, never restated
+for c in init status feedback; do
+  want="$(yq --front-matter=extract '.description' "$SK/commands/$c.md")"
+  got="$(yq --front-matter=extract '.description' "$o/commands/orchestrate-$c.md")"
+  assert_eq "$got" "$want" "opencode $c command description matches source frontmatter"
+done
+# tier -> model emission (D1: Anthropic ladder default, env-overridable)
+grep -q '^model: ' "$o/agents/planner.md" && pass || fail "opencode planner carries tier model"
+grep -q '^model: anthropic/' "$o/agents/researcher.md" && pass || fail "opencode researcher model defaults to the Anthropic ladder"
 # permission: layer emitted alongside deprecated tools: (read-only persona denies edit+bash)
 grep -A3 '^permission:' "$o/agents/planner.md" | grep -q 'bash: deny' && pass || fail "opencode planner permission denies bash"
 grep -A3 '^permission:' "$o/agents/implementer.md" | grep -q 'bash: allow' && pass || fail "opencode implementer permission allows bash"
