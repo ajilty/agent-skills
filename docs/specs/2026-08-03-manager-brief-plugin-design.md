@@ -52,3 +52,15 @@ undocumented (verified against `code.claude.com/docs/en/output-styles.md` and
 aside rather than trusting shadowing. Note: the `/output-style` command was
 removed in v2.1.91; activation is `/config` or the `outputStyle` settings
 field.
+
+## Revision, 2026-08-03 (same day)
+
+The verbatim-copy style was replaced wholesale after a two-stage UAT: transcript
+grading showed the original's brief shape fired once in ~14 eligible turns with
+four manual "busy manager" escalations, and a six-round preference elicitation
+on real turns converged on a different design: business-outcome voice,
+outcome-only leads, no findings sections (depth on request), narrative numbered
+decisions with a recommendation, verdict-exposure-next research answers, and
+Done/Doing/Next progress updates. One document by necessity: Claude Code allows
+a single active output style per session, so turn-type dispatch lives inside
+the style.

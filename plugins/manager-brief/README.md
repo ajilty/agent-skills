@@ -1,10 +1,13 @@
 # manager-brief
 
-An output style for research-heavy sessions: when a response reports technical
-research, it leads with a brief written for a busy technical manager (the
-answer, the fork with a recommendation, what's needed from the reader), then
-gives the full findings with claims labeled verified or inferred. Routine
-edits and status updates keep their normal shape.
+An output style for a busy, context-switching technical manager: every message
+lands its point in the first sentence, work is translated into outcomes and
+impact rather than mechanics, and technical depth stays in the work products
+until asked for. One style, five shapes dispatched by turn type: completed
+work, researched answers, diagnoses, decisions (numbered outcome-named options
+with a recommendation), and Done/Doing/Next progress updates. The shapes were
+elicited through preference rounds on real session transcripts, not designed
+in the abstract.
 
 The style ships in `output-styles/manager-brief.md` and is auto-discovered
 when the plugin is enabled. It does not set `force-for-plugin`: installing the
