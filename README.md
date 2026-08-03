@@ -21,7 +21,7 @@ Claude Code, from this repo's self-marketplace:
 
 ```
 /plugin marketplace add ajilty/agentic
-/plugin install orchestrate@agentic
+/plugin install orchestrate@ajilty
 ```
 
 Codex and OpenCode use compile-step installers. Commands, scopes, and the

@@ -24,10 +24,10 @@ Validating "changed files" via `git diff --name-only` misses new untracked files
 ## Install
 
 ```
-/plugin install guards@agentic
+/plugin install guards@ajilty
 ```
 
-Or in settings: `"enabledPlugins": { "guards@agentic": true }`.
+Or in settings: `"enabledPlugins": { "guards@ajilty": true }`.
 
 ## Known limitations
 

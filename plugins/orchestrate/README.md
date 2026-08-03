@@ -12,7 +12,7 @@ consequence gate — survives interruption, and remembers its judgment across go
 
 ```
 /plugin marketplace add ajilty/agentic
-/plugin install orchestrate@agentic
+/plugin install orchestrate@ajilty
 ```
 
 Everything ships in the plugin: the five persona agents, the hook floor
