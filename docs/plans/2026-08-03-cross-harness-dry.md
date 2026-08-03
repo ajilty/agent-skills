@@ -286,8 +286,13 @@ done
 
 ### Task 8: fix stale docs
 
+DONE in this PR already (doc-DRY): the root `README.md` is now brief and generic
+(plugin list + short install pointer + doc map), and `plugins/orchestrate/README.md`
+is the single source for install/use/safety detail across all three harnesses.
+That restructure removed the stale `/orchestrate:start` references and the
+circular "see the root README" pointer. Remaining:
+
 **Files:**
-- Modify: `plugins/orchestrate/README.md` (two `/orchestrate:start` → `/orchestrate:init`)
 - Modify: `plugins/orchestrate/DESIGN.md` (remove `scripts/install-claude-code.sh` refs at :159/:349, the nonexistent `scripts/runtime/` layout at :319/:355+, "the four hooks" count, the 4-persona file map missing Actuator)
 - Modify: `docs/notes/codex-support.md` (note the docs migration: developers.openai.com/codex/* now redirects to learn.chatgpt.com/docs/*; content otherwise still accurate)
 
