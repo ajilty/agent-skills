@@ -39,6 +39,11 @@ grep -q 'OpenCode dispatch addendum' "$SKD/SKILL.md" && pass || fail "opencode s
 test -x "$SKD/runtime/ledger.sh" && pass || fail "opencode ships ledger.sh executable inside the skill"
 assert_file "$o/plugins/orchestrate.ts"
 grep -q 'session.compacted' "$o/plugins/orchestrate.ts" && pass || fail "opencode plugin wires the documented session.compacted event"
+# floor parity: every fail-closed floor hook the contract declares must be wired in
+# the plugin (writer_writeahead is the documented in-loop exception, ADR-0034)
+for h in deny-heldout-read keep-on-branch guard-shared-checkout guard-merge-base guard-done gate-prod-apply write-scope run-scope; do
+  grep -q "hooks/$h.sh" "$o/plugins/orchestrate.ts" && pass || fail "opencode plugin missing floor hook: $h"
+done
 grep -q "$SKD/runtime" "$o/plugins/orchestrate.ts" && pass || fail "opencode plugin points at the skill's runtime (single copy)"
 for c in init status feedback; do assert_file "$o/commands/orchestrate-$c.md"; done
 grep -q -- '--models=' "$o/commands/orchestrate-init.md" && pass || fail "opencode init command carries the --models flag contract"
