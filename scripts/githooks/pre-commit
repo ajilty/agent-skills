@@ -5,9 +5,15 @@
 # Content guard scans only ADDED lines of the staged diff against a private,
 # never-tracked blocklist (shared with the dotfiles repo's guard). Missing
 # blocklist -> warn, don't block, so contributors without one are unaffected.
+#
+# Identity guard is opt-in for the same reason — a hardcoded expected identity
+# would block every contributor. Maintainers enable it per clone:
+#   git config hooks.expectedIdentity "Your Name <you@example.com>"
 set -euo pipefail
 
-EXPECTED="ajilty <github@ajilty.com>"
+warn() { echo "WARN: $*" >&2; }
+
+EXPECTED=$(git config --get hooks.expectedIdentity || true)
 
 strip_time() {
     local ident="$1"
@@ -22,14 +28,16 @@ check() {
         echo "  $label:   $who" >&2
         echo "  Expected: $EXPECTED" >&2
         echo "" >&2
-        echo "This repo is public; commits must use the public identity." >&2
-        echo "Check: git config --show-origin user.email" >&2
+        echo "This repo is public; commits must use the identity configured in" >&2
+        echo "hooks.expectedIdentity. Check: git config --show-origin user.email" >&2
         exit 1
     fi
 }
 
-check "Author"    "$(git var GIT_AUTHOR_IDENT)"
-check "Committer" "$(git var GIT_COMMITTER_IDENT)"
+if [[ -n "$EXPECTED" ]]; then
+    check "Author"    "$(git var GIT_AUTHOR_IDENT)"
+    check "Committer" "$(git var GIT_COMMITTER_IDENT)"
+fi
 
 # ---------------------------------------------------------------------------
 # Content guard.
@@ -37,8 +45,6 @@ check "Committer" "$(git var GIT_COMMITTER_IDENT)"
 
 BLOCKLIST_FILE="${AGENTIC_BLOCKLIST_FILE:-$HOME/.local/config/dotfiles/blocklist}"
 STALE_DAYS=30
-
-warn() { echo "WARN: $*" >&2; }
 
 if [[ ! -f "$BLOCKLIST_FILE" ]]; then
     warn "content blocklist not present at $BLOCKLIST_FILE."
@@ -52,7 +58,9 @@ if [[ -n "$(find "$BLOCKLIST_FILE" -mtime +"$STALE_DAYS" -print 2>/dev/null)" ]]
 fi
 
 patterns=()
-while IFS= read -r line; do
+# `|| [[ -n "$line" ]]`: read returns non-zero on an unterminated final line,
+# which would silently drop the last pattern — a fail-open in a leak guard.
+while IFS= read -r line || [[ -n "$line" ]]; do
     [[ "$line" =~ ^[[:space:]]*$ ]] && continue
     [[ "$line" =~ ^[[:space:]]*# ]] && continue
     patterns+=("$line")
@@ -68,9 +76,10 @@ if [[ -z "$diff_output" ]]; then
     exit 0
 fi
 
-# Only scan ADDED lines; removing a leak must never block. Strip +++ headers
-# so file paths don't false-match.
-content=$(echo "$diff_output" | grep -E '^\+' | grep -v '^+++' || true)
+# Only scan ADDED lines; removing a leak must never block. Strip the `+++ b/`
+# file headers so paths don't false-match — anchored to ` b/` because a bare
+# `^+++` also eats an added line whose own text starts with `++`.
+content=$(echo "$diff_output" | grep -E '^\+' | grep -v '^+++ b/' || true)
 
 hits=()
 for pattern in "${patterns[@]}"; do

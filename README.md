@@ -43,12 +43,20 @@ trust-seeding caveats live in the plugin README's
 
 ## Contributing setup
 
-One-time per clone, activate the repo's git hooks (identity + content leak
-guard on every commit; contributors without a private blocklist get a warn,
-not a block):
+One-time per clone, activate the repo's git hooks:
 
 ```
 git config core.hooksPath scripts/githooks
+```
+
+The `pre-commit` hook scans staged additions against a private, never-tracked
+blocklist to keep employer- or person-specific strings out of a public repo.
+Both its guards are opt-in, so a fresh clone is unaffected: with no blocklist
+file present it warns and skips, and the author-identity check runs only if you
+configure an expected identity:
+
+```
+git config hooks.expectedIdentity "Your Name <you@example.com>"
 ```
 
 ## Where things live
