@@ -1,6 +1,6 @@
 ---
 name: working-with-aws-cli
-description: "aws CLI investigation gotchas: profile names lie (sts get-caller-identity first), ForbiddenException often means expired SSO, SSM RunCommand inline-parameters quoting failure and the params-file pattern, one-attribute CloudTrail lookups, the LB to target-group ProtocolVersion exposure join. Use for read-only AWS hunts, SSM live-host sweeps, or credential-use checks."
+description: "aws CLI investigation gotchas: profile names lie (sts get-caller-identity first), ForbiddenException often means expired SSO, SSM RunCommand inline-parameters quoting failure and the params-file pattern, one-attribute CloudTrail lookups, the LB to target-group ProtocolVersion exposure join, IAM description fields rejecting em dashes (Latin-1 only). Use for read-only AWS hunts, SSM live-host sweeps, or credential-use checks."
 ---
 
 # Working with the AWS CLI — sharp edges (read-only investigation)
@@ -63,6 +63,14 @@ The way to inspect hosts that are not in EDR (commonly CI/build agents).
   `CreateLoginProfile`, `AttachUserPolicy`.
 - Externally-owned access keys (`isExternalAccount`) won't appear in your CloudTrail — their use
   must be checked at the owning account.
+
+## IAM field validation
+
+- **IAM description fields reject em dashes: keep generated text ASCII.** The `CreateRole`
+  Description pattern is `[\u0009\u000A\u000D\u0020-\u007E\u00A1-\u00FF]*` (printable ASCII plus
+  Latin-1 supplement); an em dash (U+2014) is outside it and fails with `InvalidInput`. The same
+  character class applies to other IAM free-text fields, so write descriptions with plain hyphens
+  or commas.
 
 ## What this skill does not cover
 
