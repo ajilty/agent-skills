@@ -35,6 +35,8 @@ trust-seeding caveats live in the plugin README's
 
 ## Where things live
 
+- Harness emitters (compile agents.yaml contracts to Claude Code / Codex /
+  OpenCode surfaces, any plugin): [`scripts/harness-lib/`](scripts/harness-lib/) (ADR-0037)
 - Design rationale: [`plugins/orchestrate/DESIGN.md`](plugins/orchestrate/DESIGN.md)
 - Specs: [`docs/specs/`](docs/specs/) · decisions (ADRs): [`docs/adr/`](docs/adr/)
 - Plans: [`docs/plans/`](docs/plans/) · glossary: [`CONTEXT.md`](CONTEXT.md)

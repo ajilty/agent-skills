@@ -94,9 +94,12 @@ fi
 
 # --- Drift guard: committed artifacts must equal a fresh build. Copy the plugin
 #     to a temp tree, rebuild there, diff the generated files. Skips without yq.
+#     HARNESS_LIB points the tmp copy at the real repo-level lib (ADR-0037): the
+#     lib is build-time-only and lives OUTSIDE the plugin, so the copied driver's
+#     relative default cannot resolve it.
 if have_yq4; then
   t="$(mktemp -d)"; cp -r "$SK/." "$t/"
-  ( bash "$t/scripts/build.sh" >/dev/null 2>&1 )
+  ( HARNESS_LIB="$(cd "$SK/../.." && pwd)/scripts/harness-lib" bash "$t/scripts/build.sh" >/dev/null 2>&1 )
   for f in agents/researcher.md agents/planner.md agents/implementer.md agents/verifier.md agents/actuator.md hooks/hooks.json; do
     if diff -q "$SK/$f" "$t/$f" >/dev/null 2>&1; then pass; else fail "drift: committed $f != fresh build (run scripts/build.sh)"; fi
   done
@@ -117,6 +120,34 @@ if have_yq4; then
   if [ -d "$rdir" ] && [ -f "$rdir/.claude-plugin/plugin.json" ]; then pass; else fail "marketplace source '$src' does not resolve to a plugin dir"; fi
 else
   echo "(skip manifest validity: $YQ4_SKIP)"
+fi
+
+# --- SKILL §2a' dispatch tier table vs the contract: the table is the OPERATIVE
+#     tier carrier on Claude Code (the router passes model/effort explicitly at
+#     dispatch — registered agent model: does not reliably bind), so it must agree
+#     with agents.yaml. The researcher rows are dispatch FLAVORS: the sweep row is
+#     the tier baseline (economy), judgment/troubleshooter are documented
+#     escalations — so researcher pins to its sweep row, everyone else exactly.
+if have_yq4; then
+  AGY="$SK/skills/orchestrate/references/agents.yaml"
+  SKM="$SK/skills/orchestrate/SKILL.md"
+  cc_tier_model() { case "$1" in economy) echo haiku;; standard) echo sonnet;; premium) echo opus;; esac; }
+  row_for() { grep -E "^\| *$1 *\|" "$SKM" | head -1; }
+  for p in planner implementer actuator verifier; do
+    want_m="$(cc_tier_model "$(yq ".personas.$p.tier.model" "$AGY")")"
+    want_e="$(yq ".personas.$p.tier.effort" "$AGY")"
+    row="$(row_for "$p")"
+    got_m="$(printf '%s' "$row" | awk -F'|' '{gsub(/ /,"",$3); print $3}')"
+    got_e="$(printf '%s' "$row" | awk -F'|' '{gsub(/ /,"",$4); print $4}')"
+    assert_eq "$got_m" "$want_m" "SKILL §2a' model for $p tracks agents.yaml"
+    assert_eq "$got_e" "$want_e" "SKILL §2a' effort for $p tracks agents.yaml"
+  done
+  base_row="$(grep -E '^\| *researcher — sweep' "$SKM" | head -1)"
+  want_m="$(cc_tier_model "$(yq '.personas.researcher.tier.model' "$AGY")")"
+  got_m="$(printf '%s' "$base_row" | awk -F'|' '{gsub(/ /,"",$3); print $3}')"
+  assert_eq "$got_m" "$want_m" "SKILL §2a' researcher baseline (sweep) tracks agents.yaml tier"
+else
+  echo "(skip §2a' tier-table parity: $YQ4_SKIP)"
 fi
 
 # --- Clarification binding (§2b front-door gate): the router-prose config that binds

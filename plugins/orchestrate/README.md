@@ -82,8 +82,10 @@ No config file — repo specifics are discovered, defaulted, or set by env.
 
 `agents/*.md` and `hooks/hooks.json` are **build output**, not hand-authored. They
 are generated from `skills/orchestrate/references/agents.yaml` (the single
-capability contract) by `scripts/build.sh` and committed — a marketplace install
-runs no build. After editing `agents.yaml` or any persona body, regenerate:
+capability contract, which also carries the hook wire map: `script:` + `watch:`
+per hook) by `scripts/build.sh` and committed — a marketplace install runs no
+build. All harness mapping logic lives in the repo-level `scripts/harness-lib/`
+(ADR-0037), shared by this and the Codex/OpenCode installers. After editing `agents.yaml` or any persona body, regenerate:
 
 ```
 scripts/build.sh
