@@ -1,4 +1,4 @@
-# 0036: Repo-wide plugin test and validation convention
+# 0038: Repo-wide plugin test and validation convention
 
 **Status:** active
 **Date:** 2026-08-03
