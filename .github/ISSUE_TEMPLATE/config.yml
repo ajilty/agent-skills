@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
   - name: orchestrate — Known limitations (harness vs. plugin)
-    url: https://github.com/ajilty/agent-skills/blob/main/plugins/orchestrate/KNOWN-LIMITATIONS.md
+    url: https://github.com/ajilty/agentic/blob/main/plugins/orchestrate/KNOWN-LIMITATIONS.md
     about: Several Claude Code harness behaviors (subagent notifications, worktree isolation) are outside a plugin's reach and orchestrate already compensates for them. Check here before filing — it may not be an orchestrate bug.

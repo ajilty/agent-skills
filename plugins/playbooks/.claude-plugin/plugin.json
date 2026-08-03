@@ -1,0 +1,13 @@
+{
+  "name": "playbooks",
+  "version": "0.1.0",
+  "description": "User-invoked workflows: opinionated ways of working across meta, office, coding, and security domains.",
+  "author": {
+    "name": "ajilty",
+    "email": "github@ajilty.com"
+  },
+  "homepage": "https://github.com/ajilty/agentic",
+  "repository": "https://github.com/ajilty/agentic",
+  "license": "MIT",
+  "keywords": ["workflows", "skills"]
+}

@@ -293,6 +293,6 @@ see `docs/adr/0012-subagents-not-agent-teams.md`.
 ## Not skill work (operational)
 
 - The orchestrate plugin is merged to `main` and pushed to `origin`
-  (github.com/ajilty/agent-skills); installable in any repo via
-  `/plugin marketplace add ajilty/agent-skills` then
-  `/plugin install orchestrate@ajilty-agent-skills`.
+  (github.com/ajilty/agentic); installable in any repo via
+  `/plugin marketplace add ajilty/agentic` then
+  `/plugin install orchestrate@agentic`.

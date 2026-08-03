@@ -1,0 +1,13 @@
+{
+  "name": "guards",
+  "version": "0.2.0",
+  "description": "Constraints that guard against known issues. Currently: PostToolUse validator - after every Edit/Write of a .json/.yaml/.yml file (including YAML frontmatter in .md files), parse it with jq/yq and feed syntax errors straight back to Claude (exit 2) so it self-corrects immediately.",
+  "author": {
+    "name": "ajilty",
+    "email": "github@ajilty.com"
+  },
+  "homepage": "https://github.com/ajilty/agentic",
+  "repository": "https://github.com/ajilty/agentic",
+  "license": "MIT",
+  "keywords": ["hooks", "validation", "json", "yaml", "lint"]
+}

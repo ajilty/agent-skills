@@ -26,13 +26,13 @@ case "$f" in
     exit 0 ;;
   *.json)
     if ! err=$(jq . "$f" 2>&1 >/dev/null); then
-      printf 'syntax-guard: invalid JSON in %s\n%s\n' "$f" "$err" >&2
+      printf 'guards: invalid JSON in %s\n%s\n' "$f" "$err" >&2
       exit 2
     fi ;;
   *.yaml|*.yml)
     command -v yq >/dev/null 2>&1 || exit 0
     if ! err=$(yq . "$f" 2>&1 >/dev/null); then
-      printf 'syntax-guard: invalid YAML in %s\n%s\n' "$f" "$err" >&2
+      printf 'guards: invalid YAML in %s\n%s\n' "$f" "$err" >&2
       exit 2
     fi ;;
   *.md)
@@ -44,7 +44,7 @@ case "$f" in
     head -n1 "$f" | grep -qx -- '---' || exit 0
     fm=$(awk 'NR==1{next} /^---[[:space:]]*$/{found=1; exit} {print} END{if(!found) exit 1}' "$f") || exit 0
     if ! err=$(printf '%s\n' "$fm" | yq . 2>&1 >/dev/null); then
-      printf 'syntax-guard: invalid YAML frontmatter in %s\n%s\n' "$f" "$err" >&2
+      printf 'guards: invalid YAML frontmatter in %s\n%s\n' "$f" "$err" >&2
       exit 2
     fi ;;
 esac

@@ -20,7 +20,7 @@ assert_eq(){ [ "$1" = "$2" ] && pass || fail "${3:-} (got '$1' want '$2')"; }
 
 # Locations (INT_HERE is exported by run.sh = tests/integration/).
 PLUGIN_DIR="$(cd "$INT_HERE/../.." && pwd)"          # plugins/orchestrate
-REPO_ROOT="$(cd "$PLUGIN_DIR/../.." && pwd)"          # agent-skills (has .claude-plugin/marketplace.json)
+REPO_ROOT="$(cd "$PLUGIN_DIR/../.." && pwd)"          # repo root (has .claude-plugin/marketplace.json)
 
 have_claude(){ command -v claude >/dev/null 2>&1; }
 have_api(){ [ -n "${ANTHROPIC_API_KEY:-}" ]; }

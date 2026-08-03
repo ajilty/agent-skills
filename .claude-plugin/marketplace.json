@@ -1,5 +1,5 @@
 {
-  "name": "ajilty-agent-skills",
+  "name": "agentic",
   "description": "Homegrown agentic tooling for Claude Code.",
   "owner": {
     "name": "ajilty",
@@ -16,9 +16,27 @@
       }
     },
     {
-      "name": "syntax-guard",
-      "description": "Validate JSON/YAML syntax on every Edit/Write; parse errors are fed back to Claude for immediate self-correction.",
-      "source": "./plugins/syntax-guard",
+      "name": "guards",
+      "description": "Constraints that guard against known issues. Currently: JSON/YAML syntax validation (including .md frontmatter) on every Edit/Write, with parse errors fed back for immediate self-correction.",
+      "source": "./plugins/guards",
+      "author": {
+        "name": "ajilty",
+        "email": "github@ajilty.com"
+      }
+    },
+    {
+      "name": "playbooks",
+      "description": "Opinionated workflows for how the operator works: user-invoked skills across meta, office, coding, and security domains.",
+      "source": "./plugins/playbooks",
+      "author": {
+        "name": "ajilty",
+        "email": "github@ajilty.com"
+      }
+    },
+    {
+      "name": "edges",
+      "description": "Knowledge to overcome model gaps: auto-invoked working-with-<tool> notes on sharp edges of specific tools and vendors.",
+      "source": "./plugins/edges",
       "author": {
         "name": "ajilty",
         "email": "github@ajilty.com"

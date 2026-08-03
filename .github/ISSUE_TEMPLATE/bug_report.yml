@@ -9,7 +9,7 @@ body:
         orchestrate runs on top of Claude Code's subagent dispatch, notifications, and worktree
         isolation. Several harness behaviors are outside a plugin's reach and orchestrate already
         compensates for them — please skim
-        [KNOWN-LIMITATIONS.md](https://github.com/ajilty/agent-skills/blob/main/plugins/orchestrate/KNOWN-LIMITATIONS.md)
+        [KNOWN-LIMITATIONS.md](https://github.com/ajilty/agentic/blob/main/plugins/orchestrate/KNOWN-LIMITATIONS.md)
         so we don't re-triage a known harness limitation as a plugin bug.
 
   - type: dropdown
