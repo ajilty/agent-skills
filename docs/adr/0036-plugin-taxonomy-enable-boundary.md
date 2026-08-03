@@ -57,7 +57,21 @@ only shared hook scripts would ever be library candidates. Output styles
 remain rejected (Claude-Code-only; the same content ships portably as a
 skill).
 
+Workflow vs product is a trust axis, not a complexity axis: if prose the model
+follows suffices, it is a playbook skill however long; if it needs guarantees
+the model cannot be trusted to keep (enforcement hooks, capability
+subtraction, durable state, a held-out oracle), it is a product like
+orchestrate however small. Guards are never knowledge: each
+independently-toggled enforcement is its own plugin; merge guards only when
+two or more demonstrably always toggle together. The orchestrate↔playbook
+intersection stays soft in both directions: playbook's assignment skill hands
+goals to orchestrate if installed; orchestrate's clarification step consumes
+the configured grilling skill for work, never control flow (ADR-0004).
+
 ## Considered options
+- Folding syntax-guard (and future guards) into sharp-edges — rejected:
+  knowledge is inert model-read prose, guards are harness-fired enforcement
+  with runtime cost and their own off-switch need.
 - Flat skills inside each plugin with a README category column — initially
   chosen, superseded by operator call: category browsing belongs in the
   filesystem, and the symlink-view scheme was verified distribution-safe.
