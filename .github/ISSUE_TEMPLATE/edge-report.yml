@@ -1,0 +1,73 @@
+name: Edge report (edges plugin)
+description: A working-with-<tool> skill has a wrong, stale, or missing sharp edge.
+labels: [edges]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing. These skills encode observed tool behavior, so the most useful
+        report is the raw observation: what the tool actually returned vs what the skill
+        claims. **Redact anything from your tenant** (hostnames, IDs, emails, tokens) —
+        the observation usually survives redaction fine.
+
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Which skill?
+      options:
+        - working-with-aws-cli
+        - working-with-confluence-mcp
+        - working-with-crowdstrike-mcp
+        - working-with-entra-graph
+        - working-with-github-cli
+        - working-with-horizon3-mcp
+        - working-with-jira-mcp
+        - working-with-m365-connector
+        - working-with-playwright
+        - working-with-runlayer
+        - working-with-slack-mcp
+        - working-with-wiz-mcp
+        - (new skill proposal)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: edge-type
+    attributes:
+      label: What kind of report?
+      options:
+        - Wrong — the skill's claim doesn't match observed behavior
+        - Stale — the tool/API changed and the edge no longer applies
+        - Missing — a sharp edge the skill should carry but doesn't
+    validations:
+      required: true
+
+  - type: input
+    id: surface
+    attributes:
+      label: Tool surface and version
+      description: The CLI version, MCP server (and version/date if known), or connector involved.
+      placeholder: e.g. gh 2.62.0 / falcon-mcp via HTTP / Atlassian MCP (mcp.atlassian.com)
+    validations:
+      required: true
+
+  - type: textarea
+    id: observation
+    attributes:
+      label: Expected vs observed
+      description: >-
+        What the skill claims (quote the line), what you did, and what actually came back.
+        Verbatim error strings and response shapes are the most valuable part — redacted
+        as needed.
+      placeholder: |
+        Skill says: "..."
+        I ran: ...
+        Got: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed edge wording (optional)
+      description: If you already know the corrected or new edge, draft it here.
