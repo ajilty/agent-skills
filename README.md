@@ -1,4 +1,4 @@
-# agent-skills
+# agentic
 
 Home for homegrown agentic tooling, shipped to multiple harnesses (Claude Code,
 Codex, OpenCode) from single-source contracts. Each plugin owns its full story
@@ -20,8 +20,8 @@ Codex, OpenCode) from single-source contracts. Each plugin owns its full story
 Claude Code, from this repo's self-marketplace:
 
 ```
-/plugin marketplace add ajilty/agent-skills
-/plugin install orchestrate@ajilty-agent-skills
+/plugin marketplace add ajilty/agentic
+/plugin install orchestrate@agentic
 ```
 
 Codex and OpenCode use compile-step installers. Commands, scopes, and the

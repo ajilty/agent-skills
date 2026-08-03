@@ -28,13 +28,13 @@ else
   for scope in user project; do
     h="$(mk_home)"; work="$(mk_tmp)"
     cc plugin marketplace add "$REPO_ROOT" >/dev/null 2>&1 && pass || fail "[$scope] marketplace add (local path)"
-    cc plugin install orchestrate@ajilty-agent-skills --scope "$scope" >/dev/null 2>&1 && pass || fail "[$scope] plugin install --scope $scope"
+    cc plugin install orchestrate@agentic --scope "$scope" >/dev/null 2>&1 && pass || fail "[$scope] plugin install --scope $scope"
     # list reports the expected scope
-    if cc plugin list 2>/dev/null | grep -A2 'orchestrate@ajilty-agent-skills' | grep -qi "Scope: $scope"; then pass; else fail "[$scope] plugin list reports Scope: $scope"; fi
+    if cc plugin list 2>/dev/null | grep -A2 'orchestrate@agentic' | grep -qi "Scope: $scope"; then pass; else fail "[$scope] plugin list reports Scope: $scope"; fi
     # enable-state persists in the scope-appropriate settings file
     case "$scope" in
-      user)    grep -qs 'orchestrate@ajilty-agent-skills' "$h/.claude/settings.json"  && pass || fail "[user] enable persisted to ~/.claude/settings.json";;
-      project) grep -qs 'orchestrate@ajilty-agent-skills' "$work/.claude/settings.json" && pass || fail "[project] enable persisted to repo-local .claude/settings.json";;
+      user)    grep -qs 'orchestrate@agentic' "$h/.claude/settings.json"  && pass || fail "[user] enable persisted to ~/.claude/settings.json";;
+      project) grep -qs 'orchestrate@agentic' "$work/.claude/settings.json" && pass || fail "[project] enable persisted to repo-local .claude/settings.json";;
     esac
     # inventory resolves at this scope
     case "$(cc plugin details orchestrate 2>/dev/null)" in *"Agents (5)"*) pass;; *) fail "[$scope] details reports 5 agents";; esac
@@ -42,7 +42,7 @@ else
 
   # --- Component inventory detail (names + command + hooks), once ---
   h="$(mk_home)"; work="$(mk_tmp)"
-  cc plugin marketplace add "$REPO_ROOT" >/dev/null 2>&1; cc plugin install orchestrate@ajilty-agent-skills >/dev/null 2>&1
+  cc plugin marketplace add "$REPO_ROOT" >/dev/null 2>&1; cc plugin install orchestrate@agentic >/dev/null 2>&1
   det="$(cc plugin details orchestrate 2>/dev/null)"
   for a in researcher planner implementer verifier actuator; do
     case "$det" in *"$a"*) pass;; *) fail "details lists agent: $a";; esac

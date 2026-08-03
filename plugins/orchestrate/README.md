@@ -11,8 +11,8 @@ consequence gate — survives interruption, and remembers its judgment across go
 **Claude Code** — from this repo's self-marketplace:
 
 ```
-/plugin marketplace add ajilty/agent-skills
-/plugin install orchestrate@ajilty-agent-skills
+/plugin marketplace add ajilty/agentic
+/plugin install orchestrate@agentic
 ```
 
 Everything ships in the plugin: the five persona agents, the hook floor
