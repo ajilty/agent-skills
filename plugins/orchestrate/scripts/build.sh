@@ -59,31 +59,35 @@ done
 # 2) hooks/hooks.json — auto-registered when the plugin is enabled. Paths use
 #    ${CLAUDE_PLUGIN_ROOT} so they are machine-independent. H stays literal
 #    (single-quoted) so the token survives into the emitted JSON.
+#
+#    The wiring is DERIVED from the contract's hooks: block (script + watch, in
+#    document order) — never a hand-held list. CC maps the watch classes to native
+#    matchers here: file-read+shell -> one "Read|Bash" group (scripts self-guard,
+#    over-matching is safe and saves a group), file-write -> "Write|Edit",
+#    dispatch -> "Task|Agent" (PreToolUse on the dispatch tool, ADR-0011),
+#    post-compaction -> SessionStart(compact). warn-agent-teams is CC-ONLY
+#    (ADR-0023 detects a CC-specific feature) so it is wired here, not contracted.
 mkdir -p "$PLUGIN_ROOT/hooks"
 H='${CLAUDE_PLUGIN_ROOT}/skills/orchestrate/runtime/hooks'
-cat > "$PLUGIN_ROOT/hooks/hooks.json" <<JSON
+hooks_watching() { # <class-regex> -> contract-ordered script names watching any matching class
+  yq ".hooks[] | select([.watch[] | test(\"^($1)$\")] | any) | .script" "$AGENTS"; }
+hook_entries() { # <script>... -> JSON entry lines; last line closes its group (no newline)
+  local i=0 n=$# s
+  for s in "$@"; do i=$((i+1))
+    if [ "$i" -lt "$n" ]; then printf '        { "type": "command", "command": "%s/%s" },\n' "$H" "$s"
+    else printf '        { "type": "command", "command": "%s/%s" } ] }' "$H" "$s"; fi
+  done; }
+RB=($(hooks_watching 'file-read|shell')); WE=($(hooks_watching 'file-write'))
+DP=($(hooks_watching 'dispatch'));        PC=($(hooks_watching 'post-compaction'))
 {
-  "hooks": {
-    "PreToolUse": [
-      { "matcher": "Read|Bash", "hooks": [
-        { "type": "command", "command": "$H/deny-heldout-read.sh" },
-        { "type": "command", "command": "$H/keep-on-branch.sh" },
-        { "type": "command", "command": "$H/gate-prod-apply.sh" },
-        { "type": "command", "command": "$H/run-scope.sh" },
-        { "type": "command", "command": "$H/guard-shared-checkout.sh" },
-        { "type": "command", "command": "$H/guard-merge-base.sh" },
-        { "type": "command", "command": "$H/guard-done.sh" } ] },
-      { "matcher": "Write|Edit", "hooks": [
-        { "type": "command", "command": "$H/write-scope.sh" } ] },
-      { "matcher": "Task|Agent", "hooks": [
-        { "type": "command", "command": "$H/on-writer-dispatch.sh" } ] } ],
-    "SessionStart": [
-      { "matcher": "compact", "hooks": [
-        { "type": "command", "command": "$H/on-compaction.sh" } ] },
-      { "matcher": "startup|resume", "hooks": [
-        { "type": "command", "command": "$H/warn-agent-teams.sh" } ] } ]
-  }
-}
-JSON
-echo "  hooks  -> hooks/hooks.json"
+  printf '{\n  "hooks": {\n    "PreToolUse": [\n'
+  printf '      { "matcher": "Read|Bash", "hooks": [\n';        hook_entries "${RB[@]}"; printf ',\n'
+  printf '      { "matcher": "Write|Edit", "hooks": [\n';       hook_entries "${WE[@]}"; printf ',\n'
+  printf '      { "matcher": "Task|Agent", "hooks": [\n';       hook_entries "${DP[@]}"; printf ' ],\n'
+  printf '    "SessionStart": [\n'
+  printf '      { "matcher": "compact", "hooks": [\n';          hook_entries "${PC[@]}"; printf ',\n'
+  printf '      { "matcher": "startup|resume", "hooks": [\n';   hook_entries "warn-agent-teams.sh"; printf ' ]\n'
+  printf '  }\n}\n'
+} > "$PLUGIN_ROOT/hooks/hooks.json"
+echo "  hooks  -> hooks/hooks.json (derived from agents.yaml hooks: block)"
 echo "build complete (agents/ + hooks/hooks.json regenerated from agents.yaml)"
