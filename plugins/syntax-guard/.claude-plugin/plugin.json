@@ -1,7 +1,7 @@
 {
   "name": "syntax-guard",
-  "version": "0.1.0",
-  "description": "PostToolUse validator: after every Edit/Write of a .json/.yaml/.yml file, parse it with jq/yq and feed syntax errors straight back to Claude (exit 2) so it self-corrects immediately.",
+  "version": "0.2.0",
+  "description": "PostToolUse validator: after every Edit/Write of a .json/.yaml/.yml file, parse it with jq/yq (including YAML frontmatter in .md files) and feed syntax errors straight back to Claude (exit 2) so it self-corrects immediately.",
   "author": {
     "name": "ajilty",
     "email": "github@ajilty.com"
