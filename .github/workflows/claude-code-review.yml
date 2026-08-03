@@ -39,7 +39,14 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
+          # --comment is what posts findings as inline PR comments. Without it
+          # the skill returns them as text, and automation mode (track_progress
+          # false) creates no comment for that text to land in — so the review
+          # runs, costs tokens, and surfaces nowhere.
+          prompt: '/code-review:code-review --comment ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
+          # Surfaces the review text and any denied tool in the job log, so a
+          # silent no-op is diagnosable without paying for a blind re-run.
+          show_full_output: true
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
 
