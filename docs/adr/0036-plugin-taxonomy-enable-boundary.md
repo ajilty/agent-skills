@@ -27,6 +27,14 @@ Naming: plugins are 1-2 word memorable nouns naming the boundary, never a
 `-skills`/`-plugin` suffix. Workflow skills are the imperative phrase typed
 after `/`; knowledge skills are `working-with-<tool>`.
 
+Categories (office/coding/security/...) are index rows, not directories: skills
+stay flat under `skills/<name>/` (discovery only scans immediate
+subdirectories for SKILL.md; nested category folders break silently), and the
+category is a column in the plugin README. Categories do no work at invocation
+time — the human routes typed skills, descriptions route auto-invoked ones —
+so they exist only for browsing and maintenance. A category graduates to its
+own plugin only by passing the three tests above.
+
 ## Considered options
 - Per-domain workflow plugins (office/coding/security) — rejected: none has its
   own off-switch or runtime footprint today; split office out later only if
