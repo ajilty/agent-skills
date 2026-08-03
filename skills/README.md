@@ -51,3 +51,13 @@ choice.
   not move into this tree.
 - Skill directories are kebab-case; workflow skills are the imperative phrase
   typed after `/`; knowledge skills are `working-with-<tool>`.
+- **Name for bare invocation.** Unique names resolve without the plugin
+  prefix, so check new workflow names against Claude Code built-ins (`/review`,
+  `/init`, `/code-review`, ...) and installed plugins; a collision forces
+  `/playbook:<name>` forever. Prefer a distinct name; accept the prefix only
+  when the semantic name is worth it.
+- **Knowledge skills carry what docs don't.** Docs lookup is already served
+  (context7, vendor plugins); `working-with-<tool>` holds sharp edges only —
+  gotchas, failure modes, misleading flags. The description is the API for
+  auto-invoked skills: write "use when" triggers with concrete error strings,
+  command names, and jargon the model will actually see.
