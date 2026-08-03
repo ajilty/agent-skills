@@ -1,0 +1,13 @@
+{
+  "name": "sharp-edges",
+  "version": "0.1.0",
+  "description": "Auto-invoked tool knowledge: working-with-<tool> notes that fill model gaps on sharp edges of specific tools and vendors.",
+  "author": {
+    "name": "ajilty",
+    "email": "github@ajilty.com"
+  },
+  "homepage": "https://github.com/ajilty/agent-skills",
+  "repository": "https://github.com/ajilty/agent-skills",
+  "license": "MIT",
+  "keywords": ["knowledge", "skills"]
+}

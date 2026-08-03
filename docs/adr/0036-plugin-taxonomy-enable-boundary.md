@@ -27,15 +27,26 @@ Naming: plugins are 1-2 word memorable nouns naming the boundary, never a
 `-skills`/`-plugin` suffix. Workflow skills are the imperative phrase typed
 after `/`; knowledge skills are `working-with-<tool>`.
 
-Categories (office/coding/security/...) are index rows, not directories: skills
-stay flat under `skills/<name>/` (discovery only scans immediate
-subdirectories for SKILL.md; nested category folders break silently), and the
-category is a column in the plugin README. Categories do no work at invocation
-time — the human routes typed skills, descriptions route auto-invoked ones —
-so they exist only for browsing and maintenance. A category graduates to its
-own plugin only by passing the three tests above.
+Layout: portable skills live in a repo-root library organized by category —
+`skills/<category>/<skill-name>/SKILL.md` — and plugins are views over it,
+shipping a skill via symlink (`plugins/<plugin>/skills/<name>` →
+`../../../skills/<category>/<name>`). Claude Code dereferences symlinks when
+copying a plugin to its install cache (verified empirically 2026-08-03: a
+local-marketplace install produced real directories in the cache and the skill
+appeared in the plugin's component inventory), so distribution is unaffected
+and installed plugins are self-contained. Categories still do no work at
+invocation time — the human routes typed skills, descriptions route
+auto-invoked ones — and category folders inside a plugin's own `skills/` dir
+would break discovery, which only scans immediate subdirectories; the library
+tree is where category structure lives. Plugin-internal skills (orchestrate's)
+are implementation detail of a versioned product and stay in-plugin.
 
 ## Considered options
+- Flat skills inside each plugin with a README category column — initially
+  chosen, superseded by operator call: category browsing belongs in the
+  filesystem, and the symlink-view scheme was verified distribution-safe.
+- Name-prefix categories (`security-threat-model`) — rejected: worsens the
+  typed command and churns names when a skill changes category.
 - Per-domain workflow plugins (office/coding/security) — rejected: none has its
   own off-switch or runtime footprint today; split office out later only if
   day-prep grows hooks or work-only MCP wiring.
@@ -55,6 +66,13 @@ preferences → private config, not this repo; typed as a command → playbook;
 generic tool knowledge → sharp-edges; hooks/binaries or external consumers →
 its own plugin. The "no user or company references" rule applies to every
 plugin in the repo, enforced by the public-repo decision.
+
+`rg` and `grep -r` do not follow directory symlinks by default (verified
+2026-08-03), so searching a plugin's `skills/` finds nothing: the library tree
+at repo-root `skills/` is where editing and searching happen. Git-based
+marketplace installs are inferred to dereference identically (same
+clone-then-copy path as the verified local install) but have not been
+separately tested.
 
 ## Status
 

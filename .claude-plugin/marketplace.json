@@ -17,6 +17,18 @@
       "description": "Validate JSON/YAML syntax on every Edit/Write; parse errors are fed back to Claude for immediate self-correction.",
       "source": "./plugins/syntax-guard",
       "author": { "name": "ajilty", "email": "github@ajilty.com" }
+    },
+    {
+      "name": "playbook",
+      "description": "User-invoked workflows: opinionated ways of working across meta, office, coding, and security domains.",
+      "source": "./plugins/playbook",
+      "author": { "name": "ajilty", "email": "github@ajilty.com" }
+    },
+    {
+      "name": "sharp-edges",
+      "description": "Auto-invoked tool knowledge: working-with-<tool> notes that fill model gaps on sharp edges of specific tools and vendors.",
+      "source": "./plugins/sharp-edges",
+      "author": { "name": "ajilty", "email": "github@ajilty.com" }
     }
   ]
 }

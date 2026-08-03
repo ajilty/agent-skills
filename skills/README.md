@@ -1,0 +1,47 @@
+# Skills library
+
+Source of truth for every portable skill in this repo, organized by category:
+
+```
+skills/<category>/<skill-name>/SKILL.md
+```
+
+Plugins are views over this tree. A plugin ships a skill by symlinking it:
+
+```sh
+ln -s ../../../skills/<category>/<skill-name> plugins/<plugin>/skills/<skill-name>
+```
+
+Claude Code dereferences symlinks when copying a plugin to its install cache
+(verified empirically 2026-08-03: installed cache contains real directories,
+and the skill appears in the plugin's component inventory), so distributed
+plugins are self-contained. Git preserves the symlinks in the repo itself.
+
+## Categories
+
+| Category | Contents | Ships in |
+|----------|----------|----------|
+| `meta` | workflows about working itself (grill, retro) | playbook |
+| `office` | comms, calendar, planning workflows (day-prep) | playbook |
+| `coding` | engineering workflows (assignment, tdd, review) | playbook |
+| `security` | security workflows (threat-model) | playbook |
+| `knowledge` | `working-with-<tool>` sharp-edge notes | sharp-edges |
+
+Categories exist for browsing and maintenance; routing is done by skill
+descriptions (auto-invoked) or by the name you type (user-invoked). A skill's
+category is where it lives; which plugins link it is a separate, per-skill
+choice.
+
+## Rules
+
+- **Search here, not in `plugins/`.** `rg` and `grep -r` do not follow
+  directory symlinks by default, so searching a plugin's `skills/` finds
+  nothing. This tree is the source; edit and search it directly.
+- **No user or company references, ever.** This repo is public. Skills that
+  cannot be written without naming a person or employer belong in private
+  harness config, not here.
+- **Plugin-internal skills stay in their plugin.** orchestrate's skills are
+  implementation detail of a versioned product, not library content; they do
+  not move into this tree.
+- Skill directories are kebab-case; workflow skills are the imperative phrase
+  typed after `/`; knowledge skills are `working-with-<tool>`.
