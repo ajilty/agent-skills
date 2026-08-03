@@ -137,7 +137,11 @@ export const orchestrate = async ({ \$ }: any) => {
       };
       if (["read","grep","glob"].includes(tool)) await sh(\`\${RT}/hooks/deny-heldout-read.sh\`, env);
       if (tool === "bash") {
+        await sh(\`\${RT}/hooks/deny-heldout-read.sh\`, env);  // bash cat/less of \$HELDOUT_ROOT is a read too (CC/Codex match Bash; parity)
         await sh(\`\${RT}/hooks/keep-on-branch.sh\`, env);
+        await sh(\`\${RT}/hooks/guard-shared-checkout.sh\`, env); // universal git-safety floor (ADR-0013; contract fail_closed all)
+        await sh(\`\${RT}/hooks/guard-merge-base.sh\`, env);      // merges land on the journaled base (ADR-0027)
+        await sh(\`\${RT}/hooks/guard-done.sh\`, env);            // done-gate: no raw done append without a verdict (ADR-0030)
         await sh(\`\${RT}/hooks/gate-prod-apply.sh\`, env);   // hard floor
         await sh(\`\${RT}/hooks/run-scope.sh\`, env);          // confines verifier Bash
       }

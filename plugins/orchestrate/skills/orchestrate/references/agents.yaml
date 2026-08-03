@@ -103,6 +103,14 @@ hooks:
       (git-dir == git-common-dir). Stops a stray base-correction reset from eating
       unpushed commits when an agent lands on main (isolation-lands-on-main trap, §9a).
     fail_closed: true
+  merge_base_guard:
+    event: pre-tool-use
+    applies_to: [all]              # router-level: merges happen in router context
+    intent: >-
+      Merges land on the journaled base (ADR-0027): refuse a `git merge` of an
+      agent worktree branch when HEAD is not the base the ledger journaled at
+      goal start, so a drifted HEAD cannot silently absorb the lane's work.
+    fail_closed: true
   done_gate:
     event: pre-tool-use
     applies_to: [all]              # persona-independent: the offender is the router itself (no agent_type)

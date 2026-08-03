@@ -144,7 +144,7 @@ SEED_END='#   <<< orchestrate hook-trust (managed) <<<'
 
 # The PreToolUse floor, in wire order (must match the printed config-block order below).
 # Each entry: <script-basename>.
-PRE_HOOKS="deny-heldout-read.sh keep-on-branch.sh guard-shared-checkout.sh guard-done.sh gate-prod-apply.sh write-scope.sh run-scope.sh"
+PRE_HOOKS="deny-heldout-read.sh keep-on-branch.sh guard-shared-checkout.sh guard-merge-base.sh guard-done.sh gate-prod-apply.sh write-scope.sh run-scope.sh"
 
 # Emit the managed hooks.json (CC-shaped — the shape codex reads from $CODEX_HOME/hooks.json).
 # $1: extra PreToolUse matcher-group lines (used to append the self-verify probe group).
@@ -340,6 +340,9 @@ $HOOKS_JSON (you do NOT need to paste it unless you prefer config-inline hooks):
   [[hooks.PreToolUse.hooks]]
   type = "command"
   command = "$HOOKS/guard-shared-checkout.sh"   # universal git-safety floor: refuse history-discarding ops on the PRIMARY shared checkout
+  [[hooks.PreToolUse.hooks]]
+  type = "command"
+  command = "$HOOKS/guard-merge-base.sh"         # merges land on the journaled base (ADR-0027)
   [[hooks.PreToolUse.hooks]]
   type = "command"
   command = "$HOOKS/guard-done.sh"               # done-gate hard floor: no \`done\` event without a Verifier verdict on the board
