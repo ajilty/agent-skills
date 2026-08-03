@@ -48,6 +48,16 @@ oc_tools() { local p="$1" read web write run rd=false gp=false gl=false wf=false
     "$([ "$bash" = true ] && echo allow || echo deny)" \
     "$([ "$wf" = true ] && echo allow || echo deny)"; }
 body() { awk 'f==2{print} /^---[[:space:]]*$/{f++}' "$1"; }
+# agents.yaml tier -> OpenCode model id (provider-qualified). Defaults are the
+# Anthropic ladder; override per tier via env for non-Anthropic rigs. Effort has
+# no OpenCode agent-level equivalent (no reasoning-effort key documented), so the
+# tier's effort half is carried by the model choice alone here.
+oc_model() { case "$1" in
+  economy)  echo "${ORCHESTRATE_OC_MODEL_ECONOMY:-anthropic/claude-haiku-4-5}" ;;
+  standard) echo "${ORCHESTRATE_OC_MODEL_STANDARD:-anthropic/claude-sonnet-5}" ;;
+  premium)  echo "${ORCHESTRATE_OC_MODEL_PREMIUM:-anthropic/claude-opus-5}" ;;
+  *)        echo "" ;;   # unknown/empty tier -> omit model line (inherit session default)
+esac; }
 
 mkdir -p "$AGENTS_DEST" "$PLUGIN_DEST" "$CMDS_DEST" "$SKILL_DEST" "$RT_DEST"
 cp -r "$SKILL_DIR/runtime/." "$RT_DEST/"
@@ -87,20 +97,27 @@ BRAINADD
 
 for p in $(yq '.personas | keys | .[]' "$AGENTS"); do
   desc="$(yq ".personas.$p.description" "$AGENTS")"; bsrc="$SKILL_DIR/references/$(yq ".personas.$p.body" "$AGENTS")"
-  { printf -- '---\ndescription: %s\nmode: subagent\n' "$desc"; oc_tools "$p"; printf -- '---\n\n'; body "$bsrc"; } > "$AGENTS_DEST/$p.md"
-  echo "  subagent -> $AGENTS_DEST/$p.md"
+  m="$(oc_model "$(yq ".personas.$p.tier.model" "$AGENTS")")"
+  { printf -- '---\ndescription: %s\nmode: subagent\n' "'${desc//\'/\'\'}'"
+    [ -n "$m" ] && printf 'model: %s\n' "$m"
+    oc_tools "$p"; printf -- '---\n\n'; body "$bsrc"; } > "$AGENTS_DEST/$p.md"
+  echo "  subagent -> $AGENTS_DEST/$p.md   (model: ${m:-inherit})"
 done
 
 # Command parity (OpenCode commands support \$ARGUMENTS): /orchestrate-init,
 # /orchestrate-status, /orchestrate-feedback from the same command sources the
-# Claude Code plugin ships. Frontmatter is rewritten (OpenCode keys only).
-oc_command() { # <src.md> <dest.md> <description>
-  { printf -- '---\ndescription: %s\n---\n' "$3"; body "$1"; } > "$2"
+# Claude Code plugin ships. Frontmatter is rewritten (OpenCode keys only); the
+# description is PARSED from the source frontmatter, never restated here (it had
+# drifted three-for-three when hand-copied).
+yaml_q() { printf "'%s'" "${1//\'/\'\'}"; }   # single-quoted YAML scalar (colons in prose are common)
+oc_command() { # <src.md> <dest.md>
+  local desc; desc="$(yq --front-matter=extract '.description' "$1")"
+  { printf -- '---\ndescription: %s\n---\n' "$(yaml_q "$desc")"; body "$1"; } > "$2"
   echo "  command  -> $2"
 }
-oc_command "$CMD_DIR/init.md"     "$CMDS_DEST/orchestrate-init.md"     "Standing operator loop — goal in, resume with no args. Flags: --models=dynamic|quick|inherit"
-oc_command "$CMD_DIR/status.md"   "$CMDS_DEST/orchestrate-status.md"   "Operator status update from durable disk state"
-oc_command "$CMD_DIR/feedback.md" "$CMDS_DEST/orchestrate-feedback.md" "Capture run feedback durably (review sidecar + version-stamped row)"
+oc_command "$CMD_DIR/init.md"     "$CMDS_DEST/orchestrate-init.md"
+oc_command "$CMD_DIR/status.md"   "$CMDS_DEST/orchestrate-status.md"
+oc_command "$CMD_DIR/feedback.md" "$CMDS_DEST/orchestrate-feedback.md"
 
 # Plugin: per-agent allow/deny is real subtraction; the plugin enforces path/branch
 # scope AND drives the durable ledger by shelling out to the single-source runtime.
