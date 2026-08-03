@@ -1,6 +1,6 @@
 ---
 name: working-with-confluence-mcp
-description: "Atlassian MCP Confluence gotchas, read and write: CQL contributor queries return folders-only without type in (page, blogpost, comment), serial-only transport, 25K-token spill files, title vs body escaping asymmetry, numeric spaceId requirement, ADF-legal HTML. Use when creating or updating Confluence pages or querying activity via CQL."
+description: "Atlassian MCP Confluence gotchas, read and write: CQL contributor queries return folders-only without type in (page, blogpost, comment), serial-only transport, 25K-token spill files, title vs body escaping asymmetry, numeric spaceId requirement, ADF-legal HTML. Use when calling createConfluencePage / updateConfluencePage / getConfluencePage or querying activity via CQL."
 ---
 
 # Working with the Confluence side of the Atlassian MCP — sharp edges
@@ -11,9 +11,9 @@ not this skill's.
 
 ## Transport discipline
 
-- **Treat the Atlassian transport as serial-only for Confluence.** A 4-call parallel batch can
-  drop the transport for ~15 minutes with no error. (The Jira side of the same server tolerates
-  ~3 concurrent.)
+- **Treat the Atlassian transport as serial-only for Confluence.** Observed on at least one
+  tenant: a 4-call parallel batch dropped the transport for ~15 minutes with no error, while the
+  Jira side of the same server tolerated ~3 concurrent.
 - **The 25K-token response cap spills to a temp file** on large reads: a single
   `getConfluencePage` on a big page, or `getConfluenceSpaces type=personal limit=100`. For an
   existence check use a metadata path or accept the CQL hit; when you genuinely need a spilled

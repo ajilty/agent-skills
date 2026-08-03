@@ -128,12 +128,15 @@ earlier one's output (e.g. `head(3)` to learn field names before `top()`).
   - The top-level **`comment` rollup field returns word-scrambled** — read the structured
     **`comments[]` array** instead (each entry has `falcon_user_id`, `timestamp`, `value`).
   - Comments post under the **API-client identity**, not the human — name the human in the
-    comment text if attribution matters. (A secrets-manager-fronted credential may even render
-    the author as concealed.)
+    comment text if attribution matters.
   - Resolution is **tag-based**: apply `true_positive` / `false_positive` / `ignored` to
     populate the console's Resolution column; `status:closed` alone does not.
 
-## Common third-party correlation edges (if your estate ingests these sources)
+## Correlation edges for commonly-ingested sources (adapt to your estate)
+
+These are observed patterns from specific vendor pairings (M365 audit, mail gateways, Zscaler
+ZIA). They apply only where your estate ingests the same sources — treat them as worked
+examples, and keep your own per-source field notes for the rest.
 
 - **Microsoft 365 / Exchange audit in NG-SIEM:** Defender-passthrough detections in Falcon carry
   no target mailbox or operation — the NG-SIEM pivot into the M365 audit rows is mandatory, not
@@ -143,8 +146,9 @@ earlier one's output (e.g. `head(3)` to learn field names before `top()`).
 - **Mail-flow count inflation is the norm; dedupe before reporting.** One logical message
   produces many rows: one Message Trace `Delivered` per recipient leg, a duplicate for any
   journaling/archiving compliance fork, a multi-stage gateway pipeline (receipt → spam → process
-  → delivery), plus one `MailItemsAccessed` per open. Dedupe on message-ID + recipient; expect
-  2-3x raw inflation. `Status: Expanded` marks distribution-list fan-out, not a delivery.
+  → delivery), plus one `MailItemsAccessed` per open. Dedupe on message-ID + recipient; the
+  inflation factor depends on your journaling and gateway config. `Status: Expanded` marks
+  distribution-list fan-out, not a delivery.
 - **Tenant boundary:** the SIEM sees only legs that touch your tenant — an external
   participant's intra-external hops are invisible. `MailItemsAccessed` proves *a client fetched
   it*, not *a human saw it*; `MailAccessType` `Bind` (explicit open) vs `Sync` (background pull)
@@ -161,8 +165,8 @@ earlier one's output (e.g. `head(3)` to learn field names before `top()`).
 
 ## What this skill does not cover
 
-Per-source field semantics (what a given vendor's fields mean) — keep those in your own
-data-source notes and let this skill stay about operating the MCP.
+Exhaustive per-source field semantics — beyond the worked correlation examples above, what a
+given vendor's fields mean belongs in your own data-source notes.
 
 ---
 Wrong, stale, or missing edge? File it: https://github.com/ajilty/agentic/issues/new?template=edge-report.yml
