@@ -26,6 +26,12 @@ grep -qE '^[[:space:]]*network_access[[:space:]]*=[[:space:]]*true' "$o/config.t
 # hooks.json points into the skill's runtime (single copy — no $CODEX_HOME/orchestrate-runtime)
 grep -q "$SKD/runtime/hooks/" "$o/hooks.json" && pass || fail "codex hooks.json points at the skill's runtime hooks"
 [ ! -d "$o/orchestrate-runtime" ] && pass || fail "codex no longer ships a second runtime copy at CODEX_HOME"
+# EMITTER PARITY (contract-driven): every hook the contract declares must be wired
+# in the emitted codex hooks.json — dispatch and post-compaction classes included.
+AGY="$SK/skills/orchestrate/references/agents.yaml"
+for s in $(yq '.hooks[].script' "$AGY"); do
+  grep -q "/$s\"" "$o/hooks.json" && pass || fail "codex hooks.json missing contract hook: $s"
+done
 rm -rf "$o"
 # opencode: five personas in agents/ (plural, docs-current), native skill, plugin,
 # command parity — and no AGENTS.orchestrate.md
@@ -39,10 +45,13 @@ grep -q 'OpenCode dispatch addendum' "$SKD/SKILL.md" && pass || fail "opencode s
 test -x "$SKD/runtime/ledger.sh" && pass || fail "opencode ships ledger.sh executable inside the skill"
 assert_file "$o/plugins/orchestrate.ts"
 grep -q 'session.compacted' "$o/plugins/orchestrate.ts" && pass || fail "opencode plugin wires the documented session.compacted event"
-# floor parity: every fail-closed floor hook the contract declares must be wired in
-# the plugin (writer_writeahead is the documented in-loop exception, ADR-0034)
-for h in deny-heldout-read keep-on-branch guard-shared-checkout guard-merge-base guard-done gate-prod-apply write-scope run-scope; do
-  grep -q "hooks/$h.sh" "$o/plugins/orchestrate.ts" && pass || fail "opencode plugin missing floor hook: $h"
+# EMITTER PARITY (contract-driven): every tool-watching hook + the post-compaction
+# hook must be wired in the plugin. writer_writeahead (watch: dispatch) is the
+# documented in-loop exception on OpenCode (no subagent-start event; ADR-0034 —
+# see the skill's OpenCode addendum), so the dispatch class is exempt HERE only.
+AGY="$SK/skills/orchestrate/references/agents.yaml"
+for s in $(yq '.hooks[] | select([.watch[] | test("^(file-read|shell|file-write|post-compaction)$")] | any) | .script' "$AGY"); do
+  grep -q "hooks/$s" "$o/plugins/orchestrate.ts" && pass || fail "opencode plugin missing contract hook: $s"
 done
 grep -q "$SKD/runtime" "$o/plugins/orchestrate.ts" && pass || fail "opencode plugin points at the skill's runtime (single copy)"
 for c in init status feedback; do assert_file "$o/commands/orchestrate-$c.md"; done

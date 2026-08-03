@@ -1,5 +1,12 @@
 # Cross-Harness DRY Implementation Plan
 
+> **Execution status (2026-08-03):** Phases 1-2 EXECUTED, with one operator
+> amendment: the generator lib was extracted to repo level immediately
+> (`scripts/harness-lib/`, ADR-0037) instead of plugin-local-then-promote.
+> Tasks 1-7 and 9-11 landed (D1 implemented as recommended: Anthropic ladder
+> default with env overrides). Remaining: Task 8's DESIGN.md + codex-support
+> note cleanup, and the Phase 3 forks D2-D7 (D2 shipped as the drift-check).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Every fact shared across the three harnesses (Claude Code, Codex, OpenCode) has exactly one authoritative encoding, and every derived copy is machine-checked against it in CI.
