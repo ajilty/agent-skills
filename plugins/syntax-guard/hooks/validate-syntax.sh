@@ -35,6 +35,18 @@ case "$f" in
       printf 'syntax-guard: invalid YAML in %s\n%s\n' "$f" "$err" >&2
       exit 2
     fi ;;
+  *.md)
+    # Frontmatter only: it is the one machine-read region of a markdown file
+    # (Claude Code parses it at runtime; a parse error silently drops all
+    # metadata). Fenced code blocks are illustrative prose, often deliberately
+    # partial — never lint those.
+    command -v yq >/dev/null 2>&1 || exit 0
+    head -n1 "$f" | grep -qx -- '---' || exit 0
+    fm=$(awk 'NR==1{next} /^---[[:space:]]*$/{found=1; exit} {print} END{if(!found) exit 1}' "$f") || exit 0
+    if ! err=$(printf '%s\n' "$fm" | yq . 2>&1 >/dev/null); then
+      printf 'syntax-guard: invalid YAML frontmatter in %s\n%s\n' "$f" "$err" >&2
+      exit 2
+    fi ;;
 esac
 
 exit 0
