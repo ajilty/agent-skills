@@ -1,6 +1,6 @@
 ---
 name: working-with-aws-cli
-description: Sharp edges for read-only AWS investigation via the `aws` CLI — SSO auth, running read-only commands on live hosts with SSM RunCommand, and CloudTrail lookups across accounts. Use when a hunt or triage needs to inspect live EC2 hosts (especially CI/build agents outside EDR), check whether credentials were used, read cloud inventory, or when hitting ForbiddenException on an SSO profile or ParamValidation errors on ssm send-command.
+description: "aws CLI investigation gotchas: profile names lie (sts get-caller-identity first), ForbiddenException often means expired SSO, SSM RunCommand inline-parameters quoting failure and the params-file pattern, one-attribute CloudTrail lookups, the LB to target-group ProtocolVersion exposure join. Use for read-only AWS hunts, SSM live-host sweeps, or credential-use checks."
 ---
 
 # Working with the AWS CLI — sharp edges (read-only investigation)

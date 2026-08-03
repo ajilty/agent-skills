@@ -1,6 +1,6 @@
 ---
 name: working-with-github-cli
-description: Sharp edges for hunting across a SAML-protected GitHub enterprise via the `gh` CLI — token scopes, per-org SAML authorization, audit-log / runners / packages / Dependabot endpoints, code-search limits, and per-user activity lookups. Use when enumerating org repos, runners, packages, alerts, or audit events, when a 403 says "protected by organization SAML enforcement", or when summarizing a person's GitHub activity and the numbers look implausibly low.
+description: "gh CLI across a SAML-protected GitHub enterprise: endpoint-to-scope table, per-org SSO PAT authorization behind 403 \"protected by organization SAML enforcement\", code-search limits (default branches only), contents-API idioms, per-user activity pitfalls (contributionsCollection lies for non-self). Use when hunting across org repos, runners, packages, or audit logs, or when a user's activity numbers look implausibly low."
 ---
 
 # Working with the GitHub CLI — sharp edges (enterprise hunting)

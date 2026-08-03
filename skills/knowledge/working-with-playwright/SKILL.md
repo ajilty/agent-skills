@@ -1,6 +1,6 @@
 ---
 name: working-with-playwright
-description: Sharp edges for headless browser captures with Playwright in a uv-managed Python environment. Use when rendering a page or app to an image via Playwright inside a uv venv, or when the first render fails with "Executable doesn't exist" because the browser binary is missing.
+description: "Playwright headless-capture gotchas in a uv-managed Python venv: the Chromium binary is not installed by the package. Use when a Playwright render fails with \"Executable doesn't exist\" or before the first screenshot step in a uv venv."
 ---
 
 # Working with Playwright — sharp edges

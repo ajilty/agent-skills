@@ -1,6 +1,6 @@
 ---
 name: working-with-wiz-mcp
-description: Sharp edges for the Wiz MCP — SBOM/package inventory, malicious-package and malware findings, graph_search, secrets and network exposure. Use when assessing cloud/Kubernetes blast radius, checking whether a package or version is present anywhere, running CVE exploitability hunts, or interpreting fields like isAccessibleFromInternet and executionControllers.
+description: "Wiz MCP hunting gotchas: SBOM substring lookalikes and control queries, isAccessibleFromInternet null is not false, executionControllers underreporting, subscription UUID not cloud account ID, non-disjoint pagination, Issues lag. Use for cloud/K8s blast-radius or package-presence hunts via list_* / graph_search tools."
 ---
 
 # Working with the Wiz MCP — sharp edges (cloud/k8s blast radius)

@@ -1,6 +1,6 @@
 ---
 name: working-with-entra-graph
-description: Sharp edges for auditing Microsoft Entra ID / Microsoft Graph via the `az` CLI (`az rest`) — primarily enumerating which service principals hold a given application permission (app role). Use when auditing Entra app permissions or service-principal app-role assignments, running Graph queries via `az rest`, hitting 400s on $search/$filter displayName queries, or before assuming which resource publishes a permission like ExchangeMessageTrace.Read.All.
+description: "Microsoft Graph via az rest for Entra ID audits: app permissions are app roles on the resource SP (never infer the resource from the permission name), appRoleAssignedTo pagination, appRoles null guard, ConsistencyLevel=eventual for $search/$filter. Use when enumerating who holds an application permission or when Graph queries 400/403 unexpectedly."
 ---
 
 # Working with Entra / Microsoft Graph via `az` — sharp edges

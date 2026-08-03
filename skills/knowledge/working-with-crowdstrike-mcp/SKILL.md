@@ -1,6 +1,6 @@
 ---
 name: working-with-crowdstrike-mcp
-description: Sharp edges and efficiency patterns for the CrowdStrike Falcon MCP (falcon-mcp), especially falcon_search_ngsiem (CQL/LogScale queries) and the search_* FQL tools. Use when querying CrowdStrike NG-SIEM, Falcon detections/hosts/incidents, or ingested third-party logs via any falcon_* tool — to avoid wasted round-trips, empty result sets from wrong field names, silently-truncated groupBy aggregations, and slow or timed-out queries.
+description: "CrowdStrike Falcon MCP (falcon_* tools): NG-SIEM CQL gotchas \u2014 head(3) schema discovery, groupBy limit truncates lexicographically (use top()), numbers as strings, token-overflow spill files \u2014 plus FQL syntax and detection write-path traps. Use before composing falcon_search_ngsiem queries or when results come back empty, truncated, or spilled to tool-results files."
 ---
 
 # Working with the CrowdStrike Falcon MCP — sharp edges

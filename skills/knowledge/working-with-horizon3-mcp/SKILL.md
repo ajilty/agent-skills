@@ -1,6 +1,6 @@
 ---
 name: working-with-horizon3-mcp
-description: Sharp edges for the Horizon3.ai / NodeZero MCP (autonomous pentest results) — pentests, weaknesses, proven impacts, attack paths, harvested credentials, and remediation. Use when reading NodeZero pentest results via MCP, digesting a completed pentest, hitting "Cannot query field" GraphQL errors, or answering "what did the pentest actually prove / how do we fix it".
+description: "Horizon3 / NodeZero MCP (pentest results): broken introspection and the get_h3_terminology schema cheat-sheet, remediation fields the API never exposes, two-field clean-run corroboration, ~24h token TTL, 5-day loot expiry. Use when reading NodeZero pentest results or hitting \"Cannot query field\" GraphQL errors."
 ---
 
 # Working with the Horizon3 / NodeZero MCP — sharp edges

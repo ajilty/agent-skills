@@ -1,6 +1,6 @@
 ---
 name: working-with-m365-connector
-description: Sharp edges and fallback patterns for the Microsoft 365 / Outlook connector (mail, calendar, SharePoint search and read). Use when reading Outlook mail or calendar, searching SharePoint, or asked to "open" or "read the contents of" an attachment or document surfaced through M365 — to avoid stalling on content the connector cannot render and reach for the deep-link-plus-re-upload fallback instead.
+description: "Microsoft 365 / Outlook connector limits (mail, calendar, SharePoint): no binary downloads, unreadable .docx and nested .msg attachments, the deep-link-plus-re-upload fallback, Type-3-font PDF mojibake, search/flag/RSVP blind spots. Use when reading M365 content or asked to open an attachment surfaced through the connector."
 ---
 
 # Working with the Microsoft 365 connector — sharp edges
