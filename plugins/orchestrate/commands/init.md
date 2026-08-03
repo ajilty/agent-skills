@@ -1,5 +1,5 @@
 ---
-description: Standing operator loop — feed a goal of any altitude; re-run with no args to resume. Flags: --models=dynamic|quick|inherit
+description: "Standing operator loop — feed a goal of any altitude; re-run with no args to resume. Flags: --models=dynamic|quick|inherit"
 argument-hint: "[--models=dynamic|quick|inherit] [goal…]"
 ---
 You are running the **orchestrate** standing operator loop. Use the `orchestrate`
