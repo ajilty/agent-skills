@@ -29,6 +29,36 @@ jobs:
         run: npm install -g @anthropic-ai/claude-code
       - name: Validate marketplace and all plugins (strict)
         run: bash scripts/validate-plugins.sh
+  review-workflow-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install yq (v4, mikefarah)
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+      - name: Review job can post (pull-requests write)
+        # A read-only token lets the review run to completion, hit dozens of
+        # silent permission denials, then exit green having posted nothing.
+        # Assert the grant statically so nobody pays to rediscover that.
+        run: |
+          perm=$(yq '.jobs.claude-review.permissions.pull-requests' .github/workflows/claude-code-review.yml)
+          if [ "$perm" != "write" ]; then
+            echo "claude-review needs 'pull-requests: write' to post its review; found: $perm"
+            exit 1
+          fi
+          echo "claude-review has pull-requests: write."
+      - name: Review job skips fork PRs (no secrets, no spend)
+        run: |
+          cond=$(yq '.jobs.claude-review.if' .github/workflows/claude-code-review.yml)
+          case "$cond" in
+            *"head.repo.full_name == github.repository"*)
+              echo "claude-review is gated to same-repo PRs." ;;
+            *)
+              echo "claude-review must be gated to same-repo PRs; found if: $cond"
+              exit 1 ;;
+          esac
+
   library-wiring:
     runs-on: ubuntu-latest
     steps:

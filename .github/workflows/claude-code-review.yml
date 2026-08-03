@@ -12,17 +12,18 @@ on:
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+    # Same-repo PRs only. Fork PRs get no secrets, so the action would burn a
+    # runner without ever authenticating; skipping is explicit and legible.
+    # (Public repo: forks are the only outside vector — branch PRs need push.)
+    if: github.event.pull_request.head.repo.full_name == github.repository
 
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read
-      issues: read
+      # write: Claude posts its review (and inline comments) through the GitHub
+      # MCP server. With `read` the run still exits green, having silently had
+      # every post denied.
+      pull-requests: write
       id-token: write
 
     steps:
