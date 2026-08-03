@@ -1,0 +1,13 @@
+{
+  "name": "manager-brief",
+  "version": "0.1.0",
+  "description": "Output style: research findings arrive as a manager brief, the call on top, evidence below. Activate via /config > Output style.",
+  "author": {
+    "name": "ajilty",
+    "email": "github@ajilty.com"
+  },
+  "homepage": "https://github.com/ajilty/agent-skills",
+  "repository": "https://github.com/ajilty/agent-skills",
+  "license": "MIT",
+  "keywords": ["output-style", "reporting", "research"]
+}
