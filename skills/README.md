@@ -1,5 +1,11 @@
 # Skills library
 
+This is one instance of the repo's primitive-library pattern: top-level
+libraries (`skills/`, and `agents/` etc. once their first artifact lands) are
+source of truth; plugins are symlink views. Wiring rule for every primitive
+type: symlink directories, never files — file symlinks are skipped by
+component discovery. See ADR-0036.
+
 Source of truth for every portable skill in this repo, organized by category:
 
 ```

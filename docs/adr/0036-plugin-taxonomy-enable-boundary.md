@@ -41,6 +41,22 @@ would break discovery, which only scans immediate subdirectories; the library
 tree is where category structure lives. Plugin-internal skills (orchestrate's)
 are implementation detail of a versioned product and stay in-plugin.
 
+The library generalizes to every primitive type, with one wiring rule:
+**symlink directories, never files.** Component discovery follows directory
+symlinks but skips symlinked files (verified empirically 2026-08-03: a
+symlinked agent `.md` copied to cache but registered `Agents (0)`; a real file
+and a symlinked `agents/` directory both registered correctly). So: skills are
+per-skill directories and mix freely across categories via per-skill symlinks;
+file-based primitives (agents, commands) live in the library as named set
+directories (`agents/<set>/*.md`) and a plugin symlinks its whole component
+dir to one set — needing to mix sets is the trigger to graduate to a generated
+copy step (ADR-0007 precedent). A top-level library dir is instantiated when
+its first artifact lands, not preemptively. Hooks config (`hooks.json`) stays
+in-plugin — it is the runtime footprint that justifies the plugin existing;
+only shared hook scripts would ever be library candidates. Output styles
+remain rejected (Claude-Code-only; the same content ships portably as a
+skill).
+
 ## Considered options
 - Flat skills inside each plugin with a README category column — initially
   chosen, superseded by operator call: category browsing belongs in the
