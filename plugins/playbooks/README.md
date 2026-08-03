@@ -11,7 +11,7 @@ library; edit and search there, not here.
 | Skill | Category | Purpose |
 |-------|----------|---------|
 | `grill` | meta | improve alignment by interrogating the ask before working |
-| `grill-with-docs` | meta | grill, plus update CONTEXT.md/ADRs as decisions crystallize |
+| `grill-with-docs` | meta | grill, plus update CONTEXT.md/ADRs as decisions crystallize (landed) |
 | `retro` | meta | persist learnings from a session |
 | `day-prep` | office | review open threads, comms, and calendar; plan today |
 | `assignment` | coding | run a goal through /orchestrate as a full project assignment |
