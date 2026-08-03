@@ -26,6 +26,12 @@ grep -qE '^[[:space:]]*network_access[[:space:]]*=[[:space:]]*true' "$o/config.t
 # hooks.json points into the skill's runtime (single copy — no $CODEX_HOME/orchestrate-runtime)
 grep -q "$SKD/runtime/hooks/" "$o/hooks.json" && pass || fail "codex hooks.json points at the skill's runtime hooks"
 [ ! -d "$o/orchestrate-runtime" ] && pass || fail "codex no longer ships a second runtime copy at CODEX_HOME"
+# EMITTER PARITY (contract-driven): every hook the contract declares must be wired
+# in the emitted codex hooks.json — dispatch and post-compaction classes included.
+AGY="$SK/skills/orchestrate/references/agents.yaml"
+for s in $(yq '.hooks[].script' "$AGY"); do
+  grep -q "/$s\"" "$o/hooks.json" && pass || fail "codex hooks.json missing contract hook: $s"
+done
 rm -rf "$o"
 # opencode: five personas in agents/ (plural, docs-current), native skill, plugin,
 # command parity — and no AGENTS.orchestrate.md
@@ -39,9 +45,26 @@ grep -q 'OpenCode dispatch addendum' "$SKD/SKILL.md" && pass || fail "opencode s
 test -x "$SKD/runtime/ledger.sh" && pass || fail "opencode ships ledger.sh executable inside the skill"
 assert_file "$o/plugins/orchestrate.ts"
 grep -q 'session.compacted' "$o/plugins/orchestrate.ts" && pass || fail "opencode plugin wires the documented session.compacted event"
+# EMITTER PARITY (contract-driven): every tool-watching hook + the post-compaction
+# hook must be wired in the plugin. writer_writeahead (watch: dispatch) is the
+# documented in-loop exception on OpenCode (no subagent-start event; ADR-0034 —
+# see the skill's OpenCode addendum), so the dispatch class is exempt HERE only.
+AGY="$SK/skills/orchestrate/references/agents.yaml"
+for s in $(yq '.hooks[] | select([.watch[] | test("^(file-read|shell|file-write|post-compaction)$")] | any) | .script' "$AGY"); do
+  grep -q "hooks/$s" "$o/plugins/orchestrate.ts" && pass || fail "opencode plugin missing contract hook: $s"
+done
 grep -q "$SKD/runtime" "$o/plugins/orchestrate.ts" && pass || fail "opencode plugin points at the skill's runtime (single copy)"
 for c in init status feedback; do assert_file "$o/commands/orchestrate-$c.md"; done
 grep -q -- '--models=' "$o/commands/orchestrate-init.md" && pass || fail "opencode init command carries the --models flag contract"
+# command descriptions are parsed from the commands/*.md source frontmatter, never restated
+for c in init status feedback; do
+  want="$(yq --front-matter=extract '.description' "$SK/commands/$c.md")"
+  got="$(yq --front-matter=extract '.description' "$o/commands/orchestrate-$c.md")"
+  assert_eq "$got" "$want" "opencode $c command description matches source frontmatter"
+done
+# tier -> model emission (D1: Anthropic ladder default, env-overridable)
+grep -q '^model: ' "$o/agents/planner.md" && pass || fail "opencode planner carries tier model"
+grep -q '^model: anthropic/' "$o/agents/researcher.md" && pass || fail "opencode researcher model defaults to the Anthropic ladder"
 # permission: layer emitted alongside deprecated tools: (read-only persona denies edit+bash)
 grep -A3 '^permission:' "$o/agents/planner.md" | grep -q 'bash: deny' && pass || fail "opencode planner permission denies bash"
 grep -A3 '^permission:' "$o/agents/implementer.md" | grep -q 'bash: allow' && pass || fail "opencode implementer permission allows bash"

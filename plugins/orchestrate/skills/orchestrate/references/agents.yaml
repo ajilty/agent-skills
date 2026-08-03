@@ -61,23 +61,43 @@ personas:
 # The orchestrator drives the loop and appends most ledger events in-loop. Only
 # the actions that MUST be deterministic (research: must-happen + failure you
 # can't tolerate) are hooks; everything cheap-to-miss stays in-loop.
+#
+# script: the runtime hook file (runtime/hooks/<script>) — the ONE name->file map;
+#   generators and the parity tests read it here, never a hand-held copy.
+# watch: harness-neutral guard points; each generator maps them to its native
+#   matchers/events ONCE (file-read, file-write, shell, dispatch, post-compaction).
+#   Scripts self-guard, so a harness may safely over-match (e.g. one combined
+#   read+shell matcher group).
+# Entry ORDER here is the wire order every emitter preserves.
 hooks:
   heldout_read_deny:
+    script: deny-heldout-read.sh
+    watch: [file-read, shell]      # shell too: `cat $HELDOUT_ROOT/..` is a read
     event: pre-tool-use
     applies_to: [implementer, actuator]   # both writers: the Actuator can't read the held-out ops oracle either
     intent: "Deny any file read resolving under $HELDOUT_ROOT (and on an unresolvable path)."
     fail_closed: true
-  write_scope:
+  branch_guard:
+    script: keep-on-branch.sh
+    watch: [shell]
     event: pre-tool-use
-    applies_to: [planner, researcher, verifier]
+    applies_to: [implementer]
+    intent: "Deny branch create/switch and commits that move HEAD off the assigned worktree-agent branch."
+    fail_closed: true
+  prod_apply_gate:
+    script: gate-prod-apply.sh
+    watch: [shell]
+    event: pre-tool-use            # actuator Bash; SubagentStart is NON-blocking on shell harnesses, so the hard block lives here at tool-use
+    applies_to: [actuator]
     intent: >-
-      Confine each write-capable-but-not-a-writer persona to its OWN result path,
-      fail-closed (ADR-0014, disk-first read lane): planner -> spec/ADR + per-ticket
-      dir; researcher -> ONLY findings/_quarantine/ (RAW, router gates+promotes);
-      verifier -> ONLY verdicts/. Denies the source tree, prod, the *trusted* findings
-      path (direct write would bypass the §4 gate), and the other persona's lane.
+      Pre-apply consequence gate (SKILL §6b), the hard floor: deny the actuator's
+      commands while any prod-level mutation target (PROD_TARGETS — undeclared/
+      unknown -> prod, fail-closed) lacks an operator ack. The ledger half lives in
+      on-writer-dispatch.sh, which leaves no dispatched/lease trace when unacked.
     fail_closed: true
   run_scope:
+    script: run-scope.sh
+    watch: [shell]
     event: pre-tool-use
     applies_to: [verifier]
     intent: >-
@@ -89,12 +109,9 @@ hooks:
       defense-in-depth behind the verifier's capability subtraction (no Write/Edit),
       and a determined escape is accepted — same posture as cred-scope (ADR-0002).
     fail_closed: false
-  branch_guard:
-    event: pre-tool-use
-    applies_to: [implementer]
-    intent: "Deny branch create/switch and commits that move HEAD off the assigned worktree-agent branch."
-    fail_closed: true
   shared_checkout_guard:
+    script: guard-shared-checkout.sh
+    watch: [shell]
     event: pre-tool-use
     applies_to: [all]              # router + EVERY persona — a universal git-safety floor, not persona-gated
     intent: >-
@@ -103,7 +120,19 @@ hooks:
       (git-dir == git-common-dir). Stops a stray base-correction reset from eating
       unpushed commits when an agent lands on main (isolation-lands-on-main trap, §9a).
     fail_closed: true
+  merge_base_guard:
+    script: guard-merge-base.sh
+    watch: [shell]
+    event: pre-tool-use
+    applies_to: [all]              # router-level: merges happen in router context
+    intent: >-
+      Merges land on the journaled base (ADR-0027): refuse a `git merge` of an
+      agent worktree branch when HEAD is not the base the ledger journaled at
+      goal start, so a drifted HEAD cannot silently absorb the lane's work.
+    fail_closed: true
   done_gate:
+    script: guard-done.sh
+    watch: [shell]
     event: pre-tool-use
     applies_to: [all]              # persona-independent: the offender is the router itself (no agent_type)
     intent: >-
@@ -114,16 +143,21 @@ hooks:
       raw-appended around in practice (validation re-probe), so the floor makes a ship
       without a Verifier impossible, not just discouraged.
     fail_closed: true
-  prod_apply_gate:
-    event: pre-tool-use            # actuator Bash; SubagentStart is NON-blocking on shell harnesses, so the hard block lives here at tool-use
-    applies_to: [actuator]
+  write_scope:
+    script: write-scope.sh
+    watch: [file-write]
+    event: pre-tool-use
+    applies_to: [planner, researcher, verifier]
     intent: >-
-      Pre-apply consequence gate (SKILL §6b), the hard floor: deny the actuator's
-      commands while any prod-level mutation target (PROD_TARGETS — undeclared/
-      unknown -> prod, fail-closed) lacks an operator ack. The ledger half lives in
-      on-writer-dispatch.sh, which leaves no dispatched/lease trace when unacked.
+      Confine each write-capable-but-not-a-writer persona to its OWN result path,
+      fail-closed (ADR-0014, disk-first read lane): planner -> spec/ADR + per-ticket
+      dir; researcher -> ONLY findings/_quarantine/ (RAW, router gates+promotes);
+      verifier -> ONLY verdicts/. Denies the source tree, prod, the *trusted* findings
+      path (direct write would bypass the §4 gate), and the other persona's lane.
     fail_closed: true
   writer_writeahead:
+    script: on-writer-dispatch.sh
+    watch: [dispatch]
     event: pre-tool-use            # CC: PreToolUse on the dispatch tool (matcher Task|Agent) — SubagentStart does NOT fire (ADR-0011); dispatched persona = tool_input.subagent_type. Codex/OpenCode: their subagent-start/invoke event (agent_type/PERSONA).
     applies_to: [implementer, actuator]
     intent: >-
@@ -132,6 +166,8 @@ hooks:
       just-dispatched writer leaves no dirty worktree, so the reground backstop
       can't see it until it writes. returned/verdict + read-only dispatches stay in-loop.
   compaction_reground:
+    script: on-compaction.sh
+    watch: [post-compaction]
     event: post-compaction         # CC: SessionStart(source=compact); Codex: PostCompact; OpenCode: plugin compaction event
     applies_to: [router]
     intent: >-

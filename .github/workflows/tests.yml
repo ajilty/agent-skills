@@ -1,7 +1,7 @@
 name: tests
 on: [push, pull_request]
 jobs:
-  orchestrate:
+  plugin-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -10,8 +10,25 @@ jobs:
           sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
           yq --version
-      - name: Run orchestrate suite (unit + drift guard + allowlist + manifest)
-        run: bash plugins/orchestrate/tests/run.sh
+      - name: Run every plugin suite (plugins/*/tests/run.sh)
+        run: |
+          set -e; found=0
+          for t in plugins/*/tests/run.sh; do
+            [ -f "$t" ] || continue
+            found=1
+            echo "::group::$t"
+            bash "$t"
+            echo "::endgroup::"
+          done
+          if [ "$found" -eq 0 ]; then echo "no plugin suites found"; exit 1; fi
+  validate-plugins:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Validate marketplace and all plugins (strict)
+        run: bash scripts/validate-plugins.sh
   library-wiring:
     runs-on: ubuntu-latest
     steps:

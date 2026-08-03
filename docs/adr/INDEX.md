@@ -42,3 +42,5 @@ raises a DECISION_FORK citing it (supersede flow).
 | [0034](0034-skill-native-installs-via-agents-skills.md) | Codex and OpenCode installs are skill-native via the cross-tool .agents/skills root | active |
 | [0035](0035-run-scope-mirrors-verdict-write-allowance.md) | run-scope mirrors the verifier's verdict-write allowance; one contract, every layer | active |
 | [0036](0036-plugin-taxonomy-enable-boundary.md) | Plugins are enable boundaries; skills carry the trigger | active |
+| [0037](0037-harness-emitters-live-in-repo-level-lib.md) | ADR-0037: Harness emitters live in a repo-level lib; the contract carries the wire map | active |
+| [0038](0038-repo-wide-plugin-test-and-validation-convention.md) | 0038: Repo-wide plugin test and validation convention | active |
