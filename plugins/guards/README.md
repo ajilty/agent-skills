@@ -1,4 +1,4 @@
-# syntax-guard
+# guards
 
 PostToolUse hook: after every `Edit`/`Write` of a `.json`, `.yaml`, or `.yml` file, parse it with `jq`/`yq`. On a syntax error the hook exits 2, which injects the parser's stderr back into the model's context as a blocking error — Claude sees the exact parse failure and fixes it in the same turn.
 
@@ -24,10 +24,10 @@ Validating "changed files" via `git diff --name-only` misses new untracked files
 ## Install
 
 ```
-/plugin install syntax-guard@ajilty-agent-skills
+/plugin install guards@ajilty-agent-skills
 ```
 
-Or in settings: `"enabledPlugins": { "syntax-guard@ajilty-agent-skills": true }`.
+Or in settings: `"enabledPlugins": { "guards@ajilty-agent-skills": true }`.
 
 ## Known limitations
 

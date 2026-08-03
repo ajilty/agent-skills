@@ -26,13 +26,13 @@ case "$f" in
     exit 0 ;;
   *.json)
     if ! err=$(jq . "$f" 2>&1 >/dev/null); then
-      printf 'syntax-guard: invalid JSON in %s\n%s\n' "$f" "$err" >&2
+      printf 'guards: invalid JSON in %s\n%s\n' "$f" "$err" >&2
       exit 2
     fi ;;
   *.yaml|*.yml)
     command -v yq >/dev/null 2>&1 || exit 0
     if ! err=$(yq . "$f" 2>&1 >/dev/null); then
-      printf 'syntax-guard: invalid YAML in %s\n%s\n' "$f" "$err" >&2
+      printf 'guards: invalid YAML in %s\n%s\n' "$f" "$err" >&2
       exit 2
     fi ;;
 esac

@@ -1,6 +1,6 @@
-# playbook
+# playbooks
 
-User-invoked workflow skills (`/playbook:<skill>`). Opinionated ways of working;
+User-invoked workflow skills (`/playbooks:<skill>`). Opinionated ways of working;
 short and simple to leave room for judgment.
 
 Skills are symlinked views into the repo-root [`skills/`](../../skills/README.md)

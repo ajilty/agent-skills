@@ -27,11 +27,11 @@ plugins are self-contained. Git preserves the symlinks in the repo itself.
 
 | Category | Contents | Ships in |
 |----------|----------|----------|
-| `meta` | workflows about working itself (grill, retro) | playbook |
-| `office` | comms, calendar, planning workflows (day-prep) | playbook |
-| `coding` | engineering workflows (assignment, tdd, review) | playbook |
-| `security` | security workflows (threat-model) | playbook |
-| `knowledge` | `working-with-<tool>` sharp-edge notes | sharp-edges |
+| `meta` | workflows about working itself (grill, retro) | playbooks |
+| `office` | comms, calendar, planning workflows (day-prep) | playbooks |
+| `coding` | engineering workflows (assignment, tdd, review) | playbooks |
+| `security` | security workflows (threat-model) | playbooks |
+| `knowledge` | `working-with-<tool>` sharp-edge notes | edges |
 
 Categories exist for browsing and maintenance; routing is done by skill
 descriptions (auto-invoked) or by the name you type (user-invoked). A skill's
@@ -54,7 +54,7 @@ choice.
 - **Name for bare invocation.** Unique names resolve without the plugin
   prefix, so check new workflow names against Claude Code built-ins (`/review`,
   `/init`, `/code-review`, ...) and installed plugins; a collision forces
-  `/playbook:<name>` forever. Prefer a distinct name; accept the prefix only
+  `/playbooks:<name>` forever. Prefer a distinct name; accept the prefix only
   when the semantic name is worth it.
 - **Knowledge skills carry what docs don't.** Docs lookup is already served
   (context7, vendor plugins); `working-with-<tool>` holds sharp edges only —
