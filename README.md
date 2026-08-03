@@ -11,9 +11,17 @@ Codex, OpenCode) from single-source contracts. Each plugin owns its full story
   discipline, survives interruption, remembers its judgment across goals, and
   gates consequential actions before they touch prod. Install, use, and safety
   model: [`plugins/orchestrate/README.md`](plugins/orchestrate/README.md).
-- **[`syntax-guard`](plugins/syntax-guard/)** — a small Claude-Code-only
-  PostToolUse hook that validates file syntax after writes.
-  See [`plugins/syntax-guard/README.md`](plugins/syntax-guard/README.md).
+- **[`guards`](plugins/guards/)** — constraints that guard against known
+  issues. Currently: JSON/YAML syntax validation (including .md frontmatter)
+  on every Edit/Write, with parse errors fed back for immediate
+  self-correction. See [`plugins/guards/README.md`](plugins/guards/README.md).
+- **[`playbooks`](plugins/playbooks/)** — user-invoked workflows: opinionated
+  ways of working across meta, office, coding, and security domains.
+  See [`plugins/playbooks/README.md`](plugins/playbooks/README.md).
+- **[`edges`](plugins/edges/)** — auto-invoked `working-with-<tool>` knowledge
+  skills that fill model gaps on the sharp edges of specific tools and vendors
+  (CLIs, MCP servers, connectors). Generic by rule: no user or company
+  references. See [`plugins/edges/README.md`](plugins/edges/README.md).
 
 ## Install (short version)
 
@@ -21,7 +29,7 @@ Claude Code, from this repo's self-marketplace:
 
 ```
 /plugin marketplace add ajilty/agentic
-/plugin install orchestrate@ajilty
+/plugin install orchestrate@ajilty   # or guards / playbooks / edges
 ```
 
 Codex and OpenCode use compile-step installers. Commands, scopes, and the
@@ -32,6 +40,24 @@ trust-seeding caveats live in the plugin README's
 
 - `git` and `yq` v4 (mikefarah) at build/install time. Installed runtime is pure
   git + coreutils, no other deps.
+
+## Contributing setup
+
+One-time per clone, activate the repo's git hooks:
+
+```
+git config core.hooksPath scripts/githooks
+```
+
+The `pre-commit` hook scans staged additions against a private, never-tracked
+blocklist to keep employer- or person-specific strings out of a public repo.
+Both its guards are opt-in, so a fresh clone is unaffected: with no blocklist
+file present it warns and skips, and the author-identity check runs only if you
+configure an expected identity:
+
+```
+git config hooks.expectedIdentity "Your Name <you@example.com>"
+```
 
 ## Where things live
 
