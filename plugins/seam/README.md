@@ -1,0 +1,54 @@
+# Seam
+
+Personal communications command-center **overlay** (n=1). Syncs email, chat,
+and calendar through MCP into a per-profile file store, infers threads →
+workstreams → working groups bottom-up, and compiles a static triage board.
+Draft-in-place only — nothing in this plugin can send, post, or notify another
+person.
+
+Authority chain: `docs/seam-build-run.md` (executable authority) >
+`docs/seam-design-spec.md` > `docs/seam-design-brief.md`. On conflict, stop and
+flag. `docs/seam-design-review.md` holds rationale;
+`docs/seam-fixture-walkthrough.md` traces the fixture scenarios;
+`docs/PERSISTENCE.md` defines where changes persist (plugin vs. instance vs.
+store) across machines and personas.
+
+## Layout
+
+```
+bin/seam.mjs          CLI: init | sync | ledger
+src/lib/              profile loader, store init + residency guard, ledger
+src/adapters/         email / slack / calendar; fixture + live backends behind one contract
+src/sync.mjs          watermark + fingerprint ingestion pipeline
+src/board/            board template (M3) + jsdom smoke validator
+fixtures/             MCP-shaped mock responses (walkthrough scenarios)
+evals/run.mjs         the `make eval` gate: M0/M1 goldens + §6.1 banned-tools lint
+profiles/*.template   persona profile templates — instances copy, never commit
+skills/seam-sync/     /seam-sync skill for one sync pass
+```
+
+## Instance setup (per machine, per persona)
+
+```
+export SEAM_PROFILE=personal          # or work
+node bin/seam.mjs init --profile personal   # copies template to ~/.seam/profiles/
+# edit ~/.seam/profiles/personal.yaml: store_root, MCP bindings, principals
+node bin/seam.mjs init                # creates the store at store_root
+node bin/seam.mjs sync                # one pass; fixture backends until flipped live
+node evals/run.mjs                    # the gate — must pass before live work
+```
+
+The work profile template ships disabled; enable only after work-side MCP
+permissions are confirmed.
+
+## Status
+
+- M0 (scaffold) and M1 fixture-mode (ingestion, idempotency, watermarks,
+  dark-source isolation) pass `evals/run.mjs`.
+- Live ingestion is fail-closed per surface until its shapes are captured and
+  `docs/measurements.md` exists (Build & Run §4 M1).
+- `src/board/validate.mjs` is adopted but inert: the `seam-board-v7.html`
+  reference was missing from the handoff folder; the board template graduates
+  at M3.
+- Headless sync scheduling (Build & Run §5): to be verified against current
+  Claude Code docs during M0 wrap-up and recorded here.
