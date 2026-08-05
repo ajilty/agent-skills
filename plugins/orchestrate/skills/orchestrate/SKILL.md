@@ -385,6 +385,20 @@ nothing.
 The researcher rows are one persona, two dispatch flavors — pick by **what consumes
 the output**, not by the persona name.
 
+**Craft rides the dispatch; the contract stays in the persona.** The persona
+briefs carry each role's boundary contract; the reusable *craft* (what good
+research/spec/build/verification output looks like) lives in the sibling craft
+skills shipped with this plugin — `research`, `plan`, `build`, `verify`, one
+directory up from this skill's own directory (symlinked views of the repo's
+`skills/coding/` library; the same skills the playbooks plugin ships
+user-invocable). When dispatching a researcher, planner, implementer, or
+verifier, add one line to the prompt: "Read <absolute path to the craft
+skill>/SKILL.md first and apply it as craft guidance; your persona brief
+prevails on any conflict." Resolve the absolute path once from this skill's
+base directory. Personas have `Read`, so no extra tooling is needed; if the
+file is missing (partial install), the persona brief alone is sufficient —
+never block a dispatch on it.
+
 You *may* **escalate** a single dispatch for a *named* known-hard item (pass the
 higher tier, journal it) — the exception, never the default. "This platform is
 correctness-critical" justifies escalating that item, not blanket-inheriting the
