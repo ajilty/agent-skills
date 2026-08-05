@@ -1,6 +1,7 @@
 ---
 name: build
-description: Use when implementing a planned change in code; triggers include executing a spec or task list, "build this", "implement the plan", or any coding task whose plan and acceptance criteria already exist.
+description: Execute a plan as the single writer: commit-is-artifact proof and defect-class sweeps.
+disable-model-invocation: true
 ---
 
 # Build

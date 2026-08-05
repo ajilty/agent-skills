@@ -1,6 +1,7 @@
 ---
 name: brief
-description: Use when reporting a plan, proposal, or completed work to a decision-maker who needs to act on it; triggers include "brief me", "present this", "make this decision-ready", or a request for a briefing with options and a decisions memo.
+description: Decision-ready artifact briefing ending in a copyable decisions-only memo; includes a close-out delta mode.
+disable-model-invocation: true
 ---
 
 # Brief

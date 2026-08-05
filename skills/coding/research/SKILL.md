@@ -1,6 +1,7 @@
 ---
 name: research
-description: Use when investigating a codebase, system, or ecosystem to inform a decision or plan; triggers include "research", "investigate", "what's the current state", inventory/sweep requests, and diagnosis of why something behaves as it does.
+description: Read-only investigation with confirmed-vs-inferred labeling and durable findings.
+disable-model-invocation: true
 ---
 
 # Research

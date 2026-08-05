@@ -1,6 +1,7 @@
 ---
 name: plan
-description: Use when turning research or requirements into an implementation plan or spec before building; triggers include "plan this", "write the spec", "break this down", or a build request that has no acceptance criteria yet.
+description: Turn findings into a spec with acceptance oracles, scored options, and operator decisions listed.
+disable-model-invocation: true
 ---
 
 # Plan

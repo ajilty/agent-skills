@@ -1,6 +1,7 @@
 ---
 name: verify
-description: Use when independently checking finished work against its goal before it ships; triggers include "verify this", "review this change against the spec", acceptance checks on a PR or build result, or any request for an adversarial second opinion.
+description: Adversarially verify finished work with live reproduction; verdict with evidence.
+disable-model-invocation: true
 ---
 
 # Verify
