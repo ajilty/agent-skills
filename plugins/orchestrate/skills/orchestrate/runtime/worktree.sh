@@ -10,6 +10,7 @@
 #   worktree.sh remove <ticket> <persona>              # remove iff clean (never discards work)
 #   worktree.sh path|branch <ticket> <persona>         # print the deterministic path/branch
 #   worktree.sh committed <ticket> <persona>           # exit 0 committed&clean, 2 uncommitted, 5 nothing-committed, 4 missing (ADR-0019)
+#   worktree.sh inspect [ticket] [persona]             # READ-ONLY status of agent worktrees (branch, dirty/telemetry counts, ahead, last commit)
 #
 # SAFETY: this helper NEVER destroys a worktree that holds work (uncommitted changes OR
 # commits ahead of the base). On stale-with-work it exits 3 for operator/reground
@@ -32,7 +33,27 @@ if [ -z "$base" ]; then
   base="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
   { [ -n "$base" ] && [ "$base" != HEAD ]; } || base="main"
 fi
-case "$cmd" in path|branch|create|staleness|remove|committed) ;; *) echo "usage: worktree.sh {create|staleness|remove|path|branch|committed} <ticket> <persona> [base_ref]" >&2; exit 64 ;; esac
+case "$cmd" in path|branch|create|staleness|remove|committed|inspect) ;; *) echo "usage: worktree.sh {create|staleness|remove|path|branch|committed|inspect} <ticket> <persona> [base_ref]" >&2; exit 64 ;; esac
+
+if [ "$cmd" = inspect ]; then
+  # The §10 reconcile duty's SANCTIONED read-only window over agent worktrees.
+  # Session isolation guards deny ad-hoc git against sibling worktrees (2026-08-05
+  # review: the router had to script around the guard to reconcile) — this one
+  # mutation-free command is the allowlistable path. Ticket/persona filter optional.
+  git worktree list --porcelain 2>/dev/null | awk '/^worktree /{w=$2} /^branch /{b=$2; sub("refs/heads/","",b); print w"\t"b}' |
+  while IFS="$(printf '\t')" read -r wt br; do
+    case "$br" in worktree-agent-*) ;; *) continue ;; esac
+    if [ -n "$t" ]; then case "$br" in "worktree-agent-${t}-${p:-}"*) ;; *) continue ;; esac; fi
+    st="$(git -C "$wt" status --porcelain 2>/dev/null || true)"
+    dirty=0; [ -n "$st" ] && dirty="$(printf '%s\n' "$st" | wc -l | tr -d ' ')"
+    tele="$(printf '%s' "$st" | grep -c '\.agents/runs/orchestrate/board\.jsonl$' || true)"
+    ahead="$(git -C "$wt" rev-list --count "origin/$base..HEAD" 2>/dev/null || echo '?')"
+    last="$(git -C "$wt" log -1 --format='%h %s' 2>/dev/null || true)"
+    printf '%s\t%s\tdirty=%s(telemetry=%s)\tahead=%s\tlast=%s\n' "$br" "$wt" "$dirty" "$tele" "${ahead:-?}" "${last:--}"
+  done
+  exit 0
+fi
+
 [ -n "$t" ] && [ -n "$p" ] || { echo "worktree.sh: ticket and persona required" >&2; exit 64; }
 
 BRANCH="worktree-agent-${t}-${p}"           # §9b naming (agents.yaml branch_template)

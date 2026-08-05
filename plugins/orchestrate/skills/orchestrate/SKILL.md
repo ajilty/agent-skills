@@ -353,24 +353,34 @@ scary or looks like a quick grind. The measured leak is exactly this: the failur
 one-liners got 4–6 verbose inline calls each (bloat).
 
 **Horsepower is right-sized per persona, not per task — and binds AT DISPATCH.**
-Each persona's model + reasoning effort are fixed by its *role* in the contract
-(`agents.yaml` `tier:`): *premium/max* for the Verifier (correctness is the whole
-point), *economy* for the Researcher (reduction work). Do **not** rely on the
-registered agent definition to carry this: a measured harness bug ignores an agent's
-compiled `model` frontmatter and silently inherits the parent session's model
-(Claude Code #44385 — a live run billed every persona at the flagship). **Pass the
-persona's model + effort explicitly on every dispatch**, and journal exactly what you
-passed (the `dispatched` event's `model`/`effort`; `metrics model_mix` audits it):
+The main loop runs the operator's model, normally the **best available tier**; every
+dispatch steps **down** the current model ladder from there. Tiers are relative so
+the table survives model generations (ladder today: fable > opus > sonnet > haiku):
+`T-1` = one step below the main loop, `T-2` = two steps below, `floor` = cheapest.
+No dispatch ever rides AT the main-loop tier — that is `inherit`, the measured
+ADR-0024 anti-pattern. Floors regardless of ladder: writers (implementer/actuator)
+and the verifier never below sonnet-class; verifier effort never below high.
 
-| Dispatch | model | effort | select when |
+Do **not** rely on the registered agent definition to carry this: a measured harness
+bug ignores an agent's compiled `model` frontmatter and silently inherits the parent
+session's model (Claude Code #44385 — a live run billed every persona at the
+flagship). **Pass the persona's resolved model + effort explicitly on every
+dispatch**, and journal exactly what you passed (the `dispatched` event's
+`model`/`effort`). An unjournaled dispatch is a defect, not a style miss: `metrics`
+counts returned/verdict events with no matching dispatch (`unjournaled_work`) and
+status flags them — measured 2026-08-05: planner + verifier dispatched without a
+model rode a flagship main loop at the tier above opus while `model_mix` showed
+nothing.
+
+| Dispatch | tier (today) | effort | select when |
 |---|---|---|---|
-| researcher — sweep/inventory | haiku | medium | mechanical extraction; output is a list/map the router consumes directly |
-| researcher — judgment | sonnet | high | findings feed an ADR/spec or **eliminate design options** — a silently wrong elimination poisons the Planner downstream (field-calibrated 2026-07-14, ADR-0025) |
-| researcher — troubleshooter (§2a′ tripwire) | sonnet | high | diagnosis is reduction with a **sharp conclusion**; escalate to opus for livelock/corruption-class chains |
-| planner | opus | high | |
-| implementer | sonnet | high | more model does not buy back a missing spec — see the T1 refactor rule (§2a) |
-| actuator | sonnet | high | |
-| verifier | opus | max | mechanical verifications don't belong here — batch by tier so the expensive verifier never sees them |
+| researcher — sweep/inventory | floor (haiku) | medium | mechanical extraction; output is a list/map the router consumes directly |
+| researcher — judgment | T-2 (sonnet) | high | findings feed an ADR/spec or **eliminate design options** — a silently wrong elimination poisons the Planner downstream (field-calibrated 2026-07-14, ADR-0025) |
+| researcher — troubleshooter (§2a′ tripwire) | T-2 (sonnet) | high | diagnosis is reduction with a **sharp conclusion**; escalate to T-1 for livelock/corruption-class chains |
+| planner | T-1 (opus) | high | |
+| implementer | T-2 (sonnet) | high | more model does not buy back a missing spec — see the T1 refactor rule (§2a) |
+| actuator | T-2 (sonnet) | high | |
+| verifier | T-1 (opus) | max | mechanical verifications don't belong here — batch by tier so the expensive verifier never sees them |
 
 The researcher rows are one persona, two dispatch flavors — pick by **what consumes
 the output**, not by the persona name.
@@ -395,10 +405,10 @@ either way it **rides the goal anchor** — `ledger.sh goal "<note>" [spec] [bas
 status shows it in the header:
 
 - `dynamic` (default): the table + escalation tripwires, exactly as above.
-- `quick`: dynamic, but lean cheaper/faster — shift each row one step down (model
-  first: opus→sonnet, sonnet→haiku; already-haiku rows drop effort high→medium
-  instead). Escalation rules stay live, so a *named* sharp item still climbs.
-  Floor: a T2 verifier never drops below sonnet/high.
+- `quick`: dynamic, but lean cheaper/faster — shift each row one more step down the
+  ladder (T-1→T-2, T-2→floor; already-floor rows drop effort high→medium instead).
+  Escalation rules stay live, so a *named* sharp item still climbs.
+  Floor: a T2 verifier never drops below sonnet-class/high.
 - `inherit`: pass **no** model/effort at dispatch — every persona runs the main
   loop's model; journal `model:"inherit"` on the `dispatched` event so
   `model_mix` stays honest. On a flagship main loop this recreates the
@@ -887,7 +897,12 @@ truth"* applies to the router itself, and the orchestrator drives off disk.
   never reset it. Lane status and halted forks are likewise read from disk.
 - **Reconcile against git, not just the ledger.** `ledger.sh reground` cross-checks
   live `worktree-agent-*` worktrees: any with uncommitted work is an open writer
-  lane to reconcile *even if no ledger event exists* (missed append / crash). A
+  lane to reconcile *even if no ledger event exists* (missed append / crash). For
+  a closer look, `worktree.sh inspect [ticket]` is the **sanctioned read-only
+  window** over agent worktrees (branch, dirty/telemetry counts, commits ahead,
+  last commit) — use it instead of ad-hoc `git -C <sibling-worktree>` commands,
+  which session isolation guards rightly deny (measured 2026-08-05: reconcile was
+  only completable by scripting around the guard). A
   `…/tickets/<ticket>/lease` gives at-most-once writer dispatch.
 
 **Two resume paths, by cause:**

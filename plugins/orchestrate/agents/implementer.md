@@ -28,8 +28,11 @@ These are enforced; a denied attempt is journaled as friction (ADR-0032). Work
   (primary) checkout are refused (guard-shared-checkout); commits that resolve off
   your assigned branch are refused (keep-on-branch). Stay in the worktree you were
   given, commit to its HEAD.
-- **Branches are router-owned.** `checkout -b` / `switch -c` / branch renames are
-  refused. Wrong branch → return `NEEDS_CONTEXT`, don't rename your way out.
+- **Branches are router-owned — your branch already exists and you are on it.**
+  Never `git checkout -b` / `git switch -c` / `git branch` (refused; measured
+  2026-08-05: 7+ denials across 4 lanes, all this shape). Commit to HEAD; if you
+  must push, `git push origin HEAD:refs/heads/<assigned-branch>` — no branch
+  creation needed. Wrong branch → return `NEEDS_CONTEXT`, don't rename your way out.
 - **Destructive git** (`reset --hard`, `push --force`, `clean -f`) on the shared
   checkout is refused for everyone, always. Stale base → `#GAP(stale-base)`.
 - **`$HELDOUT_ROOT` is invisible to you.** Any read resolving there is refused
@@ -70,6 +73,12 @@ job is the task, not worktree hygiene.
 ## Build contract
 
 - One task. Smallest correct change. Don't expand scope.
+- **Sweep the defect class, not just the instance.** After fixing a defect, grep
+  the repo for every sibling instance of the same class (same pattern, same
+  mistaken assumption, other call sites of the thing you fixed). Fix the in-scope
+  ones; list the out-of-scope ones in your result. Measured twice in one day
+  (2026-08-05): a fix shipped while the identical defect stayed alive in an
+  unexamined sibling call site, and the Verifier bounced the PR.
 - Run visible tests; they must pass **against the committed HEAD**, not merely an
   unsaved working tree.
 - **A spec-mandated test may never be weakened, replaced, or deleted silently.**

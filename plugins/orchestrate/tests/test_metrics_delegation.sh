@@ -30,4 +30,17 @@ bash "$R" append '{"ticket":"T1","event":"dispatched","persona":"validator"}'
 m2="$(bash "$R" metrics)"
 case "$m2" in *"disp_verifier=1"*) pass;; *) fail "validator counts as a verifier dispatch ($m2)";; esac
 
-cd /; rm -rf "$d" "$d2"
+# unjournaled_work: returned/verdict events exceeding dispatched events on the same
+# ticket = personas that ran with NO model bound at dispatch, so they inherit the
+# main-loop model (the 2026-08-05 no-opus leak). Counted per ticket so an
+# over-dispatched lane can't cancel a leaking one.
+d3="$(mktemp_repo)"; cd "$d3"
+bash "$R" append '{"ticket":"T1","event":"dispatched","persona":"implementer","model":"sonnet","effort":"high"}'
+bash "$R" append '{"ticket":"T1","event":"returned","note":"ok"}'
+bash "$R" append '{"ticket":"T2","event":"returned","note":"planner done"}'
+bash "$R" append '{"ticket":"T2","event":"verdict","verdict":"REJECTED"}'
+bash "$R" append '{"ticket":"T2","event":"verdict","verdict":"APPROVED"}'
+m3="$(bash "$R" metrics)"
+case "$m3" in *"unjournaled_work=3"*) pass;; *) fail "metrics counts returned/verdict work with no journaled dispatch ($m3)";; esac
+
+cd /; rm -rf "$d" "$d2" "$d3"

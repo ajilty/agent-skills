@@ -9,7 +9,16 @@
 #                                       # exit 0 = clean/empty, exit 3 = ambiguous writer -> HALT
 #   ledger.sh goal <note> [spec-path]  # journal the run-level goal + a pointer to the plan (ADR-0020)
 set -euo pipefail
-ROOT=".agents/runs/orchestrate"; LEDGER="$ROOT/board.jsonl"
+# Anchor the board at the MAIN checkout's root, never the process cwd: hooks fire
+# from inside agent worktrees, and appending telemetry to a linked worktree's COPY
+# of board.jsonl leaves that tree permanently dirty after squash-merge — reground
+# then HALTs on "ambiguous in-flight writer" for lanes that are fully done
+# (measured 2026-08-05: 4 false-positive HALTs, each dirty only with denied
+# lines). git-common-dir resolves to the main .git from any linked worktree;
+# non-git cwd (test fixtures) falls back to the old relative path.
+_gcd="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+case "$_gcd" in */.git) _base="${_gcd%/.git}/";; *) _base="";; esac
+ROOT="${_base}.agents/runs/orchestrate"; LEDGER="$ROOT/board.jsonl"
 LEASES="$ROOT/leases"
 enc(){ printf '%s' "$1" | sed 's#/#%2F#g'; }   # only '/' needs encoding on Linux
 val() { sed -n "s/.*\"$2\":\"\([^\"]*\)\".*/\1/p" <<< "$1"; }
@@ -67,13 +76,24 @@ case "$cmd" in
       printf '%s:%s:%s\n' "$p" "${m:--}" "${e:--}"
     done | sort | uniq -c | awk '{print $2":"$1}' | paste -sd, - || true)"; mix="${mix:--}"
     dv=$(src | grep -cE '"event":"dispatched".*"persona":"(verifier|validator)"' 2>/dev/null || true)
+    # unjournaled_work: returned/verdict events exceeding dispatched events on the same
+    # ticket. Those personas ran with NO model bound at dispatch — under the frontmatter
+    # bug (#44385) they inherit the main-loop model, so the run's priciest tier does
+    # mechanical work invisibly (measured 2026-08-05: planner + verifier rode a flagship
+    # main loop while model_mix showed nothing). Per-ticket so lanes can't cancel out.
+    uw=0
+    while IFS= read -r tk; do [ -n "$tk" ] || continue
+      w=$(src | grep "\"ticket\":\"$tk\"" | grep -cE '"event":"(returned|verdict)"' 2>/dev/null || true)
+      dd=$(src | grep "\"ticket\":\"$tk\"" | grep -c '"event":"dispatched"' 2>/dev/null || true)
+      if [ "$w" -gt "$dd" ]; then uw=$((uw + w - dd)); fi
+    done < <(src | grep -E '"event":"(returned|verdict)"' | sed -n 's/.*"ticket":"\([^"]*\)".*/\1/p' | sort -u)
     # verify_coverage: of shipped (done) lanes, how many actually got a verifier verdict?
     verified=0; total=0
     while IFS= read -r tk; do [ -n "$tk" ] || continue; total=$((total+1))
       src | grep -q "\"ticket\":\"$tk\".*\"event\":\"verdict\"" && verified=$((verified+1))
     done < <(src | grep '"event":"done"' | sed -n 's/.*"ticket":"\([^"]*\)".*/\1/p' | sort -u)
-    printf 'shipped=%s dispatches=%s forks=%s decisions=%s rejects=%s oracle_inconsistent=%s lease_conflicts=%s denials=%s friction=%s disp_researcher=%s disp_planner=%s disp_implementer=%s disp_verifier=%s disp_actuator=%s verify_coverage=%s/%s model_mix=%s\n' \
-      "$sh" "$di" "$fk" "$de" "$rj" "$oi" "$lc" "$dn" "$fr" "$dr" "$dp" "$dimp" "$dv" "$da" "$verified" "$total" "$mix" ;;
+    printf 'shipped=%s dispatches=%s forks=%s decisions=%s rejects=%s oracle_inconsistent=%s lease_conflicts=%s denials=%s friction=%s disp_researcher=%s disp_planner=%s disp_implementer=%s disp_verifier=%s disp_actuator=%s verify_coverage=%s/%s model_mix=%s unjournaled_work=%s\n' \
+      "$sh" "$di" "$fk" "$de" "$rj" "$oi" "$lc" "$dn" "$fr" "$dr" "$dp" "$dimp" "$dv" "$da" "$verified" "$total" "$mix" "$uw" ;;
 
   feedback)  # Tier 3c, Layer 3: append a durable operator-feedback record (a ledger
              # metrics snapshot + a free-text rating) to the eval log, and echo it. This
@@ -152,8 +172,16 @@ case "$cmd" in
     if git rev-parse --git-dir >/dev/null 2>&1; then
       while IFS=$'\t' read -r wt br; do
         case "$br" in *worktree-agent-*)
-          if [ -n "$(git -C "$wt" status --porcelain 2>/dev/null)" ]; then
-            echo "DIRTY WORKTREE $wt ($br) -> uncommitted writer work; reconcile before re-dispatch"; ambiguous=1; printed=1
+          dirt="$(git -C "$wt" status --porcelain 2>/dev/null)"
+          if [ -n "$dirt" ]; then
+            # board.jsonl-only dirt is hook-telemetry RESIDUE (pre-0.8.25 hooks
+            # appended denied events to the worktree's own board copy), not
+            # in-flight work — report it, don't HALT (2026-08-05: 4 false HALTs).
+            if [ -z "$(printf '%s\n' "$dirt" | grep -v '\.agents/runs/orchestrate/board\.jsonl$')" ]; then
+              echo "TELEMETRY RESIDUE $wt ($br) -> board.jsonl-only dirt, not writer work; safe to discard"; printed=1
+            else
+              echo "DIRTY WORKTREE $wt ($br) -> uncommitted writer work; reconcile before re-dispatch"; ambiguous=1; printed=1
+            fi
           fi ;;
         esac
       done < <(git worktree list --porcelain 2>/dev/null | awk '

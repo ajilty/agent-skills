@@ -133,18 +133,22 @@ if have_yq4; then
   SKM="$SK/skills/orchestrate/SKILL.md"
   cc_tier_model() { case "$1" in economy) echo haiku;; standard) echo sonnet;; premium) echo opus;; esac; }
   row_for() { grep -E "^\| *$1 *\|" "$SKM" | head -1; }
+  # The tier column is relative with today's concrete model in parens — "T-1 (opus)",
+  # "floor (haiku)" — so the cross-check reads the parenthesized model.
+  cell_model() { m="$(printf '%s' "$1" | awk -F'|' '{gsub(/ /,"",$3); print $3}')"
+    case "$m" in *\(*\)*) m="${m#*\(}"; m="${m%%\)*}";; esac; printf '%s' "$m"; }
   for p in planner implementer actuator verifier; do
     want_m="$(cc_tier_model "$(yq ".personas.$p.tier.model" "$AGY")")"
     want_e="$(yq ".personas.$p.tier.effort" "$AGY")"
     row="$(row_for "$p")"
-    got_m="$(printf '%s' "$row" | awk -F'|' '{gsub(/ /,"",$3); print $3}')"
+    got_m="$(cell_model "$row")"
     got_e="$(printf '%s' "$row" | awk -F'|' '{gsub(/ /,"",$4); print $4}')"
     assert_eq "$got_m" "$want_m" "SKILL §2a' model for $p tracks agents.yaml"
     assert_eq "$got_e" "$want_e" "SKILL §2a' effort for $p tracks agents.yaml"
   done
   base_row="$(grep -E '^\| *researcher — sweep' "$SKM" | head -1)"
   want_m="$(cc_tier_model "$(yq '.personas.researcher.tier.model' "$AGY")")"
-  got_m="$(printf '%s' "$base_row" | awk -F'|' '{gsub(/ /,"",$3); print $3}')"
+  got_m="$(cell_model "$base_row")"
   assert_eq "$got_m" "$want_m" "SKILL §2a' researcher baseline (sweep) tracks agents.yaml tier"
 else
   echo "(skip §2a' tier-table parity: $YQ4_SKIP)"

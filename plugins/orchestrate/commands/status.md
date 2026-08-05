@@ -32,7 +32,11 @@ pace 🟢 moving · 🟡 slow · 🔴 stalled; lane ✅ done · 🔄 running · 
    explicitly (`models: inherit ⚠️ all personas run the main-loop model`). When
    `metrics` shows `denials>0`, add one line: `⛔ N denials (hook/persona from the
    board's denied events)` — repeated denials on one lane mean a persona is missing
-   its boundary context, not that the hook is wrong.
+   its boundary context, not that the hook is wrong. When `metrics` shows
+   `unjournaled_work>0` or `model_mix` contains `-`/`inherit` model triples, add one
+   line: `⚠️ N dispatches ran with no model bound — they inherit the main-loop model
+   (top-tier pricing for delegated work; §2a′ requires model+effort on every
+   dispatch)`. This is a spend leak; surface it every time it is non-zero.
 2. 🌳 **Lanes** — a tree, one node per ticket with its status glyph; parallel lanes are
    siblings; writer lanes show worktree commits-ahead. When the `dispatched` events carry
    `model`/`effort`, show them inline per lane (e.g. `verifier opus/max`) — the operator
