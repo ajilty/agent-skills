@@ -14,7 +14,7 @@ library; edit and search there, not here.
 | `grill-with-docs` | meta | grill, plus update CONTEXT.md/ADRs as decisions crystallize (landed) |
 | `retro` | meta | persist learnings from a session |
 | `day-prep` | office | review open threads, comms, and calendar; plan today |
-| `assignment` | coding | run a goal through /orchestrate as a full project assignment |
+| `assignment` | coding | grill the ask, run it as a full project (orchestrate when available), report as a decision-ready briefing (landed) |
 | `tdd` | coding | verify-first development loop |
 | `review` | coding | code review workflow |
 | `threat-model` | security | structured threat modeling |
