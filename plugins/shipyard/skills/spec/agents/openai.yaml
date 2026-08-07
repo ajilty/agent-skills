@@ -1,0 +1,5 @@
+interface:
+  display_name: "Shipyard: spec"
+  short_description: "Segment 3: turn the committed direction into testable requirements and a build spec"
+policy:
+  allow_implicit_invocation: false

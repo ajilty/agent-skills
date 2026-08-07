@@ -1,0 +1,5 @@
+interface:
+  display_name: "Shipyard"
+  short_description: "Report where work stands in the Shipyard flow and name the next segment"
+policy:
+  allow_implicit_invocation: false

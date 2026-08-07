@@ -1,0 +1,5 @@
+interface:
+  display_name: "Shipyard: shape"
+  short_description: "Segment 2: score directions and force the commitment memo"
+policy:
+  allow_implicit_invocation: false

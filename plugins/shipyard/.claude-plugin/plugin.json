@@ -1,0 +1,13 @@
+{
+  "name": "shipyard",
+  "version": "0.1.0",
+  "description": "Scope it, shape it, spec it, ship it: a four-segment delivery method with structural pauses, driven entirely by explicit invocation.",
+  "author": {
+    "name": "ajilty",
+    "email": "github@ajilty.com"
+  },
+  "homepage": "https://github.com/ajilty/agentic",
+  "repository": "https://github.com/ajilty/agentic",
+  "license": "MIT",
+  "keywords": ["workflows", "skills", "delivery", "method"]
+}

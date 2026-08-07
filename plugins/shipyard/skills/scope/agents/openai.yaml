@@ -1,0 +1,5 @@
+interface:
+  display_name: "Shipyard: scope"
+  short_description: "Segment 1: turn a raw ask into a confirmed problem statement"
+policy:
+  allow_implicit_invocation: false

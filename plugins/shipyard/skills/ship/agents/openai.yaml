@@ -1,0 +1,5 @@
+interface:
+  display_name: "Shipyard: ship"
+  short_description: "Segment 4: build to spec, verify independently, deliver on explicit acceptance"
+policy:
+  allow_implicit_invocation: false
