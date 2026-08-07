@@ -1,5 +1,7 @@
 # Machine / control state (ADR-0005: two-axis split — tracked docs/ vs gitignored .agents/)
-.agents/
+# Exception: .agents/skills/ holds vendored dev skills (installed via `npx skills`), tracked.
+.agents/*
+!.agents/skills/
 
 # Harness-managed worktrees / local state
 .claude/worktrees/
