@@ -27,6 +27,10 @@ for s in "${skills[@]}"; do
     err "$f: names orchestrate (generic-seam invariant: README only)"
   fi
 
+  if ! diff -q references/conventions.md "skills/$s/conventions.md" >/dev/null 2>&1; then
+    err "skills/$s/conventions.md missing or out of sync with references/conventions.md (canonical); re-copy it"
+  fi
+
   y="skills/$s/agents/openai.yaml"
   if [ ! -f "$y" ]; then
     err "$y missing (Codex explicit-only sidecar)"

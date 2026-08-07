@@ -7,9 +7,8 @@ disable-model-invocation: true
 # Shipyard router
 
 Concierge for the Shipyard delivery method, never its driver. The human
-invokes this to find footing, not to do work. Shared conventions live at
-`../../references/conventions.md` relative to this skill's directory; read
-them first.
+invokes this to find footing, not to do work. Read `conventions.md` beside
+this skill file first.
 
 1. **Locate the work.** Default home is `docs/shipyard/<work-slug>/` in this
    repo. An invocation argument names the slug; with no argument and several

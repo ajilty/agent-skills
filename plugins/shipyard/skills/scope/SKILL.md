@@ -10,18 +10,24 @@ Turn a raw ask into a confirmed problem. No solution talk: options, tools,
 and approaches belong to `/shape`; if they appear in a draft here, move them
 out and return to the problem.
 
-Read `../../references/conventions.md` (relative to this skill's directory)
-first: it defines the engagement ranking, escalation rules, silence
-semantics, dual outputs, and scaling rule this segment applies.
+The discipline is the intake canon: BABOK elicitation and current-state
+analysis, TOGAF's as-is baseline, Lean Six Sigma Define (the project
+charter, SIPOC), hypothesis-driven MECE framing. Establish from evidence,
+frame the problem as a hypothesis, bound it.
+
+Read `conventions.md` beside this skill file first: it defines the
+engagement ranking, escalation rules, silence semantics, dual outputs, and
+scaling rule this segment applies.
 
 ## Steps
 
 1. **Research before asking.** Establish from systems, docs, and data, not
    only from the human: who has the problem, what is true today, what
-   success looks like. Label every claim sourced or inferred.
-2. **Draw the boundary.** Explicitly in and explicitly out. An adjacent
-   problem discovered during research goes into the write-up as
-   out-of-scope, never silently into scope.
+   success looks like (BABOK elicitation over a TOGAF-style as-is baseline).
+   Label every claim sourced or inferred.
+2. **Draw the boundary.** Explicitly in and explicitly out, charter and
+   SIPOC discipline. An adjacent problem discovered during research goes
+   into the write-up as out-of-scope, never silently into scope.
 3. **Register assumptions inline as they form**, each with a stated default.
    A default must be reversible and inward-facing: contacting people,
    spending money, or anything that leaves the sandbox never rides on
@@ -33,8 +39,10 @@ semantics, dual outputs, and scaling rule this segment applies.
 5. **Present for confirmation, assert-don't-ask.** The message is: "I'm
    treating this as X affecting Y, scoped to Z, assuming A and B. Wrong
    anywhere?", plus at most one disconfirmation question: the single fact
-   that would most change the framing. Correcting is roughly 5x faster than
-   answering; a list of questions is this segment's failure mode.
+   that would most change the framing. This is hypothesis-driven framing:
+   state the hypothesis, hunt its disconfirmation. Correcting is roughly 5x
+   faster than answering; a list of questions is this segment's failure
+   mode.
 6. **Pause 1: stop.** The human confirms "this is the right problem" (about
    a two-minute read); this is the cheapest kill point in the flow. End by
    naming the next command: `/shape`. Do not begin direction work in this
