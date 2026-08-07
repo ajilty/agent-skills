@@ -13,6 +13,7 @@
         "Escalations are limited to material gaps and one-way doors the memo does not cover; the manager sees roughly two to four decisions",
         "Two-way doors are recorded in the decision log without escalation",
         "Settled memo decisions are not re-opened",
+        "No docs/adr directory is created in a repo that does not already keep one",
         "The segment stops at Pause 3 naming /ship"
       ]
     }

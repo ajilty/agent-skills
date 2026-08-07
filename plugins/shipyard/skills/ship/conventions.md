@@ -63,6 +63,18 @@ research surfaces detail the repo should not hold (a public repo; another
 organization's data), keep the artifacts summary-level, point to the source
 system for specifics, and record the reduction in the decision log.
 
+## Decision graduation
+
+A decision graduates from the decision log to the worked repo's `docs/adr/`
+only when all four hold: it was human-confirmed (a returned memo's pick, an
+approved one-way door), it is hard to reverse, it would surprise a future
+reader without context, and it was a real trade-off among genuine
+alternatives. Graduate only when the repo already keeps a `docs/adr/`
+(never impose the convention on one that doesn't), follow its numbering and
+index conventions, and cite the work-slug. The decision log remains the
+full record either way. Two-way doors and asserted-only decisions never
+graduate.
+
 ## Scaling rule
 
 Low-stakes reversible work may enter at `/shape` and finish with `/ship`

@@ -47,7 +47,9 @@ thinner baseline is itself recorded in the delta report.
    ownership and knowingly accepts residual defects; it does not assert
    there are none (about a one-minute read when upstream segments held).
 7. **Close the loop.** Append a brief post-ship note to the delta report:
-   what was learned, what to change upstream.
+   what was learned, what to change upstream. Amend or supersede any
+   graduated decision record (see conventions: decision graduation) that an
+   as-built deviation contradicts, so records track reality.
 
 Completion criterion: verification ran against `requirements.md` from a
 context independent of the builder, `delta-report.md` exists on disk, and
