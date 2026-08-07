@@ -31,6 +31,13 @@ for s in "${skills[@]}"; do
     err "skills/$s/conventions.md missing or out of sync with references/conventions.md (canonical); re-copy it"
   fi
 
+  e="skills/$s/evals/evals.json"
+  if [ ! -f "$e" ]; then
+    err "$e missing (skill-creator convention: evals live in the skill dir)"
+  elif [ "$(yq -oy '.skill_name' "$e")" != "$s" ]; then
+    err "$e: skill_name must be '$s'"
+  fi
+
   y="skills/$s/agents/openai.yaml"
   if [ ! -f "$y" ]; then
     err "$y missing (Codex explicit-only sidecar)"

@@ -16,7 +16,7 @@ fi
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 mkdir -p "$tmp/docs/shipyard/vuln-tracking-b"
-cp "$plugin"/tests/fixtures/vuln-tracking-b/* "$tmp/docs/shipyard/vuln-tracking-b/"
+cp "$plugin"/skills/shipyard/evals/files/vuln-tracking-b/* "$tmp/docs/shipyard/vuln-tracking-b/"
 cd "$tmp"
 
 # Positive contract: explicit invocation works and the router reads the

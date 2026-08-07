@@ -1,0 +1,30 @@
+{
+  "skill_name": "scope",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The manager invoked /scope with this ask, then went into meetings for the rest of the day: \"Our vulnerability scanner findings keep piling up and remediation tracking is a mess across teams. We need something better. Look into it.\" Use work-slug vuln-tracking. Follow the skill exactly and actually create the files it requires.",
+      "expected_output": "Research-first intake ending in an assert-style confirmation message and a hard stop at Pause 1.",
+      "files": [],
+      "expectations": [
+        "docs/shipyard/vuln-tracking/problem.md is created with a problem statement, sourced current state, explicit in/out boundary, and an assumption register with defaults",
+        "docs/shipyard/vuln-tracking/decision-log.md is created with entries marked asserted vs confirmed",
+        "The confirmation message asserts a framing (\"I'm treating this as...\") and asks at most one disconfirmation question",
+        "No list of questions is sent",
+        "No outward-facing action (contacting people, spending, leaving the sandbox) is taken or set as a silence-default",
+        "The segment stops at Pause 1 and names /shape as the next command"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "The manager invoked /scope with this ask and says: \"I'm at my desk, let's work through this together now.\" Ask: \"Our vulnerability scanner findings keep piling up and remediation tracking is a mess across teams. We need something better.\" Follow the skill exactly; the interview has just begun, so show your first message.",
+      "expected_output": "Interview mode: Socratic one-question-per-turn engagement while research still covers system-held facts.",
+      "files": [],
+      "expectations": [
+        "The opening move is a single question, not a broadcast assert and not a list of questions",
+        "The question carries a recommended answer to confirm or correct",
+        "Research precedes or accompanies the interview for facts systems can answer"
+      ]
+    }
+  ]
+}

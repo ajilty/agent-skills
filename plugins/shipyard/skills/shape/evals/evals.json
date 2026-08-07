@@ -1,0 +1,21 @@
+{
+  "skill_name": "shape",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The manager invoked /shape for work-slug vuln-tracking-b. Place the provided files at docs/shipyard/vuln-tracking-b/ first. Follow the skill exactly and actually create or append the files it requires.",
+      "expected_output": "Scored direction options ending in a markup-able decision memo and a hard stop at Pause 2.",
+      "files": ["evals/files/vuln-tracking-b/problem.md", "evals/files/vuln-tracking-b/decision-log.md"],
+      "expectations": [
+        "docs/shipyard/vuln-tracking-b/memo.md is created with desired state, gap assessment, and scored options",
+        "\"Do nothing\" and \"defer\" appear among the scored options",
+        "Options are scored as deltas from the accepted baseline, crediting existing controls",
+        "The memo ends with a copyable block the manager can mark up and return verbatim",
+        "A pre-mortem prompt is included",
+        "decision-log.md is appended to, not overwritten",
+        "The message presents the pivot, not the full scoring matrix",
+        "The segment stops at Pause 2 naming /spec and does not fabricate a returned memo"
+      ]
+    }
+  ]
+}

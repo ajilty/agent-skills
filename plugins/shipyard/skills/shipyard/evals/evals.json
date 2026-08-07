@@ -1,0 +1,17 @@
+{
+  "skill_name": "shipyard",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The manager invoked /shipyard vuln-tracking-b. Place the provided files at docs/shipyard/vuln-tracking-b/ first. Follow the skill exactly.",
+      "expected_output": "A few-line position report naming the exact next segment, with no segment work performed.",
+      "files": ["evals/files/vuln-tracking-b/problem.md", "evals/files/vuln-tracking-b/decision-log.md"],
+      "expectations": [
+        "The report states that scoping is complete and Pause 1 has been passed as confirmed",
+        "The report names /shape as the exact next command",
+        "Staleness is checked (assumptions past deadline, unreturned memos)",
+        "No segment work is performed; the skill only reads and reports"
+      ]
+    }
+  ]
+}

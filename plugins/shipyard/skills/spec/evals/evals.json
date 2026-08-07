@@ -1,0 +1,20 @@
+{
+  "skill_name": "spec",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The manager invoked /spec for work-slug vuln-tracking-c. Place the provided files at docs/shipyard/vuln-tracking-c/ first; the memo there has been returned by the manager. Follow the skill exactly. You will naturally hit design decisions while drafting (data model shape, sync frequency, auth handling within the read-only constraint, dashboard framework, alert thresholds, tag taxonomy, retry semantics, hosting target). Actually create the files the skill requires.",
+      "expected_output": "Testable requirements and a build spec, one-way doors escalated non-blockingly, hard stop at Pause 3.",
+      "files": ["evals/files/vuln-tracking-c/problem.md", "evals/files/vuln-tracking-c/memo.md", "evals/files/vuln-tracking-c/decision-log.md"],
+      "expectations": [
+        "docs/shipyard/vuln-tracking-c/requirements.md is created with testable, MoSCoW-prioritized requirements traceable to memo decisions",
+        "docs/shipyard/vuln-tracking-c/build-spec.md is created with architecture and rationale",
+        "Each escalated one-way door carries a default and a deadline, and work continues on the default rather than blocking",
+        "Escalations are limited to material gaps and one-way doors the memo does not cover; the manager sees roughly two to four decisions",
+        "Two-way doors are recorded in the decision log without escalation",
+        "Settled memo decisions are not re-opened",
+        "The segment stops at Pause 3 naming /ship"
+      ]
+    }
+  ]
+}
