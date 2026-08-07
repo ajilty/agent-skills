@@ -18,8 +18,14 @@ Push every human interaction as high up this list as possible:
 4. One pointed question
 5. Open-ended review (avoid)
 
-Never interview with question lists; assert and let the human correct.
+The default posture is assert-and-correct: never send a list of questions.
 Correcting is roughly 5x faster than answering.
+
+When the human is present and answering, interview instead: one question per
+turn, each carrying a recommended answer to confirm or correct, walking the
+open branches until none remain. Presence pre-pays the attention this
+ranking conserves; a broadcast assert in a live working session leaves
+head-held context unmined.
 
 ## Escalate on surprise, not schedule
 

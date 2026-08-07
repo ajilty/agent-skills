@@ -51,3 +51,16 @@ system when the repo is public).
 Harness-level integration results (explicit-only invocation verified
 end-to-end in the real CLI) live in `tests/integration.sh` and
 `docs/notes/2026-08-07-plugin-integration-testing.md`.
+
+## Field feedback round (2026-08-07, operator sandbox)
+
+Failing case from live operator testing: the operator invoked `/scope`
+interactively, present and ready to engage, and got the assert-and-correct
+broadcast instead of an interview; head-held context went unmined. Root
+cause: scope carried a single engagement posture tuned for the absent
+manager. Fix: a presence conditional in scope's engagement step and in the
+conventions (present-and-answering: Socratic one-question-per-turn, each
+question carrying a recommended answer; absent: assert with one
+disconfirmation question). GREEN probe with a present-human scenario passed:
+research first, then one question with a recommended answer on the most
+load-bearing branch, no question list, no broadcast assert.

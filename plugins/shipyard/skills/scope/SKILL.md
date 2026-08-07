@@ -36,15 +36,23 @@ scaling rule this segment applies.
    - `problem.md`: problem statement, current-state summary with sources,
      scope boundary (in/out), assumption register with defaults.
    - `decision-log.md`: prose log of what was asserted vs confirmed, by whom.
-5. **Present for confirmation, assert-don't-ask.** The message is: "I'm
-   treating this as X affecting Y, scoped to Z, assuming A and B. Wrong
-   anywhere?", plus at most one disconfirmation question: the single fact
-   that would most change the framing. This is hypothesis-driven framing:
-   state the hypothesis, hunt its disconfirmation. Correcting is roughly 5x
-   faster than answering; a list of questions is this segment's failure
-   mode.
+5. **Engage by presence.**
+   - Human absent or briefly available: present for confirmation,
+     assert-don't-ask. The message is: "I'm treating this as X affecting Y,
+     scoped to Z, assuming A and B. Wrong anywhere?", plus at most one
+     disconfirmation question: the single fact that would most change the
+     framing. Hypothesis-driven framing: state the hypothesis, hunt its
+     disconfirmation. A list of questions sent to an absent human is this
+     segment's failure mode.
+   - Human present and answering: interview instead, Socratic and
+     one-question-per-turn, each question carrying a recommended answer to
+     confirm or correct, walking the problem's branches (who has it, what
+     is true today, what success looks like, boundary, assumptions) until
+     none stay open. Research still answers what systems can answer; the
+     interview mines what only the human knows. Same artifacts either way.
 6. **Pause 1: stop.** The human confirms "this is the right problem" (about
-   a two-minute read); this is the cheapest kill point in the flow. End by
+   a two-minute read; in interview mode the confirmation is the interview's
+   closing exchange); this is the cheapest kill point in the flow. End by
    naming the next command: `/shape`. Do not begin direction work in this
    session, even if the confirmation arrives immediately.
 
