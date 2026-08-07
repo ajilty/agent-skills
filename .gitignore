@@ -5,3 +5,4 @@
 
 # Harness-managed worktrees / local state
 .claude/worktrees/
+node_modules/

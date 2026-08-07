@@ -93,6 +93,19 @@ for (const d of ['src', 'bin', 'skills', 'profiles']) {
 }
 check('§6.1 zero send-capable tool names in plugin code', offenders.length === 0, offenders.join('; '));
 
+
+// ---- board smoke validator (M3 prerequisite; skipped when jsdom absent) ----
+try {
+  await import('jsdom');
+  const { execFileSync } = await import('child_process');
+  const out = execFileSync(process.execPath, [join(pluginRoot, 'src', 'board', 'validate.mjs')], { encoding: 'utf8' });
+  const lines = out.trim().split('\n');
+  check(`board validator ${lines.length} checks`, !lines.some((l) => l.startsWith('FAIL')), out);
+} catch (err) {
+  if (err?.code === 'ERR_MODULE_NOT_FOUND') results.push('SKIP board validator (jsdom not installed)');
+  else check('board validator', false, String(err.stdout ?? err.message ?? err));
+}
+
 rmSync(work, { recursive: true, force: true });
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

@@ -47,8 +47,14 @@ permissions are confirmed.
   dark-source isolation) pass `evals/run.mjs`.
 - Live ingestion is fail-closed per surface until its shapes are captured and
   `docs/measurements.md` exists (Build & Run §4 M1).
-- `src/board/validate.mjs` is adopted but inert: the `seam-board-v7.html`
-  reference was missing from the handoff folder; the board template graduates
-  at M3.
+- Board reference v7 is in hand: graduated to `src/board/template.html`, and
+  `src/board/validate.mjs` passes 15/15 against it. The M3 work is the
+  deterministic generator that renders this template from `board-data.json`.
 - Headless sync scheduling (Build & Run §5): to be verified against current
   Claude Code docs during M0 wrap-up and recorded here.
+
+## Dev dependency
+
+The board smoke validator needs `jsdom`: `npm install --no-save jsdom`, then
+`node src/board/validate.mjs`. It is not required for `evals/run.mjs`, which
+runs the board validator only when jsdom is present.
