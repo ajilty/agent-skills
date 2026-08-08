@@ -153,6 +153,23 @@ import { readdirSync as rds } from 'fs';
 const autoFiles = rds(join(corpusA, 'email')).filter((f) => f.startsWith('t-auto-'));
 check('corpus contains automation-noise substrate for FILTER path', autoFiles.length > 0, autoFiles.length + ' files');
 
+
+// ---- board generation: corpus → schema-valid board-data (M2/M3 first cut) ----
+import { generateBoard } from '../src/board/generate.mjs';
+const genStore = join(work, 'genstore'); initStore(genStore, 'personal');
+const genProfile = { profile: 'personal', store_root: genStore, sources: [
+  { surface: 'email', backend: 'fixture' }, { surface: 'slack', backend: 'fixture' }, { surface: 'calendar', backend: 'fixture' }] };
+syncOnce({ profile: genProfile, storeRoot: genStore, fixturesRoot: corpusA });
+let board, genErr = null;
+try { board = generateBoard({ storeRoot: genStore, profile: 'personal', watermarks: readWatermarks(genStore) }); }
+catch (e) { genErr = e.message; }
+check('board generates schema-valid from real corpus', !!board && !genErr, genErr || '');
+check('board respects Critical soft cap (<=5)', board && board.tiers.critical_now.length <= 5, board && JSON.stringify(board.tiers.critical_now.length));
+check('board: no external_unverified in Critical without corroboration',
+  board && board.tiers.critical_now.every((c) => c.urgency_origin !== 'external_unverified' || c.internal_corroboration));
+check('board: every claim has provenance ref',
+  board && Object.values(board.tiers).flat().every((c) => (c.claims||[]).every((cl) => !!cl.ref)));
+
 rmSync(work, { recursive: true, force: true });
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

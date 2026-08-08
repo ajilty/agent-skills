@@ -2,12 +2,16 @@
 // Envelope: {ts: ISO-8601, actor: "user"|"agent", type, ...payload}
 import { appendFileSync, readFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { isEventType } from '../model/schema.mjs';
 
 export function appendEvent(storeRoot, event) {
   if (event.actor !== 'user' && event.actor !== 'agent') {
     throw new Error(`ledger event rejected: actor must be "user" or "agent", got ${JSON.stringify(event.actor)}`);
   }
   if (!event.type) throw new Error('ledger event rejected: missing type');
+  if (!isEventType(event.type)) {
+    throw new Error(`ledger event rejected: type "${event.type}" not in the event enum (src/model/schema.mjs)`);
+  }
   const full = { ts: event.ts ?? new Date().toISOString(), ...event };
   const dir = join(storeRoot, 'events');
   mkdirSync(dir, { recursive: true });

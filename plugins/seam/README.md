@@ -23,6 +23,8 @@ src/sync.mjs          watermark + fingerprint ingestion pipeline
 src/board/            board template (M3) + jsdom smoke validator
 fixtures/             MCP-shaped mock responses (walkthrough scenarios)
 src/corpus/           synthetic UAT world (world.mjs) + deterministic generator
+src/model/schema.mjs  data-model contract: enums + board-data validation
+src/board/generate.mjs  corpus → schema-valid board-data (M2/M3 first cut)
 evals/run.mjs         the `make eval` gate: M0/M1 goldens + §6.1 banned-tools lint
 profiles/*.template   persona profile templates — instances copy, never commit
 skills/seam-sync/     /seam-sync skill for one sync pass
