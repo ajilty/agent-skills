@@ -22,6 +22,7 @@ src/adapters/         email / slack / calendar; fixture + live backends behind o
 src/sync.mjs          watermark + fingerprint ingestion pipeline
 src/board/            board template (M3) + jsdom smoke validator
 fixtures/             MCP-shaped mock responses (walkthrough scenarios)
+src/corpus/           synthetic UAT world (world.mjs) + deterministic generator
 evals/run.mjs         the `make eval` gate: M0/M1 goldens + §6.1 banned-tools lint
 profiles/*.template   persona profile templates — instances copy, never commit
 skills/seam-sync/     /seam-sync skill for one sync pass
@@ -40,6 +41,14 @@ node evals/run.mjs                    # the gate — must pass before live work
 
 The work profile template ships disabled; enable only after work-side MCP
 permissions are confirmed.
+
+## Synthetic world (dev + UAT)
+
+`node bin/seam.mjs corpus --out corpus-out --seed 42 --days 5 --per-day 300`
+materializes a reproducible ~1,230-message week for a fictional security leader
+across email/chat/calendar. It is the substrate for development and user-
+acceptance testing in place of a real mailbox; ground truth in
+`world-truth.json` lets inference be scored. See `src/corpus/README.md`.
 
 ## Status
 

@@ -125,6 +125,34 @@ try {
   else check('board validator', false, String(err.stdout ?? err.message ?? err));
 }
 
+
+// ---- synthetic corpus: durable UAT world, volume ingest, determinism ----
+import { generateCorpus } from '../src/corpus/generate.mjs';
+const corpusA = join(work, 'corpusA');
+const mA = generateCorpus({ outDir: corpusA, days: 5, seed: 42, perDay: 300 });
+const corpusB = join(work, 'corpusB');
+const mB = generateCorpus({ outDir: corpusB, days: 5, seed: 42, perDay: 300 });
+check('corpus deterministic on seed 42', JSON.stringify(mA.counts) === JSON.stringify(mB.counts), JSON.stringify(mA.counts));
+check('corpus is real-world volume (>200 msgs/day)', (mA.counts.email + mA.counts.slack) / mA.days > 200, JSON.stringify(mA.counts));
+const cStore = join(work, 'cstore'); initStore(cStore, 'personal');
+const cProfile = { profile: 'personal', store_root: cStore, sources: [
+  { surface: 'email', backend: 'fixture' }, { surface: 'slack', backend: 'fixture' }, { surface: 'calendar', backend: 'fixture' }] };
+const cFirst = syncOnce({ profile: cProfile, storeRoot: cStore, fixturesRoot: corpusA });
+check('corpus ingests all surfaces, none dark',
+  cFirst.email?.ok && cFirst.slack?.ok && cFirst.calendar?.ok
+  && cFirst.email.appended === mA.counts.email && cFirst.slack.appended === mA.counts.slack, JSON.stringify(cFirst));
+const cSecond = syncOnce({ profile: cProfile, storeRoot: cStore, fixturesRoot: corpusA });
+check('corpus re-sync idempotent at volume', cSecond.email.appended === 0 && cSecond.slack.appended === 0 && cSecond.calendar.appended === 0, JSON.stringify(cSecond));
+// ground truth present for inference scoring later
+import { readFileSync as rfs } from 'fs';
+const truth = JSON.parse(rfs(join(corpusA, 'world-truth.json'), 'utf8'));
+check('corpus ships ground truth (workstreams + identity collision)',
+  truth.workstreams.length > 0 && truth.identity_collisions.length > 0);
+// the FILTER/injection substrate exists in the corpus (poisoned automation body)
+import { readdirSync as rds } from 'fs';
+const autoFiles = rds(join(corpusA, 'email')).filter((f) => f.startsWith('t-auto-'));
+check('corpus contains automation-noise substrate for FILTER path', autoFiles.length > 0, autoFiles.length + ' files');
+
 rmSync(work, { recursive: true, force: true });
 console.log(results.join('\n'));
 process.exit(results.some((r) => r.startsWith('FAIL')) ? 1 : 0);

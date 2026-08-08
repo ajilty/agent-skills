@@ -10,6 +10,7 @@ import { seamHome, profilePath, activeProfileName, loadProfile } from '../src/li
 import { initStore, assertResidency } from '../src/lib/store.mjs';
 import { appendEvent, readEvents } from '../src/lib/ledger.mjs';
 import { syncOnce } from '../src/sync.mjs';
+import { generateCorpus } from '../src/corpus/generate.mjs';
 
 const pluginRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -44,6 +45,19 @@ try {
     assertResidency(profile.store_root, name);
     const results = syncOnce({ profile, storeRoot: profile.store_root, fixturesRoot: join(pluginRoot, 'fixtures') });
     console.log(JSON.stringify(results, null, 2));
+  } else if (cmd === 'corpus') {
+    // Materialize the synthetic UAT world (reproducible from seed). Canonical
+    // acceptance corpus is seed 42 / 5 days / 300 per-day. Output is gitignored.
+    const outDir = flag('out') ?? join(pluginRoot, 'corpus-out');
+    const m = generateCorpus({
+      outDir,
+      days: parseInt(flag('days') ?? '5', 10),
+      seed: parseInt(flag('seed') ?? '42', 10),
+      perDay: parseInt(flag('per-day') ?? '300', 10),
+    });
+    console.log(`synthetic world written to ${outDir}`);
+    console.log(JSON.stringify(m, null, 2));
+    console.log(`to ingest: point a sync at it — fixturesRoot=${outDir}`);
   } else if (cmd === 'ledger') {
     const name = activeProfileName();
     const { profile } = loadProfile(name);
@@ -52,7 +66,7 @@ try {
       console.log(JSON.stringify(e));
     }
   } else {
-    console.log('usage: seam <init|sync|ledger> [--profile name] [--type t] [--actor a]');
+    console.log('usage: seam <init|sync|corpus|ledger> [--profile name] [--out dir] [--days N] [--seed N] [--per-day N] [--type t] [--actor a]');
     process.exit(cmd ? 1 : 0);
   }
 } catch (err) {
