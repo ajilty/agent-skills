@@ -29,3 +29,24 @@ Buys and builds. Cares about: total cost of ownership, buy-vs-build, whether an
 n=1 personal tool has any commercial path, what breaks at ten users, compliance
 cost per seat. Allergic to: projects that are really a hobby wearing a product's
 clothes.
+
+## P5 · Alex Cursi — Head of Security Engineering, mid-size tech (the target user)
+The person Seam is actually for, reviewing round 2 with the intent brief in hand.
+Runs a security org, owes answers up to a CISO and out to auditors, and lives in
+Ghostty + tmux by choice. Would run this daily on his own mailbox — and would
+also read the source, the ledger, and the eval suite before trusting it near his
+mail. Wants both at once: a triage that genuinely saves the morning reassembly,
+and an audit trail he'd stake his own credibility on. Allergic to: tools that
+need grooming, apologetic day-one states, and trust theater (badges over
+unbuilt code). His question is never "is this clever" — it's "does this catch
+the person I'm about to drop, and can I prove what it did."
+
+---
+
+## Round 2 protocol
+Each persona receives `INTENT-BRIEF.md` FIRST, then reviews the revised artifacts
+(`ui/`, `docs/`, `site/`). The ask shifts from round 1's "what is this and is it
+any good" to "given the stated intent, does this execution serve it — and where
+does it still misrepresent, undersell, or contradict the intent." Round-1
+objections that were addressed should be acknowledged as closed; the signal we
+want is what's *left*.
