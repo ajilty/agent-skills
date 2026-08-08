@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- The board renders attacker-influenced content (message snippets, discovered
+     links) into a page opened in the user's logged-in browser. Strict CSP: no
+     remote origins, no inline/remote script beyond the board's own, so an injected
+     tag cannot exfiltrate on render. Fonts are system-stack, never fetched. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
 <title>Seam — v7</title>
 <style>
   :root{
@@ -664,11 +669,18 @@ function openClaim(ref,label){logEvent({type:"claim_provenance_opened",claim:lab
 function tierChip(it){if(!(it.tier in TIER_LABEL))return '';
  if(it.provisional)return '<button class="tier-chip hollow" title="AI-assigned, unconfirmed — tap to confirm" onclick="event.stopPropagation();confirmTier(\''+it.id+'\')">'+TIER_LABEL[it.tier]+' · provisional</button>';
  return '<span class="tier-chip" title="confirmed by you">'+TIER_LABEL[it.tier]+' ✓</span>';}
+// Untrusted-content escaping. Every field sourced from a message — sender,
+// snippet, discovered link — is attacker-controllable and must never reach
+// innerHTML or an attribute raw. esc() for text/attribute context; escAttrJs()
+// for the value inside a single-quoted on* handler. M3's generator must route
+// ALL sender-derived fields through these; this is the load-bearing render rule.
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function escAttrJs(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/[<>"]/g,c=>({'<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function msgRow(m){
  return '<div class="msg"><div class="msg-ico">'+ICONS[m.src]+'</div><div class="msg-body">'
-  +'<div class="msg-head"><span class="msg-from">'+m.from+'</span><span class="msg-time">'+m.time+'</span></div>'
-  +'<div class="msg-snippet">"'+m.snip+'"</div></div>'
-  +'<a class="lnk msg-open" href="#" onclick="return openLink(\''+m.link+'\')">open <span class="ext">↗</span></a></div>';
+  +'<div class="msg-head"><span class="msg-from">'+esc(m.from)+'</span><span class="msg-time">'+esc(m.time)+'</span></div>'
+  +'<div class="msg-snippet">"'+esc(m.snip)+'"</div></div>'
+  +'<a class="lnk msg-open" href="#" onclick="return openLink(\''+escAttrJs(m.link)+'\')">open <span class="ext">↗</span></a></div>';
 }
 function cardEl(it){
  const blk=inBlock(it.id);

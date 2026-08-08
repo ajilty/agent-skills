@@ -24,7 +24,10 @@ export function normalizeEmailThread(thread) {
       subject: header(m, 'Subject'),
       headers: { precedence: header(m, 'Precedence'), list_unsubscribe: header(m, 'List-Unsubscribe') },
       source_ref: { surface: 'email', threadId: thread.threadId, messageId: m.id },
-      fingerprint: createHash('sha256').update(`email|${m.id}|${ts}|${body}`).digest('hex').slice(0, 16),
+      // Identity keys on stable fields only. `snippet` (the body source here) is a
+      // provider-generated truncation and mutates under us; keying on it would
+      // re-fingerprint the corpus and silently re-append. id + ts is the durable key.
+      fingerprint: createHash('sha256').update(`email|${m.id}|${ts}`).digest('hex').slice(0, 16),
     };
   });
 }
@@ -42,7 +45,7 @@ export function emailAdapter(cfg, ctx) {
         const thread = JSON.parse(readFileSync(join(dir, f), 'utf8'));
         out.push(...normalizeEmailThread(thread));
       }
-      return out.filter((m) => !since || m.ts > since).sort((a, b) => a.ts.localeCompare(b.ts));
+      return out.filter((m) => !since || m.ts >= since).sort((a, b) => a.ts.localeCompare(b.ts));
     },
     fetchCurrent() { throw new Error('email has no fetchCurrent objects in v1'); },
     stageDraft() { throw new Error('draft staging is M4 — not yet implemented'); },

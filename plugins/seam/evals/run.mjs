@@ -60,6 +60,25 @@ const second = syncOnce(ctx);
 for (const [surface, want] of Object.entries(golden.rerun_appends)) {
   check(`M1 re-run idempotent on ${surface} (${want} new)`, second[surface]?.appended === want, JSON.stringify(second[surface]));
 }
+// Same-second watermark boundary: a message arriving at exactly high_water must
+// not be dropped. Regression for the `> since` → `>= since` fix.
+import { normalizeEmailThread } from '../src/adapters/email.mjs';
+const boundary = normalizeEmailThread({ threadId: 't-bound', messages: [
+  { id: 'b1', payload: { headers: [
+    { name: 'Date', value: 'Tue, 4 Aug 2026 07:05:12 -0400' }, { name: 'From', value: 'a@x.com' }] }, snippet: 'first' },
+  { id: 'b2', payload: { headers: [
+    { name: 'Date', value: 'Tue, 4 Aug 2026 07:05:12 -0400' }, { name: 'From', value: 'b@x.com' }] }, snippet: 'second' },
+]});
+const hw = boundary[0].ts; // pretend only b1 was stored last pull
+const survives = boundary.filter((m) => m.ts >= hw).some((m) => m.id === 'email:b2');
+check('M1 same-second message at watermark is not dropped', survives);
+// Fingerprint stability: snippet churn must not change the identity key.
+const fp1 = normalizeEmailThread({ threadId: 't-fp', messages: [
+  { id: 'z', payload: { headers: [{ name: 'Date', value: 'Tue, 4 Aug 2026 07:05:12 -0400' }] }, snippet: 'v1 truncation' }]})[0].fingerprint;
+const fp2 = normalizeEmailThread({ threadId: 't-fp', messages: [
+  { id: 'z', payload: { headers: [{ name: 'Date', value: 'Tue, 4 Aug 2026 07:05:12 -0400' }] }, snippet: 'v2 DIFFERENT truncation' }]})[0].fingerprint;
+check('M1 fingerprint stable across snippet churn', fp1 === fp2);
+
 const rawDays = readdirSync(join(storeRoot, 'raw', 'email'));
 check('M1 raw JSONL laid out by day', rawDays.length >= 1 && rawDays.every((f) => /^\d{4}-\d{2}-\d{2}\.jsonl$/.test(f)), rawDays.join(','));
 const syncEvents = readEvents(storeRoot, { type: 'sync_requested' });

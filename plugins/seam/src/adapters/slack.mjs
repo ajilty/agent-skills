@@ -34,7 +34,7 @@ export function slackAdapter(cfg, ctx) {
       for (const f of readdirSync(dir).filter((f) => f.endsWith('.json')).sort()) {
         out.push(...normalizeSlackRead(JSON.parse(readFileSync(join(dir, f), 'utf8'))));
       }
-      return out.filter((m) => !since || m.ts > since).sort((a, b) => a.ts.localeCompare(b.ts));
+      return out.filter((m) => !since || m.ts >= since).sort((a, b) => a.ts.localeCompare(b.ts));
     },
     fetchCurrent() { throw new Error('slack has no fetchCurrent objects in v1'); },
     stageDraft() { throw new Error('draft staging is M4 — not yet implemented'); },

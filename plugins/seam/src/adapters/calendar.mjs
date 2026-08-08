@@ -35,7 +35,7 @@ export function calendarAdapter(cfg, ctx) {
       for (const f of readdirSync(dir).filter((f) => f.endsWith('.json')).sort()) {
         out.push(...normalizeCalendarEvent(JSON.parse(readFileSync(join(dir, f), 'utf8')), f));
       }
-      return out.filter((m) => !since || m.ts > since).sort((a, b) => a.ts.localeCompare(b.ts));
+      return out.filter((m) => !since || m.ts >= since).sort((a, b) => a.ts.localeCompare(b.ts));
     },
     fetchCurrent() { throw new Error('calendar fetchCurrent lands with anchors (wave 2)'); },
     stageDraft() { throw new Error('calendar stages holds, not drafts'); },
