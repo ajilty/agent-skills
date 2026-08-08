@@ -50,5 +50,24 @@ w.assignBlock('act_103','cal_f1');
 check('schedule: card left board',!d.getElementById('act_103')||d.getElementById('cal_f1').textContent.includes('1'));
 w.openReview();
 check('review friday modal opens',d.getElementById('overlay').classList.contains('open'));
+
+// Escape-by-default guard: no sender-derived field may reach innerHTML or an on*
+// attribute raw. Fails on the round-2 defect class (title/whyNow/context/attachment
+// concatenated unescaped). Any new raw interpolation of these must go through esc/escAttrJs.
+const src=readFileSync(templatePath,'utf8');
+const rawPats=[
+  /\+it\.(title|whyNow|context|type)\b(?!\s*\))/,        // it.title etc not wrapped
+  /openLink\('\s*\+\s*(a\[|it\.|f\.|m\.)/,             // openLink(' + rawvar  (unescaped url in onclick)
+];
+const rawHits=[];
+for(const re of rawPats){ if(re.test(src)) rawHits.push(String(re)); }
+// Flag a sender-derived field only when it sits BETWEEN two string literals —
+// the HTML-sandwich signature ( '...'+field+'...' ) — and is not wrapped in
+// esc()/escAttrJs(). This excludes ledger/log value strings like `"+f.val,`.
+const fields='it\\.title|it\\.whyNow|it\\.context|a\\[1\\]|a\\[0\\]|f\\.name|f\\.val|f\\.prov|f\\.anchor|f\\.anchorLabel|m\\.snip|m\\.link';
+const bad=[...src.matchAll(new RegExp("['\"]\\s*\\+\\s*("+fields+")\\s*\\+\\s*['\"]",'g'))]
+  .filter(m=>{const pre=src.slice(Math.max(0,m.index-11),m.index); return !/esc\(|escAttrJs\(/.test(pre);});
+check('XSS guard: no raw sender-derived field in render paths ('+bad.length+' raw)', bad.length===0);
+
 console.log(results.join('\n'));
 process.exit(results.some(r=>r.startsWith('FAIL'))?1:0);

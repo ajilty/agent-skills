@@ -267,17 +267,19 @@ a{color:var(--link)}
         Applying it is a write, so it stays your move.</p>
     </div>
 
-    <button class="btn ledgerbtn" onclick="var l=document.getElementById('ledger');l.classList.toggle('open')">Show store ledger</button>
+    <button class="btn ledgerbtn" onclick="var l=document.getElementById('ledger');l.classList.toggle('open')">Show store ledger (illustrative)</button>
     <div class="ledger" id="ledger"><div class="lb">
 <div>{<span class="k">"ts"</span>:"2026-08-07T07:42:03Z",<span class="k">"actor"</span>:"agent",<span class="k">"type"</span>:"sync_requested",<span class="k">"result"</span>:{"email":{"ok":true,"appended":31},"calendar":{"ok":true,"appended":4}}}</div>
-<div>{<span class="k">"ts"</span>:"2026-08-07T07:42:08Z",<span class="k">"actor"</span>:"agent",<span class="k">"type"</span>:"model_call",<span class="k">"provider"</span>:"anthropic","model":"claude","message_ids":["email:m-5001a","email:m-6001a"],"bytes_sent":2841}</div>
-<div>{<span class="k">"ts"</span>:"2026-08-07T07:42:09Z",<span class="k">"actor"</span>:"agent",<span class="k">"type"</span>:"tier_assigned",<span class="k">"action"</span>:"act_201","tier":"critical","reason":"internal corroboration + extracted deadline"}</div>
-<div>{<span class="k">"ts"</span>:"2026-08-07T07:42:09Z",<span class="k">"actor"</span>:"agent",<span class="k">"type"</span>:"external_urgency_flagged",<span class="k">"action"</span>:"act_204","verdict":"uncorroborated — held at opportunity"}</div>
-<div>{<span class="k">"ts"</span>:"2026-08-07T07:42:09Z",<span class="k">"actor"</span>:"agent",<span class="k">"type"</span>:"injection_attempt_logged","source":"email:m-7002a","note":"body-sourced filter instruction ignored"}</div>
+<div>{<span class="k">"ts"</span>:"2026-08-07T07:42:08Z",<span class="k">"actor"</span>:"agent",<span class="k">"type"</span>:"model_call"<span style="color:#8A5A16"> ·designed</span>,<span class="k">"provider"</span>:"anthropic","model":"claude","message_ids":["email:m-5001a","email:m-6001a"],"bytes_sent":2841}</div>
+<div>{<span class="k">"ts"</span>:"2026-08-07T07:42:09Z",<span class="k">"actor"</span>:"agent",<span class="k">"type"</span>:"tier_assigned"<span style="color:#8A5A16"> ·designed</span>,<span class="k">"action"</span>:"act_201","tier":"critical","reason":"internal corroboration + extracted deadline"}</div>
+<div>{<span class="k">"ts"</span>:"2026-08-07T07:42:09Z",<span class="k">"actor"</span>:"agent",<span class="k">"type"</span>:"external_urgency_flagged"<span style="color:#8A5A16"> ·designed</span>,<span class="k">"action"</span>:"act_204","verdict":"uncorroborated — held at opportunity"}</div>
+<div>{<span class="k">"ts"</span>:"2026-08-07T07:42:09Z",<span class="k">"actor"</span>:"agent",<span class="k">"type"</span>:"injection_attempt_logged"<span style="color:#8A5A16"> ·designed</span>,"source":"email:m-7002a","note":"body-sourced filter instruction ignored"}</div>
 <div>{<span class="k">"ts"</span>:"2026-08-07T08:03:44Z",<span class="k">"actor"</span>:"user",<span class="k">"type"</span>:"tier_confirmed",<span class="k">"action"</span>:"act_205"}</div>
     </div></div>
-    <p class="note">The ledger answers "what did it do while I was away" — including every model call and
-      every ignored injection attempt. Off-screen by default; one click to audit.</p>
+    <p class="note">Illustrative seed. Events tagged <span style="color:#8A5A16">·designed</span> come from
+      engines not yet built (story compilation, urgency capping, injection adjudication, model-call
+      logging) — shown here to convey intent, not because they fired. Real today: sync, and your own
+      confirmations. The shipped ledger will only ever record what actually happened.</p>
   </main>
 </div>
 

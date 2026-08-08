@@ -597,12 +597,12 @@ function renderCfg(){
    +(p.ok?'<span class="conf-ok">auto-merged ✓</span>'
      :'<span class="conf-sus">holding pen <button class="btn btn-sm" onclick="mergeOk()">Confirm merge</button></span>')+'</div>').join('')+'</div>'
  +'<div class="cfg-sec"><div class="cfg-sec-title">Workspaces</div>'
- +c.sanctioned.map(s=>'<div class="space-row"><span class="space-ico">'+ICONS[s[0]]+'</span>'+s[1]+'<span style="font-size:11px;color:var(--moss)">sanctioned ✓</span></div>').join('')
- +c.observed.map(s=>'<div class="space-row"><span class="space-ico">'+ICONS[s[0]]+'</span>'+s[1]+'<span class="obs">observed outside sanctioned</span>'
+ +c.sanctioned.map(s=>'<div class="space-row"><span class="space-ico">'+ICONS[s[0]]+'</span>'+esc(s[1])+'<span style="font-size:11px;color:var(--moss)">sanctioned ✓</span></div>').join('')
+ +c.observed.map(s=>'<div class="space-row"><span class="space-ico">'+ICONS[s[0]]+'</span>'+esc(s[1])+'<span class="obs">observed outside sanctioned</span>'
    +'<button class="btn btn-sm" onclick="sanction()">Add to sanctioned</button><button class="btn btn-sm btn-ghost" onclick="keepFlag()">Keep flagged</button></div>').join('')+'</div>'
  +'<div class="cfg-sec"><div class="cfg-sec-title">Anchors — formal systems</div>'
  +(c.anchors.length?c.anchors.map(a=>'<div class="space-row"><span class="space-ico">'+ICONS[a[0]==='wiki'?'wiki':a[0]]+'</span>'
-   +'<a class="lnk" href="#" onclick="return openLink(\''+a[2]+'\')">'+a[1]+' <span class="ext">↗</span></a></div>').join('')
+   +'<a class="lnk" href="#" onclick="return openLink(\''+escAttrJs(a[2])+'\')">'+esc(a[1])+' <span class="ext">↗</span></a></div>').join('')
   :'<div class="space-row" style="color:var(--ink-soft)">none — this stream lives only in the overlay</div>')
  +'<div class="space-row"><button class="btn btn-sm" onclick="addAnchor()">+ Link an anchor</button></div></div>'
  +'<div class="cfg-sec"><div class="cfg-sec-title">Reporting</div>'
@@ -687,10 +687,10 @@ function cardEl(it){
  return '<div class="card '+(it.provisional?'provisional ':'')+(WS[it.ws].profile==='personal'?'personal ':'')+'" id="'+it.id+'" draggable="true" ondragstart="dragStart(event,\''+it.id+'\')" style="border-left-color:'+WS[it.ws].color+'">'
   +'<div class="card-top">'
   +(it.unread?'<span class="unread-dot" title="new since last visit"></span>':'')
-  +'<span class="type-badge">'+it.type+'</span>'
-  +'<div class="card-title">'+it.title+'</div>'+tierChip(it)
-  +'<button class="menu-btn" aria-label="Actions" onclick="openMenu(event,\''+it.id+'\')">⋯</button></div>'
-  +'<div class="story"><b>WHY NOW</b> — '+it.whyNow+'<br><b>CONTEXT</b> — '+it.context+'</div>'
+  +'<span class="type-badge">'+esc(it.type)+'</span>'
+  +'<div class="card-title">'+esc(it.title)+'</div>'+tierChip(it)
+  +'<button class="menu-btn" aria-label="Actions" onclick="openMenu(event,\''+escAttrJs(it.id)+'\')">⋯</button></div>'
+  +'<div class="story"><b>WHY NOW</b> — '+esc(it.whyNow)+'<br><b>CONTEXT</b> — '+esc(it.context)+'</div>'
   +'<div class="chips">'+it.chips.map(chipEl).join('')
    +'<span class="chip effort">'+it.effort+' · '+EFFORT_MIN[it.effort]+'m</span>'
    +(blk?'<span class="chip staged">→ '+blk.label+' '+blk.time+'</span>':'')
@@ -701,7 +701,7 @@ function cardEl(it){
   +'</div>'
   +'<div class="msgs">'+it.msgs.map(msgRow).join('')
   +(it.attachments.length?'<div class="attach"><span class="attach-label">LINKS FOUND</span>'
-    +it.attachments.map(a=>'<a href="#" onclick="return openLink(\''+a[1]+'\')">'+a[0]+' ↗</a>').join('')+'</div>':'')
+    +it.attachments.map(a=>'<a href="#" onclick="return openLink(\''+escAttrJs(a[1])+'\')">'+esc(a[0])+' ↗</a>').join('')+'</div>':'')
   +'</div></div>';
 }
 function render(){
@@ -1129,15 +1129,15 @@ function renderReflect(){
 }
 function factCard(f){
  if(f.status==='pending')return '<div class="fact" style="border-style:dashed">'
-  +'<div class="fact-row"><span class="unread-dot"></span><span class="fact-name">'+f.name+'</span><span class="fact-val">'+f.val+'</span></div>'
-  +'<div class="fact-meta"><span class="chip extclaim">'+f.srcNote+'</span>'
-  +'<a class="lnk" href="#" onclick="return openLink(\''+f.prov+'\')">provenance <span class="ext">↗</span></a></div>'
-  +'<div class="card-actions"><button class="btn btn-sm btn-ink" onclick="resolveFact(\''+f.id+'\',\'promoted\')">✓ Promote fact</button>'
-  +'<button class="btn btn-sm btn-ghost" onclick="resolveFact(\''+f.id+'\',\'dismissed\')">Dismiss</button></div></div>';
+  +'<div class="fact-row"><span class="unread-dot"></span><span class="fact-name">'+esc(f.name)+'</span><span class="fact-val">'+esc(f.val)+'</span></div>'
+  +'<div class="fact-meta"><span class="chip extclaim">'+esc(f.srcNote)+'</span>'
+  +'<a class="lnk" href="#" onclick="return openLink(\''+escAttrJs(f.prov)+'\')">provenance <span class="ext">↗</span></a></div>'
+  +'<div class="card-actions"><button class="btn btn-sm btn-ink" onclick="resolveFact(\''+escAttrJs(f.id)+'\',\'promoted\')">✓ Promote fact</button>'
+  +'<button class="btn btn-sm btn-ghost" onclick="resolveFact(\''+escAttrJs(f.id)+'\',\'dismissed\')">Dismiss</button></div></div>';
  const meta=f.status==='lagging'
-  ?'<span class="anchor-lag">wiki lagging</span><a class="lnk" href="#" onclick="return openLink(\''+f.anchor+'\')">'+f.anchorLabel+' <span class="ext">↗</span></a><button class="btn btn-sm" onclick="stageWiki()">Stage wiki update</button>'
-  :'<span class="anchor-ok">✓ verified in wiki 07:42 — auto-retires next pass</span><a class="lnk" href="#" onclick="return openLink(\''+f.anchor+'\')">'+f.anchorLabel+' <span class="ext">↗</span></a>';
- return '<div class="fact"><div class="fact-row"><span class="fact-name">'+f.name+'</span><span class="fact-val">'+f.val+'</span></div><div class="fact-meta">'+meta+'</div></div>';
+  ?'<span class="anchor-lag">wiki lagging</span><a class="lnk" href="#" onclick="return openLink(\''+escAttrJs(f.anchor)+'\')">'+esc(f.anchorLabel)+' <span class="ext">↗</span></a><button class="btn btn-sm" onclick="stageWiki()">Stage wiki update</button>'
+  :'<span class="anchor-ok">✓ verified in wiki 07:42 — auto-retires next pass</span><a class="lnk" href="#" onclick="return openLink(\''+escAttrJs(f.anchor)+'\')">'+esc(f.anchorLabel)+' <span class="ext">↗</span></a>';
+ return '<div class="fact"><div class="fact-row"><span class="fact-name">'+esc(f.name)+'</span><span class="fact-val">'+esc(f.val)+'</span></div><div class="fact-meta">'+meta+'</div></div>';
 }
 function renderKnow(){
  const pend=FACTS.filter(f=>f.status==='pending'&&(!filterWs||f.ws===filterWs));
