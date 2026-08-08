@@ -38,9 +38,10 @@ export const TIER_STATE = ['provisional', 'confirmed'];
 export const URGENCY_ORIGIN = ['internal', 'external_unverified'];
 export const EFFORT = ['S', 'M', 'L'];
 export const WORKSTREAM_PROFILE = ['work', 'personal'];
-// Identity confidence tiers (spec §3 lifecycle): full-address auto-merge,
-// holding pen for suspected, explicit cross-reference for unrelated handles.
-export const IDENTITY_TIER = ['full_match', 'holding_pen', 'cross_reference'];
+// Identity confidence tiers (spec §3 lifecycle): auto_merged = same full email
+// across surfaces; suspected = same name at a different domain, held, never
+// merged on name alone; linked = unrelated handle tied by explicit evidence.
+export const IDENTITY_TIER = ['auto_merged', 'suspected', 'linked'];
 export const FRESHNESS = ['ok', 'dark'];
 
 // Ledger event vocabulary (Build & Run §8) — the append-only envelope's `type`.
