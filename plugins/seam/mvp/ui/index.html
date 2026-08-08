@@ -128,9 +128,9 @@ a{color:var(--link)}
 <header class="top">
   <span class="wordmark">Seam</span>
   <div class="modes" role="tablist">
-    <button class="mode" role="tab" aria-selected="true">Operate <span class="b alert" id="bOp">4</span></button>
-    <button class="mode" role="tab" aria-selected="false">Reflect <span class="b">1</span></button>
-    <button class="mode" role="tab" aria-selected="false">Know <span class="b">2</span></button>
+    <button class="mode" role="tab" aria-selected="true">Operate <span class="b alert" id="bOp" title="unread items needing you in actionable tiers">2</span></button>
+    <button class="mode" role="tab" aria-selected="false">Reflect <span class="b" title="designed — not in this build">0</span></button>
+    <button class="mode" role="tab" aria-selected="false">Know <span class="b" title="designed — not in this build">0</span></button>
   </div>
   <div class="fresh">
     <span class="chip">email 07:42</span>
@@ -152,6 +152,7 @@ a{color:var(--link)}
   <aside class="rail">
     <div class="seeded">Seeded from your 10-min setup — 3 workstreams, 6 people. Tiering is live, not settling.</div>
     <h3>Workstreams</h3>
+    <p class="note" style="margin-top:-2px">Anchor = the formal work item a stream maps to (a tracker ticket), if any.</p>
     <div class="ws" data-sel="1">
       <div class="n">SecureTooling renewal</div>
       <div class="m">6 messages · 3 open · anchor: none</div>
@@ -187,10 +188,10 @@ a{color:var(--link)}
       <div class="cards">
         <div class="card prov">
           <div class="hd"><span class="unread"></span><span class="badge review">REVIEW</span>
-            <span class="tchip">CRITICAL · provisional</span></div>
+            <button class="tchip" onclick="confirmChip(this,'CRITICAL')">CRITICAL · provisional</button></div>
           <div class="ti">Confirm the credential-reset blast radius before the 10:00 all-staff notice.</div>
           <div class="ln"><span class="lbl">WHY NOW</span> Internal confirmation of 2 clicks;
-            notice deadline <span class="claim">10:00 today</span>.</div>
+            notice deadline <span class="claim" onclick="revealProv(this,'email:m-5001b · E. Vance 08:12')">10:00 today</span>.</div>
           <div class="ln"><span class="lbl">CONTEXT</span> Reported phish hit 12 mailboxes; resets in progress.</div>
           <div class="sig"><span class="chip">date extracted</span><span class="chip">internally corroborated</span>
             <span class="chip">2 surfaces</span></div>
@@ -206,12 +207,12 @@ a{color:var(--link)}
         </div>
 
         <div class="card prov moss">
-          <div class="hd"><span class="badge nudge">NUDGE · waiting</span><span class="tchip">CRITICAL · provisional</span></div>
+          <div class="hd"><span class="badge nudge">NUDGE · waiting</span><button class="tchip" onclick="confirmChip(this,'CRITICAL')">CRITICAL · provisional</button></div>
           <div class="ti">Chase the purge confirmation you asked for 2 hours ago.</div>
           <div class="ln"><span class="lbl">WHY NOW</span> Your ask at
             <span class="claim">08:10</span>, no reply, incident SLA 2h.</div>
           <div class="ln"><span class="lbl">CONTEXT</span> Purge across 12 mailboxes still unconfirmed.</div>
-          <div class="sig"><span class="chip">from your sent mail</span><span class="chip">silent 2h 04m</span></div>
+          <div class="sig"><span class="chip">from your sent mail</span><span class="chip">silent 2h 04m</span><span class="chip warn">mail-only — a reply in chat/in person isn't seen</span></div>
           <div class="act"><a class="deep" href="#" onclick="return false">Open thread in mail</a></div>
         </div>
       </div>
@@ -222,7 +223,7 @@ a{color:var(--link)}
       <div class="cards">
         <div class="card prov ochre">
           <div class="hd"><span class="unread"></span><span class="badge reply">REPLY</span>
-            <span class="tchip">OPPORTUNITY · provisional</span></div>
+            <button class="tchip" onclick="confirmChip(this,'OPPORTUNITY')">OPPORTUNITY · provisional</button></div>
           <div class="ti">Respond to the renewal quote before Friday's claimed pricing deadline.</div>
           <div class="ln"><span class="lbl">WHY NOW</span> Vendor says
             <span class="claim">pricing expires Friday</span> — sender-claimed, unverified.</div>
@@ -287,6 +288,11 @@ a{color:var(--link)}
 document.querySelectorAll('.mode').forEach(m=>m.addEventListener('click',()=>{
   document.querySelectorAll('.mode').forEach(x=>x.setAttribute('aria-selected','false'));
   m.setAttribute('aria-selected','true');}));
+function confirmChip(btn,tier){btn.textContent=tier+' \u2713';btn.classList.add('conf');
+  var card=btn.closest('.card'); if(card) card.classList.remove('prov');}
+function revealProv(el,src){if(el.dataset.open)return; el.dataset.open=1;
+  var s=document.createElement('span'); s.className='note'; s.style.marginLeft='6px';
+  s.textContent='\u2192 '+src; el.after(s);}
 document.querySelectorAll('.lens button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.lens button').forEach(x=>x.setAttribute('aria-pressed','false'));
   b.setAttribute('aria-pressed','true');}));

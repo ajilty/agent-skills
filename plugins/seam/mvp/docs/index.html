@@ -245,8 +245,20 @@ the alternative — implying nothing ever leaves — is the claim that would fai
       <td>Nowhere. Plain files under your <code>store_root</code>. No server, no account, no telemetry.</td></tr>
 </table>
 <p>Every model call is recorded in the ledger as a <code>model_call</code> event carrying the provider,
-the model, the message ids included, and the bytes sent — so "what left, and when" is answerable line
-by line, not asserted.</p>
+the exact <em>versioned</em> model id (not a family name), the message ids included, and the bytes sent
+— so "what left, and when" is answerable line by line, not asserted.</p>
+<h3>What the provider does with it</h3>
+<p>Naming the provider is half the disclosure; the other half is their handling terms. This section is
+filled from your provider's agreement, not asserted by us:</p>
+<table>
+  <tr><th>Question</th><th>Answer (from provider terms)</th></tr>
+  <tr><td>Retention window for submitted content</td><td><em>&lt;fill from DPA&gt;</em></td></tr>
+  <tr><td>Is submitted content used for training?</td><td><em>&lt;fill from DPA&gt;</em></td></tr>
+  <tr><td>DPA / BAA in place?</td><td><em>&lt;fill&gt;</em></td></tr>
+  <tr><td>Data-residency region</td><td><em>&lt;fill&gt;</em></td></tr>
+</table>
+<p class="note">Until these are filled for your provider, treat Seam as unfit for regulated mail. The
+seeding conversation also sends content (workstream and people names); it is covered by the same terms.</p>
 
 <h2 id="ledger">The ledger</h2>
 <p>Every state change — yours and Seam's — appends to <code>events/ledger-YYYY-MM.jsonl</code> with an

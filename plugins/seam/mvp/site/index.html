@@ -136,7 +136,7 @@ footer a{color:var(--ink-soft);text-decoration:none}
     <a class="btn primary lg" href="../ui/index.html">See the board</a>
     <a class="btn lg" href="../docs/index.html#install">How to install</a>
   </div>
-  <p class="fine">Runs on your machine · plain files you own · you approve every write · reads mail + calendar today</p>
+  <p class="fine">Runs on your machine · plain files you own · you approve every write · reads mail + calendar today · sees delegations made over mail</p>
 </div>
 <hr class="seam-rule" style="max-width:1120px;margin:0 auto">
 
@@ -148,7 +148,7 @@ footer a{color:var(--ink-soft);text-decoration:none}
   <div class="grid3">
     <div class="tile"><h3>Asks that went quiet</h3>
       <p>You delegated it, they said "midweek," it's Thursday and nobody has told you. Seam watches your
-      sent mail for the ask and the silence after it. This is the wedge.</p></div>
+      sent mail for the ask and the silence after it.</p></div>
     <div class="tile moss"><h3>Dates said in passing</h3>
       <p>The deadline that mattered was one clause in a Tuesday email. Seam extracts it and shows you the
       sentence it came from.</p></div>
@@ -224,7 +224,8 @@ footer a{color:var(--ink-soft);text-decoration:none}
       you chose. No server, no account, no telemetry.</p></div>
     <div class="box go"><h4>Goes to the model provider</h4>
       <p>The message text needed to compile a card — per compilation, nothing else. Recorded as a
-      <code>model_call</code> ledger event with provider, model, message ids, and bytes sent.</p></div>
+      <code>model_call</code> ledger event with provider, versioned model id, message ids, and bytes sent.
+      What the provider retains or trains on is disclosed from their terms in the docs — not asserted here.</p></div>
   </div>
 </section>
 
