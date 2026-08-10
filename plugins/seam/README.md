@@ -24,7 +24,8 @@ src/board/            board template (M3) + jsdom smoke validator
 fixtures/             MCP-shaped mock responses (walkthrough scenarios)
 src/corpus/           synthetic UAT world (world.mjs) + deterministic generator
 src/model/schema.mjs  data-model contract: enums + board-data validation
-src/board/generate.mjs  corpus → schema-valid board-data (M2/M3 first cut)
+src/board/generate.mjs  store → schema-valid board-data (clustering, tiering)
+src/board/render.mjs  board-data → static HTML (deterministic, escape-by-default)
 evals/run.mjs         the `make eval` gate: M0/M1 goldens + §6.1 banned-tools lint
 profiles/*.template   persona profile templates — instances copy, never commit
 skills/seam-sync/     /seam-sync skill for one sync pass
@@ -38,6 +39,7 @@ node bin/seam.mjs init --profile personal   # copies template to ~/.seam/profile
 # edit ~/.seam/profiles/personal.yaml: store_root, MCP bindings, principals
 node bin/seam.mjs init                # creates the store at store_root
 node bin/seam.mjs sync                # one pass; fixture backends until flipped live
+node bin/seam.mjs board               # regenerate the static board from the store
 node evals/run.mjs                    # the gate — must pass before live work
 ```
 

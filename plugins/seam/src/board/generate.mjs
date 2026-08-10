@@ -45,13 +45,41 @@ function cluster(messages) {
   const streams = new Map();
   for (const th of threads.values()) {
     th.msgs.sort((a, b) => a.ts.localeCompare(b.ts));
+    // Human-readable stream label; a raw channel id is not a workstream name.
+    const chan = th.key.replace('slack-channel:', '').replace(/^C-/, '');
     const tag = th.msgs.map((m) => wsTag(m.subject)).find(Boolean)
-      || (th.surface === 'slack' ? th.key.replace('slack-channel:', 'chan:') : 'untagged');
+      || (th.surface === 'slack'
+        ? chan.charAt(0) + chan.slice(1).toLowerCase() + ' channel'
+        : 'Unsorted');
     if (!streams.has(tag)) streams.set(tag, { name: tag, threads: [], surfaces: new Set() });
     streams.get(tag).threads.push(th);
     streams.get(tag).surfaces.add(th.surface);
   }
   return streams;
+}
+
+// Does this thread need the user AT ALL? The board shows what needs triage —
+// most traffic needs nothing. Without this gate every thread becomes a card and
+// the board is a second inbox (observed: 418 cards on a 5-day corpus). A thread
+// earns a card only on a concrete actionable signal.
+function needsUser(th, streamName) {
+  const msgs = th.msgs;
+  const senders = msgs.map((m) => addr(m.sender_raw));
+  const body = msgs.map((m) => `${m.subject || ''} ${m.body || ''}`).join(' ');
+  const others = senders.filter((s) => s && s !== PROTAGONIST);
+  const myLastIdx = senders.lastIndexOf(PROTAGONIST);
+  const repliedAfter = myLastIdx >= 0 && senders.slice(myLastIdx + 1).some((s) => s && s !== PROTAGONIST);
+  // 1. my own ask, unanswered — the wedge
+  if (myLastIdx >= 0 && !repliedAfter && ASK_LEX.test(body)) return 'delegation_silence';
+  // 2. a principal is in the thread
+  if (senders.some((s) => PRINCIPALS.has(s))) return 'principal';
+  // 3. an explicit date/deadline was extracted
+  if (DATE_LEX.test(body)) return 'date';
+  // 4. external party asserting urgency
+  if (others.some((s) => !s.endsWith('@' + INTERNAL_DOMAIN)) && URGENCY_LEX.test(body)) return 'external_urgency';
+  // 5. incident traffic with internal corroboration
+  if ((/incident|phish|sec/i.test(streamName) || th.key.includes('SECINC')) && CORROBORATION_LEX.test(body)) return 'incident';
+  return null; // ambient — no card
 }
 
 // Decide action type, tier, urgency origin for a thread. Deterministic rules,
@@ -97,7 +125,15 @@ function triage(th, streamName) {
 // Mechanical card compilation — placeholder prose under the real word budgets.
 function compileCard(th, streamName, tri, idx) {
   const last = th.msgs[th.msgs.length - 1];
-  const who = trunc(last.sender_raw?.replace(/<.*/, '') || 'someone', 3);
+  // For a nudge the subject is whoever owes YOU — never the protagonist
+  // ("chase yourself" is a bug). Prefer the last participant who isn't me;
+  // for a one-sided ask, fall back to the recipient the ask was sent to.
+  const clean = (v) => trunc(String(v || '').replace(/<.*/, '').replace(/["']/g, '').split('@')[0].replace(/[._]/g, ' ') || 'them', 3);
+  const other = [...th.msgs].reverse().find((m) => addr(m.sender_raw) !== PROTAGONIST);
+  const myAsk = [...th.msgs].reverse().find((m) => addr(m.sender_raw) === PROTAGONIST && (m.recipients || []).length);
+  const owed = other ? clean(other.sender_raw)
+    : clean((myAsk?.recipients || []).find((r) => addr(r) !== PROTAGONIST));
+  const who = tri.type === 'nudge' ? owed : clean(last.sender_raw);
   const titles = {
     nudge: `Chase ${who} on ${trunc(streamName, 4)}`,
     reply: `Reply on ${trunc(streamName, 5)}`,
@@ -133,12 +169,28 @@ export function generateBoard({ storeRoot, profile = 'personal', watermarks = {}
   const streams = cluster(messages);
   const cards = [];
   let idx = 0;
+  let ambient = 0;
   for (const stream of streams.values()) {
+    // Consolidate: within a workstream, threads sharing an action type are one
+    // card (the newest thread leads, the rest are folded in as related). Without
+    // this the board repeats the same story once per thread.
+    const byType = new Map();
     for (const th of stream.threads) {
-      // one card per actionable thread; skip pure automation/noise threads
       if (th.key.includes('auto-') || /noreply|newsletter|status\.example/i.test(th.msgs[0]?.sender_raw || '')) continue;
+      if (!needsUser(th, stream.name)) { ambient += 1; continue; }
       const tri = triage(th, stream.name);
-      cards.push(compileCard(th, stream.name, tri, idx++));
+      const key = `${tri.type}|${tri.tier}`;
+      if (!byType.has(key)) byType.set(key, { tri, threads: [] });
+      byType.get(key).threads.push(th);
+    }
+    for (const { tri, threads } of byType.values()) {
+      threads.sort((a, b) => b.msgs[b.msgs.length - 1].ts.localeCompare(a.msgs[a.msgs.length - 1].ts));
+      const lead = threads[0];
+      const card = compileCard(lead, stream.name, tri, idx++);
+      card.related_threads = threads.length - 1;
+      card.msgs = threads.flatMap((t) => t.msgs).sort((a, b) => b.ts.localeCompare(a.ts)).slice(0, 4)
+        .map((m) => ({ from: m.sender_raw, snip: trunc(m.body || '', 20), link: m.id }));
+      cards.push(card);
     }
   }
   // File into tiers; enforce Critical soft cap by demoting the lowest-signal overflow.
@@ -157,7 +209,7 @@ export function generateBoard({ storeRoot, profile = 'personal', watermarks = {}
     freshness: Object.fromEntries(Object.entries(watermarks).map(([s, w]) => [s, { state: w.dark ? 'dark' : 'ok', last_ok: w.last_ok }])),
     workstreams: [...streams.keys()].filter((k) => k !== 'untagged'),
     tiers,
-    counts: { messages: messages.length, cards: cards.length, workstreams: streams.size },
+    counts: { messages: messages.length, cards: cards.length, workstreams: streams.size, ambient_suppressed: ambient },
   };
   const violations = validateBoardData(board);
   if (violations.length) throw new Error('board-data failed schema validation:\n' + violations.join('\n'));

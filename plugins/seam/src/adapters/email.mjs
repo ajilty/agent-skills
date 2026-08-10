@@ -19,6 +19,10 @@ export function normalizeEmailThread(thread) {
       surface: 'email',
       workspace_ref: `email-thread:${thread.threadId}`,
       sender_raw: header(m, 'From'),
+      // Recipients are load-bearing: a delegation nudge must name who owes you,
+      // which is the recipient of your ask, not its sender.
+      recipients: [header(m, 'To'), header(m, 'Cc')].filter(Boolean)
+        .flatMap((v) => v.split(',').map((x) => x.trim())).filter(Boolean),
       ts,
       body,
       subject: header(m, 'Subject'),

@@ -54,11 +54,11 @@ export function generateCorpus({ outDir, days = 5, seed = 42, perDay = 300 } = {
     counts.slack += msgs.length;
   };
 
-  const emailMsg = (fromP, ts, subject, body) => ({
+  const emailMsg = (fromP, ts, subject, body, toP) => ({
     id: `m-${Math.floor(ts)}-${Math.floor(R() * 1e4)}`,
     payload: { headers: [
       { name: 'From', value: `${fromP.name} <${fromP.email}>` },
-      { name: 'To', value: PROTAGONIST.email },
+      { name: 'To', value: (toP || PROTAGONIST).email },
       { name: 'Date', value: new Date(ts * 1000).toUTCString() },
       { name: 'Subject', value: subject },
     ] }, snippet: body });
@@ -116,8 +116,11 @@ export function generateCorpus({ outDir, days = 5, seed = 42, perDay = 300 } = {
     if (d <= 1) {
       for (const ws of WORKSTREAMS.filter((w) => w.people.length)) {
         if (chance(0.5)) {
+          // the ask goes TO a person in the workstream — that is who owes a reply
+          const owedBy = person(pick(ws.people));
           emailFile(ws, d, 9000 + d, [emailMsg(PROTAGONIST, workTs(d),
-            `[${ws.name}] can you own this?`, `following up — ${pick(LEXICON[ws.flavour])}? need it by midweek`)]);
+            `[${ws.name}] can you own this?`,
+            `following up — ${pick(LEXICON[ws.flavour])}? need it by midweek`, owedBy)]);
         }
       }
     }

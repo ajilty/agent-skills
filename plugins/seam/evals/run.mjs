@@ -167,8 +167,28 @@ check('board generates schema-valid from real corpus', !!board && !genErr, genEr
 check('board respects Critical soft cap (<=5)', board && board.tiers.critical_now.length <= 5, board && JSON.stringify(board.tiers.critical_now.length));
 check('board: no external_unverified in Critical without corroboration',
   board && board.tiers.critical_now.every((c) => c.urgency_origin !== 'external_unverified' || c.internal_corroboration));
+check('board is a triage board, not a second inbox (<=25 cards)',
+  board && board.counts.cards <= 25, board && String(board.counts.cards));
+check('board suppresses ambient traffic (most messages produce no card)',
+  board && board.counts.ambient_suppressed > board.counts.cards, board && JSON.stringify(board.counts));
+check('nudge never names the protagonist (chase-yourself bug)',
+  board && Object.values(board.tiers).flat().filter((c) => c.type === 'nudge')
+    .every((c) => !/alex/i.test(c.title)),
+  board && JSON.stringify(Object.values(board.tiers).flat().filter((c) => c.type === 'nudge').map((c) => c.title)));
+check('no duplicate card titles within a tier',
+  board && Object.values(board.tiers).every((cs) => new Set(cs.map((c) => c.title)).size === cs.length));
+
 check('board: every claim has provenance ref',
   board && Object.values(board.tiers).flat().every((c) => (c.claims||[]).every((cl) => !!cl.ref)));
+
+// render: board-data → static HTML, escaped, interactive
+import { renderBoard } from '../src/board/render.mjs';
+let html = null, renderErr = null;
+try { html = board && renderBoard(board); } catch (e) { renderErr = e.message; }
+check('board renders to static HTML', !!html && !renderErr, renderErr || '');
+check('render escapes sender-derived text (no raw < from messages)',
+  !html || !/<script(?![ >])/i.test(html.replace(/<script>[\s\S]*?<\/script>/g, '')));
+check('render includes every card', !html || (html.match(/class="card /g) || []).length === board.counts.cards);
 
 rmSync(work, { recursive: true, force: true });
 console.log(results.join('\n'));
