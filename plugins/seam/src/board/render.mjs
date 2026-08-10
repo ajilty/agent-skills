@@ -69,9 +69,16 @@ export function renderBoard(board, { bodyOnly = false } = {}) {
   const streams = (board.workstreams || []).map((w) =>
     `<button class="ws-btn" data-ws="${esc(w)}">${esc(w)}</button>`).join('');
   const c = board.counts || {};
+  // The banner states the actual compilation state — never claims model-quality
+  // prose when the copy is mechanical, and vice versa.
+  const compileNote = board.compilation === 'model'
+    ? `Card prose is <b>model-compiled</b>, accepted only after passing the word-budget, external-marking and fence-echo linters.`
+    : board.compilation === 'mixed'
+      ? `Card prose is <b>mixed</b> — ${board.compile_stats?.applied ?? 0} model-compiled, ${board.compile_stats?.kept_mechanical ?? 0} fell back to mechanical after failing a linter.`
+      : `Card prose is <b>mechanical</b> (placeholder); structure, tiering and rules are real.`;
   const body = `
 <div class="proto">Generated from the synthetic world — ${c.messages} messages → ${c.cards} cards.
-  Card prose is <b>mechanical</b> (placeholder); structure, tiering and rules are real.</div>
+  ${compileNote}</div>
 <header class="top">
   <span class="wordmark">Seam</span>
   <div class="modes">

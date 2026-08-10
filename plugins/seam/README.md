@@ -26,6 +26,7 @@ src/corpus/           synthetic UAT world (world.mjs) + deterministic generator
 src/model/schema.mjs  data-model contract: enums + board-data validation
 src/board/generate.mjs  store → schema-valid board-data (clustering, tiering)
 src/board/render.mjs  board-data → static HTML (deterministic, escape-by-default)
+src/compile/prompt.mjs  story compilation: fenced prompt + budget/marking linters
 evals/run.mjs         the `make eval` gate: M0/M1 goldens + §6.1 banned-tools lint
 profiles/*.template   persona profile templates — instances copy, never commit
 skills/seam-sync/     /seam-sync skill for one sync pass
