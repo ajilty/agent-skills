@@ -7,7 +7,7 @@
       "expected_output": "Independent verification reported as exceptions against requirements, a delta report on disk, blast-radius-framed acceptance.",
       "files": ["evals/files/vuln-tracking-d/problem.md", "evals/files/vuln-tracking-d/memo.md", "evals/files/vuln-tracking-d/requirements.md", "evals/files/vuln-tracking-d/build-spec.md", "evals/files/vuln-tracking-d/decision-log.md"],
       "expectations": [
-        "docs/shipyard/vuln-tracking-d/delta-report.md is created listing both deviations against what was approved",
+        "docs/shipyard/vuln-tracking-d/delta-report.md is created listing both deviations against what was approved and closing with results against the value the memo promised",
         "Verification is reported as exceptions against requirements.md; test counts and coverage percentages do not appear as verification evidence",
         "As-built deviations are appended to the decision log",
         "Acceptance is framed by blast radius: a stated default with a deadline for low-and-reversible, or an explicit-yes requirement for high-or-irreversible",

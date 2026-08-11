@@ -7,7 +7,8 @@
       "expected_output": "Research-first intake ending in an assert-style confirmation message and a hard stop at Pause 1.",
       "files": [],
       "expectations": [
-        "docs/shipyard/vuln-tracking/problem.md is created with a problem statement, sourced current state, explicit in/out boundary, and an assumption register with defaults",
+        "docs/shipyard/vuln-tracking/problem.md is created with a problem statement, sourced current state, explicit in/out boundary, a RAID register (risks, assumptions, issues, dependencies) with defaults on assumptions, and an engagement brief (deliverables, segment plan with expected reader time per gate, what is needed from the manager and by when)",
+        "The confirmation message is plain language with no method jargon (RAID, MECE, pyramid, pause numbers) and closes with what the manager will get, when, and what is needed from them",
         "docs/shipyard/vuln-tracking/decision-log.md is created with entries marked asserted vs confirmed",
         "The confirmation message asserts a framing (\"I'm treating this as...\") and asks at most one disconfirmation question",
         "No list of questions is sent",

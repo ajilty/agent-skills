@@ -28,13 +28,17 @@ outputs, and scaling rule this segment applies.
 2. **Draw the boundary.** Explicitly in and explicitly out, charter and
    SIPOC discipline. An adjacent problem discovered during research goes
    into the write-up as out-of-scope, never silently into scope.
-3. **Register assumptions inline as they form**, each with a stated default.
-   A default must be reversible and inward-facing: contacting people,
-   spending money, or anything that leaves the sandbox never rides on
-   silence; those become escalations with an explicit ask.
+3. **Register risks, assumptions, issues, and dependencies inline as they
+   form** (the RAID register), assumptions each with a stated default. A
+   default must be reversible and inward-facing: contacting people, spending
+   money, or anything that leaves the sandbox never rides on silence; those
+   become escalations with an explicit ask.
 4. **Write the dual outputs** to `docs/shipyard/<work-slug>/`:
    - `problem.md`: problem statement, current-state summary with sources,
-     scope boundary (in/out), assumption register with defaults.
+     scope boundary (in/out), the RAID register, and the engagement brief:
+     the deliverables of this effort, the segment plan with the expected
+     reader time at each gate, and what is needed from the human and by when
+     (decisions, access, availability).
    - `decision-log.md`: prose log of what was asserted vs confirmed, by whom.
 5. **Engage by presence.**
    - Human absent or briefly available: present for confirmation,
@@ -42,8 +46,9 @@ outputs, and scaling rule this segment applies.
      scoped to Z, assuming A and B. Wrong anywhere?", plus at most one
      disconfirmation question: the single fact that would most change the
      framing. Hypothesis-driven framing: state the hypothesis, hunt its
-     disconfirmation. A list of questions sent to an absent human is this
-     segment's failure mode.
+     disconfirmation. The message closes in plain terms with what they will
+     get, when, and what is needed from them by when. A list of questions
+     sent to an absent human is this segment's failure mode.
    - Human present and answering: interview instead, Socratic and
      one-question-per-turn, each question carrying a recommended answer to
      confirm or correct, walking the problem's branches (who has it, what

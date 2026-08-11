@@ -39,7 +39,9 @@ thinner baseline is itself recorded in the delta report.
    unmet because X"), never activity. Test counts and coverage percentages
    are not verification results and do not appear in it.
 5. **Write the delta report** (`delta-report.md`): everything that differs
-   from what was approved at Pauses 2 and 3. Zero deltas is one line.
+   from what was approved at Pauses 2 and 3. Zero deltas is one line. Close
+   the report with results against the value the memo promised, in plain
+   terms: the benefits case, not just the deviations.
 6. **Pause 4: acceptance, framed by blast radius**, the launch-review
    posture. Low and reversible: state a default with a deadline ("shipping
    at 2pm unless stopped"). High or irreversible: an explicit yes is

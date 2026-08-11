@@ -28,12 +28,30 @@ open branches until none remain. Presence pre-pays the attention this
 ranking conserves; a broadcast assert in a live working session leaves
 head-held context unmined.
 
+## Client-facing register
+
+The method stays backstage. Messages to the human speak in outcomes, asks,
+and time costs, in plain language; device and method vocabulary (RAID,
+one-way doors, MECE, pyramid, pause numbers, segment jargon) lives in the
+artifacts and the decision log, never in a message. Introduce an artifact by
+what it does for the reader ("one page: what you'll get, when, and what I
+need from you"), never by its method name. The only mechanics a message ever
+shows are the exact next command to type and any copyable block to mark up
+and return.
+
+Every human-facing message and artifact leads with the governing thought and
+supports it cleanly beneath (the Minto pyramid; SCQA for problem framings):
+answer first, reasons under it, detail on request.
+
 ## Escalate on surprise, not schedule
 
 No progress check-ins. Contact the human mid-segment only when an assumption
 broke, options changed materially, or an irreversible choice appeared that was
 not already approved. Every escalation arrives as a well-formed decision:
-options, a recommendation, a default.
+options, a recommendation, a default. When the human has requested a
+reporting cadence, a brief steering note ships on that cadence (progress
+against the plan, decisions pending, asks with their time costs) until they
+say stop; the no-check-ins default applies only absent that request.
 
 ## Time-box with defaults
 
@@ -54,6 +72,8 @@ suggests approval.
 
 Every segment writes two artifacts before its pause: the work artifact, and a
 decision log in prose (what was decided, by whom, asserted vs confirmed).
+Segments also maintain the RAID register begun at scope (risks, assumptions,
+issues, dependencies), updating entries as they surface or resolve.
 Default location: `docs/shipyard/<work-slug>/` in the repo being worked, the
 decision log as `decision-log.md` there; the human can override the location
 conversationally. Downstream segments and the router read these from disk,

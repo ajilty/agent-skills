@@ -365,3 +365,32 @@ time. Sequenced this way so no gap opens.
 - Each skill reads its predecessor's dual outputs (artifact + decision log)
   from disk rather than the conversation, so the chain works across sessions
   and across harnesses, and the router can locate position the same way.
+
+---
+
+## Addendum (2026-08-10): engagement devices and the client-facing register
+
+Field use prompted five adopted additions, all encoded in the conventions
+and segment skills:
+
+- **Engagement brief**: scope's problem.md carries deliverables, the segment
+  plan with expected reader time per gate, and what is needed from the human
+  and by when.
+- **RAID register**: the assumption register generalizes to risks,
+  assumptions, issues, and dependencies, maintained by every segment.
+- **Answer-first**: the Minto pyramid and SCQA join the conventions as the
+  register for all human-facing outputs; ship's delta report closes with
+  results against the value the memo promised.
+- **Opt-in steering cadence**: a human-requested cadence gets a brief
+  steering note on that cadence; escalate-on-surprise stays the default.
+- **Client-facing register**: the method stays backstage. Messages speak
+  outcomes, asks, and time costs in plain language; device vocabulary lives
+  in artifacts and the decision log; artifacts are introduced by what they
+  do for the reader, and the only mechanics a message shows are the next
+  command and any copyable block.
+
+Also adopted earlier the same day: presence-conditional engagement in scope
+(interview when the human is present and answering), and the decision
+graduation rule (human-confirmed, hard-to-reverse, surprising, real
+trade-off decisions graduate to the worked repo's docs/adr/ when it keeps
+one).

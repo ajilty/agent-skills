@@ -10,6 +10,7 @@
         "docs/shipyard/vuln-tracking-c/requirements.md is created with testable, MoSCoW-prioritized requirements traceable to memo decisions",
         "docs/shipyard/vuln-tracking-c/build-spec.md is created with architecture and rationale",
         "Each escalated one-way door carries a default and a deadline, and work continues on the default rather than blocking",
+        "Escalation messages are plain language, describing each decision and its reversal cost without method jargon",
         "Escalations are limited to material gaps and one-way doors the memo does not cover; the manager sees roughly two to four decisions",
         "Two-way doors are recorded in the decision log without escalation",
         "Settled memo decisions are not re-opened",
