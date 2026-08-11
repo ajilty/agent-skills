@@ -13,7 +13,8 @@ verifiability, BABOK traceability with MoSCoW prioritization, ISO/IEC/IEEE
 42010 architecture description, Nygard decision records, Amazon's one-way
 and two-way doors.
 
-Read `conventions.md` beside this skill file first. Input: the returned
+Read `references/conventions.md` in this skill's directory first. Input:
+the returned
 memo at `docs/shipyard/<work-slug>/memo.md` and
 the decision log, read from disk. Memo decisions are settled; this segment
 never re-opens them. A commitment stated directly by the human at invocation

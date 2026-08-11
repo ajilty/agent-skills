@@ -14,7 +14,8 @@ service validation and change enablement, the SRE launch and
 operational-readiness review, PMBOK Validate Scope, DORA-style progressive
 delivery.
 
-Read `conventions.md` beside this skill file first. Inputs from
+Read `references/conventions.md` in this skill's directory first. Inputs
+from
 `docs/shipyard/<work-slug>/`: `requirements.md`,
 `build-spec.md`, `decision-log.md`. Verify against whatever spec exists; a
 thinner baseline is itself recorded in the delta report.

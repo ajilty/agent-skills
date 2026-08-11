@@ -15,9 +15,9 @@ analysis, TOGAF's as-is baseline, Lean Six Sigma Define (the project
 charter, SIPOC), hypothesis-driven MECE framing. Establish from evidence,
 frame the problem as a hypothesis, bound it.
 
-Read `conventions.md` beside this skill file first: it defines the
-engagement ranking, escalation rules, silence semantics, dual outputs, and
-scaling rule this segment applies.
+Read `references/conventions.md` in this skill's directory first: it
+defines the engagement ranking, escalation rules, silence semantics, dual
+outputs, and scaling rule this segment applies.
 
 ## Steps
 

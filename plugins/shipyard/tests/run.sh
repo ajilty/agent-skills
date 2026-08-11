@@ -27,8 +27,8 @@ for s in "${skills[@]}"; do
     err "$f: names orchestrate (generic-seam invariant: README only)"
   fi
 
-  if ! diff -q references/conventions.md "skills/$s/conventions.md" >/dev/null 2>&1; then
-    err "skills/$s/conventions.md missing or out of sync with references/conventions.md (canonical); re-copy it"
+  if ! diff -q references/conventions.md "skills/$s/references/conventions.md" >/dev/null 2>&1; then
+    err "skills/$s/references/conventions.md missing or out of sync with references/conventions.md (canonical); re-copy it"
   fi
 
   e="skills/$s/evals/evals.json"

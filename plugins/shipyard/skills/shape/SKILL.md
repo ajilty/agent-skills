@@ -14,7 +14,7 @@ Kepner-Tregoe weighted criteria with must/want separation, the decision
 brief's BLUF and courses of action, PRINCE2's owned business case, Amazon's
 PR/FAQ decision-ready narrative.
 
-Read `conventions.md` beside this skill file first. Input:
+Read `references/conventions.md` in this skill's directory first. Input:
 `docs/shipyard/<work-slug>/problem.md` and `decision-log.md`,
 read from disk. When no confirmed problem statement exists, open with an
 inline scope-lite (one paragraph: problem, boundary, key assumptions) and

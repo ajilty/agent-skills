@@ -39,7 +39,8 @@ engine-neutral and never fail because a named capability is absent.
 ## Harness support
 
 Each skill directory is self-contained standard skill packaging (`SKILL.md`
-plus its `conventions.md` and Codex sidecar), so skills can be installed
+plus its `references/conventions.md` and Codex sidecar), so skills can be
+installed
 individually on any harness that reads the format;
 `references/conventions.md` is the canonical source the per-skill copies are
 synced from (tests enforce the sync).

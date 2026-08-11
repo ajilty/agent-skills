@@ -1,8 +1,9 @@
 # Shipyard conventions
 
-Canonical copy: each skill ships an identical `conventions.md` beside its
-`SKILL.md` (standard self-contained skill packaging; the test suite enforces
-the sync). Edit here, then re-copy into `skills/*/conventions.md`.
+Canonical copy: each skill ships an identical copy at
+`references/conventions.md` inside its own directory (skill-creator anatomy;
+the test suite enforces the sync). Edit here, then re-copy into
+`skills/*/references/conventions.md`.
 
 The identical core every segment applies. Each segment's pause contract lives
 in that segment's skill; this file is what all segments share. Read it once at
