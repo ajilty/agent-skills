@@ -43,6 +43,21 @@ Every human-facing message and artifact leads with the governing thought and
 supports it cleanly beneath (the Minto pyramid; SCQA for problem framings):
 answer first, reasons under it, detail on request.
 
+Every recommendation carries its confidence and provenance inline and
+compressed ("confirmed by running it", "my read", the source in a
+parenthetical); a low-confidence recommendation is flagged once as such
+rather than hedged throughout.
+
+## Gate artifacts
+
+A gate artifact leads with three things before the full document: what was
+asked (the intent recap), what changed since the last approved version (the
+drift), and the open decisions ranked by risk. Re-review after markup is
+presented as a diff against the previously approved version, never a
+re-read. Gates ask for an active choice: a bare approve is not offered; the
+human picks, amends, or strikes, and the artifact carries one line asking
+what would change the decision.
+
 ## Escalate on surprise, not schedule
 
 No progress check-ins. Contact the human mid-segment only when an assumption

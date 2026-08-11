@@ -394,3 +394,15 @@ Also adopted earlier the same day: presence-conditional engagement in scope
 graduation rule (human-confirmed, hard-to-reverse, surprising, real
 trade-off decisions graduate to the worked repo's docs/adr/ when it keeps
 one).
+
+## Addendum 2 (2026-08-10): research-brief adopt-now tier
+
+From `docs/notes/2026-08-10-shipyard-research-brief.md`, items 1-9 adopted:
+delta-first gate artifacts and active-choice gates (conventions: gate
+artifacts section); in-file ballot with appetite on the memo (shape); EARS
+form and a worked example per requirement (spec); pre-build chain
+consistency check, appetite-exhaustion escalation, and verifier-only
+delta report made unbypassable (ship); plain-language on-ramp (router);
+confidence and provenance labels on recommendations (conventions). Next
+tier (sanctioned fast path, per-project constitution, outcome
+instrumentation) remains open for decision.

@@ -9,6 +9,7 @@
       "expectations": [
         "docs/shipyard/vuln-tracking-d/delta-report.md is created listing both deviations against what was approved and closing with results against the value the memo promised",
         "Verification is reported as exceptions against requirements.md; test counts and coverage percentages do not appear as verification evidence",
+        "The verification section is authored from context independent of the builder, or the delta report plainly states that no independent context was available",
         "As-built deviations are appended to the decision log",
         "Acceptance is framed by blast radius: a stated default with a deadline for low-and-reversible, or an explicit-yes requirement for high-or-irreversible",
         "Nothing irreversible or outward-facing moves on silence or inferred approval"

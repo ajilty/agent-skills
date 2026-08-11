@@ -23,6 +23,8 @@ invokes this to find footing, not to do work. Read
 4. **Name the next command.** One of `/scope`, `/shape`, `/spec`, `/ship`.
    For brand-new work, recommend the entry segment by stakes per the scaling
    rule: high-stakes irreversible work starts at `/scope`; low-stakes
-   reversible work may start at `/shape`.
+   reversible work may start at `/shape`. A plain-language ask handed to
+   this router is the on-ramp: name the segment that fits it and the exact
+   command to type, so nobody needs the vocabulary to get started.
 5. **Stop.** This skill reads and reports only. When asked to continue the
    work from here, name the command the human should type instead.

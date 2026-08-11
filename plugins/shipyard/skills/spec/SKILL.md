@@ -27,7 +27,10 @@ commitment is never inferred.
 1. **Derive requirements from the memo decisions**: functional and
    non-functional, every one testable to the 29148 bar (verifiable,
    unambiguous), prioritized (MoSCoW), and traceable to the decision it
-   serves.
+   serves. Write each in EARS form ("When <trigger>, the <system> shall
+   <response>", with the ubiquitous/state/event patterns as they fit), and
+   give every requirement at least one worked example or acceptance case:
+   examples carry more context into the build than prose.
 2. **Produce the build spec**: architecture and design decisions with
    rationale (a 42010-style architecture description in miniature), plus
    the implementation plan.
@@ -50,7 +53,8 @@ commitment is never inferred.
    two-minute read): the last point where changing course costs an edit
    instead of a rebuild. End by naming the next command: `/ship`.
 
-Completion criterion: `requirements.md` (testable, prioritized, traceable)
-and `build-spec.md` exist on disk, every design decision appears in the
+Completion criterion: `requirements.md` (testable, prioritized, traceable,
+EARS-formed, each requirement carrying a worked example) and
+`build-spec.md` exist on disk, every design decision appears in the
 decision log, open one-way doors carry a default and a deadline, and the
 segment has stopped at Pause 3 naming `/ship`.

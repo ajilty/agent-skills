@@ -38,15 +38,21 @@ record it in the decision log as asserted, not confirmed.
    human, each pre-filled with a recommendation, plus one pre-mortem prompt
    ("which option would you be embarrassed to have picked in 12 months?")
    in the PR/FAQ spirit of anticipating concerns before they are raised.
-   Close with a copyable block phrased so that the memo pasted back
-   verbatim, marked up, is complete and actionable feedback.
+   Record the appetite: the time or effort budget the human will spend on
+   the pick, scored like any other driver and binding on the build. Close
+   with a ballot the human edits in the file itself, one checkbox line per
+   decision (accept / change to: ___) plus a single line "what would change
+   this decision: ___"; a bare approve is not offered. Pasting the block
+   back works equally; where the harness offers structured questions,
+   present the enumerable choices that way as well.
 6. **Write the dual outputs** to `docs/shipyard/<work-slug>/`:
    - `memo.md`: desired state, gap assessment, scored options with
      recommendation, the copyable memo block.
    - append to `decision-log.md`.
 7. **Present the pivot, not the math** ("Option B wins unless data residency
    outweighs cost. Does it?"), then **Pause 2: stop.** The human returns the
-   marked-up memo: pick, modify, reject, or defer (about a five-minute
+   marked-up memo by editing the ballot in `memo.md` or pasting it back:
+   pick, modify, reject, or defer (about a five-minute
    read). This is the commitment event, the only structurally required human
    decision in the method, and the last cheap exit; ownership of the chosen
    decisions transfers to the human here, PRINCE2's owned business case.
