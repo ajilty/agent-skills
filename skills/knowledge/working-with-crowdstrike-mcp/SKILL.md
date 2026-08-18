@@ -1,6 +1,6 @@
 ---
 name: working-with-crowdstrike-mcp
-description: "CrowdStrike Falcon MCP (falcon_* tools): NG-SIEM CQL gotchas \u2014 head(3) schema discovery, groupBy limit truncates lexicographically (use top()), numbers as strings, token-overflow spill files \u2014 plus FQL syntax and detection write-path traps. Use before composing falcon_search_ngsiem queries or when results come back empty, truncated, or spilled to tool-results files."
+description: "CrowdStrike Falcon MCP (falcon_* tools): NG-SIEM CQL gotchas \u2014 head(3) schema discovery, groupBy limit truncates lexicographically (use top()), numbers as strings, token-overflow spill files, blocked processes logged under ProcessBlocked not ProcessRollup2 \u2014 plus FQL syntax, detection write-path traps, the falcon_search_applications (Discover) broken pagination cursor, the Spotlight (falcon_search_vulnerabilities) no-product-filter limit, and RTR read-only limits. Use before composing falcon_search_ngsiem queries, paging Discover applications, scoping Spotlight vulns, reading blocked-process telemetry, or running RTR \u2014 or when results come back empty, truncated, or spilled to tool-results files."
 ---
 
 # Working with the CrowdStrike Falcon MCP — sharp edges
@@ -85,6 +85,21 @@ give enterprise-wide visibility that per-API queries can't.
   some `.text` elements are bare fragment lines (`"@id": …`), not whole objects. Guard each
   parse (`try fromjson`, or a `try/except json.loads` loop).
 
+### Blocked / prevented actions log under their own event, not the usual one
+
+A prevention-blocked process is **not** in `ProcessRollup2` — it lands in
+`#event_simpleName=ProcessBlocked` (carrying the full `CommandLine`, `ImageFileName`, and
+`ParentBaseFileName`). So a `ProcessRollup2 ParentBaseFileName=<x>` query returning **zero
+children is not "no telemetry"** — the blocked child executed far enough to be recorded, just
+under `ProcessBlocked`. When a detection shows a prevention/block, query `ProcessBlocked` for the
+command line and parent. Check the block-specific event name before concluding the sensor saw
+nothing.
+
+`ProcessRollup2` does **not** reliably populate `FileVersion` for every binary (third-party
+service exes especially) — a `groupBy([ComputerName, FileVersion], …)` silently drops the column
+when it's empty. To pin a binary's build, key on `SHA256HashData` and map the hash via the
+software inventory (`falcon_search_applications`) or RTR `filehash`, not `FileVersion`.
+
 ### CQL construction gotchas
 
 - **`OR` across two `regex()` calls → HTTP 400.** Reformulate as field-match alternation
@@ -116,6 +131,63 @@ earlier one's output (e.g. `head(3)` to learn field names before `top()`).
 - FQL combines predicates with `+` (AND), e.g. `status:'new'+severity:>70`.
 - `sort` accepts both `field.desc` and `field|desc`; sort `severity.desc` to surface the worst
   first.
+- **A `cmdline:'*substring*'` wildcard filter on `falcon_search_detections` /
+  `falcon_aggregate_detections` returns empty silently** — `cmdline` is not a supported
+  filter/aggregation field on the alerts endpoint (empty ≠ no match). Pivot to an indexed field:
+  `pattern_id:`, `technique_id:`, `tags:`, or a time-boxed `created_timestamp:`.
+- **A detection's `automated_triage` block (Charlotte) is a fast first-pass anchor** —
+  `triage_outcome` / `triage_recommendation` plus tags like `FC-Type-Penetration Testing`,
+  `true_positive`, `FC-Action-No Remediation Required` often classify the alert (e.g. authorized
+  pentest activity) before you dig; `falcon_get_detection_details` returns them.
+
+## falcon_search_applications (Discover software inventory)
+
+Discover is the authoritative on-disk software inventory — reach for it (not Spotlight, not
+process telemetry) to answer "where is product X installed."
+
+- **The pagination `after` cursor is broken: it re-serves page 1.** Passing `pagination.next`
+  back as `after` returns the same first page, so a naive paging loop silently caps at one page
+  and looks complete. **Recover the full set by unioning two opposite sorts** (e.g. `name.asc`
+  then `name.desc`, or on `last_updated_timestamp`) and deduping on the row `id` — between them
+  you cover the whole set up to 2× the page size. `pagination.total` still reports the true
+  count, so you know when you have them all.
+- **A `name:'*Product*'` wildcard over a widely-installed product spills to a
+  `tool-results/*.txt` file** (agent/console footprints put the product on hundreds of hosts).
+  Parse the spill with `python3 json.load` on the `results` key; don't read it inline.
+- **Discover normalizes many components under one product name.** Every Veeam service (Agent,
+  console, Mount Service, Transport) reports as `name: "Veeam Backup & Replication"`, so a raw
+  host count conflates the real servers with hundreds of agent-only workstations — filter on
+  `host.product_type_desc` and read the component-level names, not the rolled-up product.
+- **A host lists multiple co-existing versions** (an in-place upgrade leaves old component
+  directories resident), so the *oldest* version on a host is a risk flag, not proof the old
+  build is the active one — confirm on-host (RTR `filehash` / running-process telemetry) before
+  calling it live-vulnerable.
+
+## falcon_search_vulnerabilities (Spotlight)
+
+- **The FQL has no product / vendor / app filter field.** You cannot filter to "all of vendor
+  X's CVEs" by product — reach a third-party product only by **enumerating its known CVE IDs**
+  (`cve.id:'CVE-…',cve.id:'CVE-…'`). Consult `falcon://spotlight/vulnerabilities/fql-guide`; an
+  unsupported field returns empty, not an error.
+- **Spotlight under-inventories third-party software.** It reported a product on 1 of ~50 hosts
+  that Discover and process telemetry both show running it — so do **not** use Spotlight to scope
+  a software estate; use `falcon_search_applications`. Treat "no Spotlight CVE on this host" as
+  *the scanner didn't see it*, not *not vulnerable*.
+- **`status:'reopen'` is a real signal** — a finding remediated then re-detected means a patch
+  regressed or was incomplete; worth a root-cause check, not just a re-patch. Facet
+  `['cve','host_info']` to get scoring + asset context in one call.
+
+## Real Time Response (RTR) — read-only tier
+
+- **The read-only command set cannot read a PE file's version property** (that needs the
+  Active-Responder scripting tier / `runscript`). To identify a binary's build read-only, use
+  `filehash` (SHA256/MD5) and map the hash via the software inventory, or `reg query` an app's
+  version value — not the file version. A vendor's registry key may not carry a build value
+  (`HKLM\SOFTWARE\Veeam\Veeam Backup and Replication` held only `TempPathDir` and provider GUIDs,
+  no version).
+- **`init` returns the full command schema** for the host (base command set + args), and reports
+  `offline_queued: false` when the host is live; **delete the session**
+  (`falcon_delete_rtr_session`) when done.
 
 ## Write path and console deep-links
 

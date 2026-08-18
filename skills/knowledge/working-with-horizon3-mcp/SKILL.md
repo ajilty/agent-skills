@@ -1,13 +1,14 @@
 ---
 name: working-with-horizon3-mcp
-description: "Horizon3 / NodeZero MCP (pentest results): broken introspection and the get_h3_terminology schema cheat-sheet, remediation fields the API never exposes, two-field clean-run corroboration, ~24h token TTL, 5-day loot expiry. Use when reading NodeZero pentest results or hitting \"Cannot query field\" GraphQL errors."
+description: "Horizon3 / NodeZero MCP (pentest results): in-band introspection is broken but the public GraphQL docs are WebFetch-able, the get_h3_terminology schema cheat-sheet, the action_logs_page per-host command log (filter_by_inputs, page_size-100 cap, attempted-vs-proven), remediation fields the API never exposes, two-field clean-run corroboration, ~24h token TTL, 5-day loot expiry. Use when reading NodeZero pentest results, pulling the per-endpoint action log, or hitting \"Cannot query field\" GraphQL errors."
 ---
 
 # Working with the Horizon3 / NodeZero MCP — sharp edges
 
 How to drive the Horizon3 MCP for reading autonomous-pentest results. The server is an HTTP MCP
 at `mcp.horizon3ai.com`. If tools are deferred, load schemas first (e.g. ToolSearch
-`select:mcp__horizon3__run_h3_graphql_request`). If the tools aren't present, call
+`select:mcp__horizon3__run_h3_graphql_query`). **`run_h3_graphql_request` is deprecated and
+no-ops — use `run_h3_graphql_query` for every read.** If the tools aren't present, call
 `mcp__horizon3__authenticate` for an OAuth URL — but **`authenticate` itself may not be exposed
 in a given session**, in which case re-auth requires reconnecting the connector interactively.
 **Token TTL is ~24h in practice** — while a pentest's loot clock is live, expect re-auth to be a
@@ -42,6 +43,31 @@ Read-only: never call `run_pentest` or any mutation.
   `get_pentest_details` expose no link field). Hand a pentest to the user by `op_id` with "open
   it in the NodeZero Portal" — never a guessed console URL.
 
+## The action log — the per-host command record
+
+`action_logs_page` is the **complete log of every command NodeZero ran, per host** — the thing to
+read for "what did it *try* against endpoint X," including attempts that never became findings.
+It's not in the terminology cheat-sheet; get its exact shape from the public docs (below).
+
+- **Shape:** `action_logs_page(input:{op_id:"…"}, page_input:{page_size:100,
+  filter_by_inputs:[{field_name:"endpoint_ip", values:["10.0.0.5"]}]}) { action_logs {
+  start_time end_time endpoint_ip cmd module_id module_name exit_code target_h3_names } }`.
+- **Filtering is `page_input.filter_by_inputs: [FilterByInput]`**, each `{field_name, values,
+  not_values, greater_than / greater_than_or_equal, less_than / less_than_or_equal, is_null}`. A
+  bare `filter_by:{…}` object **crashes the server** with a generic "unexpected error" — it does
+  not exist. Supported `field_name`s include `endpoint_ip`, `module_id`, `exit_code`, and the
+  start/end times.
+- **`page_size` caps at 100** (default 20); a larger value silently returns ≤100, so a
+  `page_size:4000` pull looks like "the whole op" but is only the first ~100 rows (opening recon,
+  sorted by `start_time` ascending). Paginate with `page_num` to walk the rest.
+- **`exit_code` is the tool's exit, not exploitation success** — `0` means the module ran to
+  completion, not that the target was compromised.
+- **Attempted ≠ proven.** A blocked or failed exploit **appears in the action log but never
+  becomes a `weaknesses_page` entry** and leaves `impacts_count: 0`. "Absent from weaknesses"
+  means "not *proven*" — not "not *attempted*" and not "not *exploitable*"; a control (e.g. an EDR
+  block) can suppress the callback NodeZero needs to score it. When a host's defensive posture is
+  the question, read the action log, not just the weaknesses.
+
 ## Remediation — the trap that costs a re-run
 
 - **Get remediation text from `weaknesses_page(input:{op_id}).weaknesses.vuln.description`.**
@@ -61,6 +87,10 @@ together** — treating either alone as "clean" risks reading a display/paginati
 all-clear. NodeZero can reach 1,000+ hosts and harvest creds yet still chain zero proven impact;
 that's the signal to report, with both fields cited.
 
+But 0-impact is a *proven-results* statement, not a clean bill of health: if a control blocked an
+exploit mid-run, the attempt still sits in the action log while `impacts_count` stays untouched —
+cross-reference the action log (above) before reporting a host as unexposed.
+
 ## Pagination + filtering gotchas
 
 - **`weaknesses_page` returns a default page (~20) — the full set can be several times larger.**
@@ -68,17 +98,26 @@ that's the signal to report, with both fields cited.
   visible on page one, but counts are not.
 - **`OpInput` (the `weaknesses_page` input) has `op_id` but no `severities` filter** — filter
   severity client-side after pulling.
-- **Weakness fields that work:** `uuid`, `vuln_name`, `severity`, `score`, and nested
-  `vuln { id name description }`. `Vuln` has `description`, NOT `remediation` (the error suggests
-  "Did you mean 'description'?").
+- **Weakness fields that work:** `uuid`, `vuln_name`, `severity`, `score`, `ip`, `host_name`,
+  `proofs`, and nested `vuln { id name description }`. Field-name traps: it's `host_name` not
+  `hostname`, and `proofs` not `proof` (both miss with a "Did you mean" hint). `Vuln` has
+  `description`, NOT `remediation`. `PageInfo` has no `total_count` — count client-side.
 
-## Introspection is broken — discover fields by trial
+## Introspection is broken — the public docs portal is the fallback
 
-- **`fetch_h3_graphql_docs` and GraphQL `__type` introspection error server-side** ("An
-  unexpected error occurred. We are investigating."). You cannot browse the schema.
-- Discover fields by **trial-and-error**: the query engine returns `Cannot query field 'X' on
-  type 'Y'` and *sometimes* a `Did you mean 'Z'?` hint on scalar fields (not on every miss).
-  Start from the known-good field lists above and add incrementally.
+- **Discover fields the MCP-native way first.** `get_h3_terminology` (the cheat-sheet — call it
+  every session) plus the known-good field lists above plus incremental trial against the live
+  query engine, which returns `Cannot query field 'X' on type 'Y'` and *sometimes* a `Did you
+  mean 'Z'?` hint on scalar fields (not on every miss). In-band `__type` introspection and
+  `fetch_h3_graphql_docs` both error server-side ("An unexpected error occurred. We are
+  investigating."), so you build the query up from terminology + trial, not from live
+  introspection.
+- **When trial-and-error stalls, WebFetch the public docs: <https://docs.horizon3.ai/api/graphql/>.**
+  They are fetchable and authoritative. Reach for them the moment probing isn't converging — a
+  nested *input* shape crashes with a generic "unexpected error" and no field hint (e.g. the
+  `filter_by_inputs` shape), which trial-and-error cannot recover on its own; the docs settle it
+  in one shot. "Introspection is broken" is not "the schema is undiscoverable" — the HTML portal
+  is the escape hatch.
 
 ## Credentials + data
 
