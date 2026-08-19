@@ -1,6 +1,7 @@
 ---
 name: respond-to-vuln
 description: Use when a newly discovered vulnerability or exploit alert needs to be run to ground and remediated across a fleet. Runs the loop end to end - identify the CVE, verify it on the affected hosts with layered evidence, scope the whole estate (catching vuln-scanner blind spots), package an executive brief plus an operational inventory, then run a verified check to closure. Triggers on an EDR/exploit detection, an autonomous-pentest finding, or a "we need to patch X everywhere" ask.
+disable-model-invocation: true
 ---
 
 <what-to-do>
@@ -26,7 +27,7 @@ Run this loop for the vulnerability. Do the phases in order: each **produces** a
    - *Produces:* the validation gate; a per-host before-state baseline.
    - *Into next:* the gate and baseline become the inventory's validation section and the signal the watch re-tests.
 
-5. **Package two views of the same verified data.** An **executive brief** (bottom line, current status, prioritized actions with owners) at decision altitude, and an **operational inventory** (per-host status, versions, CVEs with RCE flagged, a change log, the validation gates) at per-host / per-binary altitude. Publish both where the audience can act on them.
+5. **Package two views of the same verified data.** An **executive brief** (bottom line, current status, prioritized actions with owners) at decision altitude, and an **operational inventory** (per-host status, versions, CVEs with RCE flagged, a change log, the validation gates) at per-host / per-binary altitude. Publish both where the audience can act on them. Reference layouts live in `references/` (sanitized, placeholder data only).
    - *Input:* everything above - CVE, host list, versions, confidence tags, gates.
    - *Produces:* the two published artifacts.
    - *Into next:* the inventory's change log is where the watch records every update.
@@ -72,5 +73,14 @@ Words like "incident" and "breach" carry formal response and notification weight
 ## Why two artifacts, one data spine
 
 The brief answers "what happened, what do we do" for a decision-maker; the inventory answers "which host, which binary, what version, confirmed how" for the people doing the work. Build both from the same verified data and keep them current in place as the watch surfaces changes, rather than shipping a one-time snapshot.
+
+## Reference templates
+
+`references/` holds sanitized starting points for the two phase-5 artifacts, with placeholder data only (no real hosts, CVEs, or organizations):
+
+- `references/brief-template.html` - the executive brief (status band, bottom line, remediation-status table, prioritized actions).
+- `references/inventory-template.html` - the operational inventory (per-host table with click-to-expand running binaries, a change log, and validation gates).
+
+Copy one out, replace the `{{PLACEHOLDER}}` tokens and example rows with real verified data, and publish. Keep them generic: never commit real environment data back into this repo.
 
 </supporting-info>

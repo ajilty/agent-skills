@@ -1,0 +1,160 @@
+<!--
+  Operational inventory template for the respond-to-vuln playbook (phase 5).
+  SANITIZED: all data below is placeholder. Replace every {{TOKEN}} and the
+  example rows with real, verified data before publishing. Never commit real
+  environment data back into this repo.
+  Self-contained: no external assets. Theme-aware. Rows expand on click.
+-->
+<title>{{PRODUCT}} Deployment Inventory</title>
+<style>
+  :root{
+    --ground:#eef1f5; --surface:#fff; --surface-2:#f5f8fb;
+    --ink:#15181e; --ink-soft:#39414e; --muted:#697586; --line:#dce1ea;
+    --accent:#2f5d8a; --crit:#b3261e; --crit-bg:#fbeceb; --crit-row:#fdf5f4;
+    --high:#b0600a; --high-bg:#fbf1e5; --good:#1c7a5b; --good-bg:#e6f3ee;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --ground:#0e1218; --surface:#161b23; --surface-2:#1b212b;
+    --ink:#e8ecf3; --ink-soft:#c3cbd7; --muted:#8b98a9; --line:#28303c;
+    --accent:#6fa3d6; --crit:#f0796d; --crit-bg:#2a1513; --crit-row:#1c1512;
+    --high:#e0975a; --high-bg:#271c11; --good:#5cc39b; --good-bg:#112019;
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0e1218; --surface:#161b23; --surface-2:#1b212b;
+    --ink:#e8ecf3; --ink-soft:#c3cbd7; --muted:#8b98a9; --line:#28303c;
+    --accent:#6fa3d6; --crit:#f0796d; --crit-bg:#2a1513; --crit-row:#1c1512;
+    --high:#e0975a; --high-bg:#271c11; --good:#5cc39b; --good-bg:#112019;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5}
+  .wrap{max-width:1000px;margin:0 auto;padding:38px 22px 64px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  h1{margin:0;font-size:1.9rem;letter-spacing:-.02em}
+  .eyebrow{font:600 11px/1 ui-monospace,monospace;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 8px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin:22px 0 10px;
+    background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .stats>div{background:var(--surface);padding:15px}
+  .stats .n{font:600 1.6rem/1 ui-monospace,monospace} .stats .n.good{color:var(--good)} .stats .n.crit{color:var(--crit)}
+  .stats .l{font-size:11px;color:var(--muted);margin-top:6px}
+  .sec{font:600 11px/1 ui-monospace,monospace;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--accent);display:flex;align-items:center;gap:12px;margin:30px 0 12px}
+  .sec::after{content:"";flex:1;height:1px;background:var(--line)}
+  .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+  th{background:var(--surface-2);text-align:left;font:600 10px/1 ui-monospace,monospace;
+    letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:10px 13px;border-bottom:1px solid var(--line)}
+  tr.row{background:var(--surface);cursor:pointer}
+  tr.row>td{padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-soft)}
+  tr.row:hover{background:var(--surface-2)}
+  tr.row.crit{background:var(--crit-row)} tr.row.crit td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
+  tr.row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .chev{display:inline-block;color:var(--muted);width:12px;transition:transform .15s}
+  tr.row.open .chev{transform:rotate(90deg)}
+  @media (prefers-reduced-motion:reduce){.chev{transition:none}}
+  .host{font-family:ui-monospace,monospace;font-weight:600;color:var(--ink);white-space:nowrap}
+  .ip{display:block;font:400 11px/1 ui-monospace,monospace;color:var(--muted);margin-top:3px}
+  .pill{display:inline-block;font:600 10px/1.5 ui-monospace,monospace;text-transform:uppercase;padding:2px 7px;border-radius:999px}
+  .pill.good{background:var(--good-bg);color:var(--good)} .pill.high{background:var(--high-bg);color:var(--high)}
+  .pill.crit{background:var(--crit-bg);color:var(--crit)} .pill.muted{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+  tr.detail{display:none} tr.detail.show{display:table-row}
+  tr.detail>td{padding:0;border-bottom:1px solid var(--line);background:var(--surface-2)}
+  .di{padding:14px 16px 16px 30px} .di .dh{font:600 10px/1 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+  .bin{display:grid;gap:8px;font-size:12.5px}
+  .binrow{display:grid;grid-template-columns:16px 1fr;gap:8px}
+  .binrow .svc{color:var(--ink);font-weight:600}
+  .binrow .path{display:block;margin-top:2px;font-family:ui-monospace,monospace;font-size:11px;color:var(--muted);word-break:break-all}
+  .note{font-size:12px;color:var(--muted);margin:10px 0 0;line-height:1.5}
+  .cl{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .clr{display:grid;grid-template-columns:92px 1fr;border-bottom:1px solid var(--line);background:var(--surface)}
+  .clr:last-child{border-bottom:none} .clr.pending{background:var(--surface-2)}
+  .cld{font:600 12px/1.4 ui-monospace,monospace;color:var(--accent);padding:12px 14px;border-right:1px solid var(--line)}
+  .clb{padding:12px 14px;font-size:13px;color:var(--ink-soft)} .clb b{color:var(--ink)}
+  .gates{margin-top:14px;border:1px dashed var(--line);border-radius:10px;padding:14px 16px;background:var(--surface)}
+  .gates h4{margin:0 0 8px;font:600 11px/1 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  ul{margin:0;padding-left:18px;color:var(--ink-soft)} li{margin-bottom:6px} li b{color:var(--ink)}
+  .toolbar{display:flex;justify-content:flex-end;margin-bottom:10px}
+  .btn{font:600 11px/1 ui-monospace,monospace;text-transform:uppercase;color:var(--accent);
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+  footer{margin-top:30px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.6}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">{{EDR}} · Software Inventory</p>
+  <h1>{{PRODUCT}} Deployment Inventory</h1>
+
+  <div class="stats">
+    <div><div class="n">{{N}}</div><div class="l">Hosts with {{PRODUCT}}</div></div>
+    <div><div class="n">{{N}}</div><div class="l">Servers &amp; DCs</div></div>
+    <div><div class="n crit">{{N}}</div><div class="l">On vulnerable builds</div></div>
+    <div><div class="n good">{{N}}</div><div class="l">Remediated / verified</div></div>
+  </div>
+
+  <div class="sec">Affected hosts</div>
+  <p class="note">Click a row to expand its running binaries (full path + service, vulnerable one flagged). Discovery method = how far each is confirmed: <b>Installed</b> (inventory) · <b>Running</b> (process telemetry) · <b>Hash</b> (live-response).</p>
+  <div class="toolbar"><button class="btn" id="toggleAll" type="button">Expand all</button></div>
+  <div class="tbl">
+    <table><thead><tr>
+      <th style="width:20px"></th><th>Host (IP)</th><th>Type</th><th>Software: component (version)</th><th>Running</th><th>Discovery</th><th>Risk</th>
+    </tr></thead><tbody>
+
+      <!-- vulnerable example row -->
+      <tr class="row crit" tabindex="0" role="button" aria-expanded="false">
+        <td><span class="chev">&#9656;</span></td><td><span class="host">HOST-01</span><span class="ip">10.0.0.10</span></td>
+        <td>Server</td><td>{{component}} <span class="mono">{{old-version}}</span></td>
+        <td><span class="pill crit">Hash</span></td><td class="mono">Installed · Running · Hash</td>
+        <td><span class="pill crit">{{CVE}}</span></td>
+      </tr>
+      <tr class="detail"><td colspan="7"><div class="di"><p class="dh">Running binaries</p><div class="bin">
+        <div class="binrow"><span>&#9888;</span><div><span class="svc">{{vulnerable service}}</span> <span class="pill crit">{{version}} — vulnerable</span><span class="path">C:\{{path}}\{{binary.exe}}</span></div></div>
+        <div class="binrow"><span>·</span><div><span class="svc">{{other service}}</span> <span class="pill good">{{version}}</span><span class="path">C:\{{path}}\</span></div></div>
+      </div><p class="note"><b>Validation gate:</b> {{what "fixed" looks like for this host — e.g. hash changes / binary removed / build advances past {{fixed-build}}.}}</p></div></td></tr>
+
+      <!-- clean example row -->
+      <tr class="row" tabindex="0" role="button" aria-expanded="false">
+        <td><span class="chev">&#9656;</span></td><td><span class="host">HOST-02</span><span class="ip">10.0.0.11</span></td>
+        <td>Server</td><td>{{component}} <span class="mono">{{current-version}}</span></td>
+        <td><span class="pill good">Yes</span></td><td class="mono">Installed · Running</td>
+        <td><span class="pill good">patched</span></td>
+      </tr>
+      <tr class="detail"><td colspan="7"><div class="di"><div class="bin">
+        <div class="binrow"><span>·</span><div><span class="svc">{{service}}</span> <span class="pill good">{{current-version}}</span><span class="path">C:\{{path}}\{{binary.exe}}</span></div></div>
+      </div><p class="note">Current build; not vulnerable.</p></div></td></tr>
+
+    </tbody></table>
+  </div>
+
+  <div class="sec">Change log — observed environment changes</div>
+  <div class="cl">
+    <div class="clr"><div class="cld">{{YYYY<br>MM-DD}}</div><div class="clb"><b>{{event}}</b> — {{what changed + how observed}}. {{interpretation}}</div></div>
+    <div class="clr"><div class="cld">{{YYYY<br>MM-DD}}</div><div class="clb"><b>{{remediation}}</b> — {{verified how}}.</div></div>
+    <div class="clr pending"><div class="cld">— — —</div><div class="clb">{{open item still to confirm}}</div></div>
+  </div>
+  <div class="gates">
+    <h4>Validation gates — what "patched" looks like</h4>
+    <ul>
+      <li><b>{{HOST / group}}:</b> {{gate condition, e.g. binary removed / hash changed / build &ge; {{fixed-build}} / CVE closed}}.</li>
+      <li><b>Estate:</b> re-run this inventory; confirm no pre-fix build remains.</li>
+    </ul>
+  </div>
+
+  <footer>
+    <b>Method &amp; confidence.</b> "Installed" = software inventory; "Running" = process telemetry; "Hash" = live-response file hash. {{Note any tool limits, e.g. telemetry lacks a file-version field, scanner coverage gaps, and which claims are verified vs inferred.}}
+  </footer>
+</div>
+
+<script>
+  (function(){
+    var rows = document.querySelectorAll('tr.row');
+    function set(r,open){var d=r.nextElementSibling;r.classList.toggle('open',open);
+      r.setAttribute('aria-expanded',open?'true':'false');
+      if(d&&d.classList.contains('detail'))d.classList.toggle('show',open);}
+    rows.forEach(function(r){
+      r.addEventListener('click',function(){set(r,!r.classList.contains('open'))});
+      r.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();set(r,!r.classList.contains('open'))}});
+    });
+    var b=document.getElementById('toggleAll'),x=false;
+    b.addEventListener('click',function(){x=!x;rows.forEach(function(r){set(r,x)});b.textContent=x?'Collapse all':'Expand all'});
+  })();
+</script>
