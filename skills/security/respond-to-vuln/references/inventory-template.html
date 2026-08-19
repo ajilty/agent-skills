@@ -1,9 +1,12 @@
 <!--
   Operational inventory template for the respond-to-vuln playbook (phase 5).
-  SANITIZED: all data below is placeholder. Replace every {{TOKEN}} and the
-  example rows with real, verified data before publishing. Never commit real
-  environment data back into this repo.
-  Self-contained: no external assets. Theme-aware. Rows expand on click.
+  SANITIZED: every value below is a placeholder. Replace each single-level
+  {{TOKEN}} and the example rows with real, verified data, then publish via the
+  harness's artifact/publish mechanism (it supplies the doctype + theme wrapper).
+  Guidance lives in HTML comments, never inside a {{TOKEN}}, so find/replace of
+  /\{\{[A-Z0-9_]+\}\}/ is mechanical. Never commit real data.
+  Self-contained: no external assets. Theme-aware. Rows expand on click; each
+  row's first cell is a real <button> so keyboard/AT users can operate it.
 -->
 <title>{{PRODUCT}} Deployment Inventory</title>
 <style>
@@ -45,13 +48,14 @@
   table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
   th{background:var(--surface-2);text-align:left;font:600 10px/1 ui-monospace,monospace;
     letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:10px 13px;border-bottom:1px solid var(--line)}
-  tr.row{background:var(--surface);cursor:pointer}
   tr.row>td{padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-soft)}
+  tr.row{background:var(--surface);cursor:pointer}
   tr.row:hover{background:var(--surface-2)}
   tr.row.crit{background:var(--crit-row)} tr.row.crit td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
-  tr.row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-  .chev{display:inline-block;color:var(--muted);width:12px;transition:transform .15s}
-  tr.row.open .chev{transform:rotate(90deg)}
+  .chev{appearance:none;border:0;background:none;padding:0;margin:0;cursor:pointer;
+    color:var(--muted);font:inherit;line-height:1;display:inline-block;transition:transform .15s}
+  .chev[aria-expanded="true"]{transform:rotate(90deg)}
+  .chev:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
   @media (prefers-reduced-motion:reduce){.chev{transition:none}}
   .host{font-family:ui-monospace,monospace;font-weight:600;color:var(--ink);white-space:nowrap}
   .ip{display:block;font:400 11px/1 ui-monospace,monospace;color:var(--muted);margin-top:3px}
@@ -77,84 +81,101 @@
   .toolbar{display:flex;justify-content:flex-end;margin-bottom:10px}
   .btn{font:600 11px/1 ui-monospace,monospace;text-transform:uppercase;color:var(--accent);
     background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   footer{margin-top:30px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.6}
 </style>
 
 <div class="wrap">
-  <p class="eyebrow">{{EDR}} · Software Inventory</p>
+  <p class="eyebrow">{{EDR}} &middot; Software Inventory</p>
   <h1>{{PRODUCT}} Deployment Inventory</h1>
 
   <div class="stats">
-    <div><div class="n">{{N}}</div><div class="l">Hosts with {{PRODUCT}}</div></div>
-    <div><div class="n">{{N}}</div><div class="l">Servers &amp; DCs</div></div>
-    <div><div class="n crit">{{N}}</div><div class="l">On vulnerable builds</div></div>
-    <div><div class="n good">{{N}}</div><div class="l">Remediated / verified</div></div>
+    <div><div class="n">{{TOTAL_HOSTS}}</div><div class="l">Hosts with {{PRODUCT}}</div></div>
+    <div><div class="n">{{SERVER_COUNT}}</div><div class="l">Servers &amp; DCs</div></div>
+    <div><div class="n crit">{{VULN_COUNT}}</div><div class="l">On vulnerable builds</div></div>
+    <div><div class="n good">{{FIXED_COUNT}}</div><div class="l">Remediated / verified</div></div>
   </div>
 
   <div class="sec">Affected hosts</div>
-  <p class="note">Click a row to expand its running binaries (full path + service, vulnerable one flagged). Discovery method = how far each is confirmed: <b>Installed</b> (inventory) · <b>Running</b> (process telemetry) · <b>Hash</b> (live-response).</p>
-  <div class="toolbar"><button class="btn" id="toggleAll" type="button">Expand all</button></div>
+  <p class="note">Click a row (or its arrow) to expand its running binaries: full path + service, with the vulnerable one flagged. Discovery = how far each is confirmed: <b>Installed</b> (inventory) &middot; <b>Running</b> (process telemetry) &middot; <b>Hash</b> (live-response). RCE CVEs carry an <span class="pill crit">RCE</span> flag.</p>
+  <div class="toolbar"><button class="btn" id="toggleAll" type="button" aria-expanded="false">Expand all</button></div>
   <div class="tbl">
     <table><thead><tr>
       <th style="width:20px"></th><th>Host (IP)</th><th>Type</th><th>Software: component (version)</th><th>Running</th><th>Discovery</th><th>Risk</th>
     </tr></thead><tbody>
 
-      <!-- vulnerable example row -->
-      <tr class="row crit" tabindex="0" role="button" aria-expanded="false">
-        <td><span class="chev">&#9656;</span></td><td><span class="host">HOST-01</span><span class="ip">10.0.0.10</span></td>
-        <td>Server</td><td>{{component}} <span class="mono">{{old-version}}</span></td>
-        <td><span class="pill crit">Hash</span></td><td class="mono">Installed · Running · Hash</td>
-        <td><span class="pill crit">{{CVE}}</span></td>
+      <!-- vulnerable example row; RCE flag shown because the CVE is an RCE. Delete these examples. -->
+      <tr class="row crit">
+        <td><button class="chev" type="button" aria-expanded="false" aria-controls="d1" aria-label="Toggle details for HOST-01">&#9656;</button></td>
+        <td><span class="host">HOST-01</span><span class="ip">10.0.0.10</span></td>
+        <td>Server</td><td>{{COMPONENT}} <span class="mono">{{OLD_VERSION}}</span></td>
+        <td><span class="pill crit">Hash</span></td><td class="mono">Installed &middot; Running &middot; Hash</td>
+        <td><span class="pill crit">{{CVE}}</span> <span class="pill crit">RCE</span></td>
       </tr>
-      <tr class="detail"><td colspan="7"><div class="di"><p class="dh">Running binaries</p><div class="bin">
-        <div class="binrow"><span>&#9888;</span><div><span class="svc">{{vulnerable service}}</span> <span class="pill crit">{{version}} — vulnerable</span><span class="path">C:\{{path}}\{{binary.exe}}</span></div></div>
-        <div class="binrow"><span>·</span><div><span class="svc">{{other service}}</span> <span class="pill good">{{version}}</span><span class="path">C:\{{path}}\</span></div></div>
-      </div><p class="note"><b>Validation gate:</b> {{what "fixed" looks like for this host — e.g. hash changes / binary removed / build advances past {{fixed-build}}.}}</p></div></td></tr>
+      <tr class="detail" id="d1"><td colspan="7"><div class="di"><p class="dh">Running binaries</p><div class="bin">
+        <div class="binrow"><span>&#9888;</span><div><span class="svc">{{VULN_SERVICE}}</span> <span class="pill crit">{{OLD_VERSION}} &mdash; vulnerable</span><span class="path">C:\{{PATH}}\{{BINARY}}</span></div></div>
+        <div class="binrow"><span>&middot;</span><div><span class="svc">{{OTHER_SERVICE}}</span> <span class="pill good">{{VERSION}}</span><span class="path">C:\{{PATH}}\</span></div></div>
+      </div><!-- GATE: what "fixed" looks like for this host (hash changes / binary removed / build past {{FIXED_BUILD}}). -->
+      <p class="note"><b>Validation gate:</b> {{GATE}}</p></div></td></tr>
 
       <!-- clean example row -->
-      <tr class="row" tabindex="0" role="button" aria-expanded="false">
-        <td><span class="chev">&#9656;</span></td><td><span class="host">HOST-02</span><span class="ip">10.0.0.11</span></td>
-        <td>Server</td><td>{{component}} <span class="mono">{{current-version}}</span></td>
-        <td><span class="pill good">Yes</span></td><td class="mono">Installed · Running</td>
+      <tr class="row">
+        <td><button class="chev" type="button" aria-expanded="false" aria-controls="d2" aria-label="Toggle details for HOST-02">&#9656;</button></td>
+        <td><span class="host">HOST-02</span><span class="ip">10.0.0.11</span></td>
+        <td>Server</td><td>{{COMPONENT}} <span class="mono">{{CURRENT_VERSION}}</span></td>
+        <td><span class="pill good">Yes</span></td><td class="mono">Installed &middot; Running</td>
         <td><span class="pill good">patched</span></td>
       </tr>
-      <tr class="detail"><td colspan="7"><div class="di"><div class="bin">
-        <div class="binrow"><span>·</span><div><span class="svc">{{service}}</span> <span class="pill good">{{current-version}}</span><span class="path">C:\{{path}}\{{binary.exe}}</span></div></div>
+      <tr class="detail" id="d2"><td colspan="7"><div class="di"><div class="bin">
+        <div class="binrow"><span>&middot;</span><div><span class="svc">{{SERVICE}}</span> <span class="pill good">{{CURRENT_VERSION}}</span><span class="path">C:\{{PATH}}\{{BINARY}}</span></div></div>
       </div><p class="note">Current build; not vulnerable.</p></div></td></tr>
 
     </tbody></table>
   </div>
 
-  <div class="sec">Change log — observed environment changes</div>
+  <div class="sec">Change log &mdash; observed environment changes</div>
   <div class="cl">
-    <div class="clr"><div class="cld">{{YYYY<br>MM-DD}}</div><div class="clb"><b>{{event}}</b> — {{what changed + how observed}}. {{interpretation}}</div></div>
-    <div class="clr"><div class="cld">{{YYYY<br>MM-DD}}</div><div class="clb"><b>{{remediation}}</b> — {{verified how}}.</div></div>
-    <div class="clr pending"><div class="cld">— — —</div><div class="clb">{{open item still to confirm}}</div></div>
+    <!-- one row per observed change; keep dates as they occur. -->
+    <div class="clr"><div class="cld">{{DATE}}</div><div class="clb"><b>{{EVENT}}</b> &mdash; {{WHAT_CHANGED_AND_HOW_OBSERVED}}. {{INTERPRETATION}}</div></div>
+    <div class="clr"><div class="cld">{{DATE}}</div><div class="clb"><b>{{REMEDIATION}}</b> &mdash; {{HOW_VERIFIED}}.</div></div>
+    <div class="clr pending"><div class="cld">&mdash; &mdash; &mdash;</div><div class="clb">{{OPEN_ITEM_TO_CONFIRM}}</div></div>
   </div>
   <div class="gates">
-    <h4>Validation gates — what "patched" looks like</h4>
+    <h4>Validation gates &mdash; what "patched" looks like</h4>
     <ul>
-      <li><b>{{HOST / group}}:</b> {{gate condition, e.g. binary removed / hash changed / build &ge; {{fixed-build}} / CVE closed}}.</li>
+      <li><b>{{HOST_OR_GROUP}}:</b> {{GATE_CONDITION}}.</li>
       <li><b>Estate:</b> re-run this inventory; confirm no pre-fix build remains.</li>
     </ul>
   </div>
 
   <footer>
-    <b>Method &amp; confidence.</b> "Installed" = software inventory; "Running" = process telemetry; "Hash" = live-response file hash. {{Note any tool limits, e.g. telemetry lacks a file-version field, scanner coverage gaps, and which claims are verified vs inferred.}}
+    <!-- METHOD_NOTE: what each source proves, tool limits (e.g. telemetry has no file-version field,
+         scanner coverage gaps), and which claims are verified vs inferred. -->
+    <b>Method &amp; confidence.</b> "Installed" = software inventory; "Running" = process telemetry; "Hash" = live-response file hash. {{METHOD_NOTE}}
   </footer>
 </div>
 
 <script>
   (function(){
+    function set(row, open){
+      var d = row.nextElementSibling;
+      var btn = row.querySelector('.chev');
+      row.classList.toggle('open', open);
+      if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (d && d.classList.contains('detail')) d.classList.toggle('show', open);
+    }
     var rows = document.querySelectorAll('tr.row');
-    function set(r,open){var d=r.nextElementSibling;r.classList.toggle('open',open);
-      r.setAttribute('aria-expanded',open?'true':'false');
-      if(d&&d.classList.contains('detail'))d.classList.toggle('show',open);}
-    rows.forEach(function(r){
-      r.addEventListener('click',function(){set(r,!r.classList.contains('open'))});
-      r.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();set(r,!r.classList.contains('open'))}});
+    rows.forEach(function(row){
+      var btn = row.querySelector('.chev');
+      if (btn) btn.addEventListener('click', function(e){ e.stopPropagation(); set(row, btn.getAttribute('aria-expanded') !== 'true'); });
+      row.addEventListener('click', function(){ var b = row.querySelector('.chev'); set(row, !(b && b.getAttribute('aria-expanded') === 'true')); });
     });
-    var b=document.getElementById('toggleAll'),x=false;
-    b.addEventListener('click',function(){x=!x;rows.forEach(function(r){set(r,x)});b.textContent=x?'Collapse all':'Expand all'});
+    var all = document.getElementById('toggleAll'), open = false;
+    all.addEventListener('click', function(){
+      open = !open;
+      rows.forEach(function(row){ set(row, open); });
+      all.setAttribute('aria-expanded', open ? 'true' : 'false');
+      all.textContent = open ? 'Collapse all' : 'Expand all';
+    });
   })();
 </script>

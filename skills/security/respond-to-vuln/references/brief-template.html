@@ -1,8 +1,10 @@
 <!--
   Executive brief template for the respond-to-vuln playbook (phase 5).
-  SANITIZED: all data below is placeholder. Replace every {{TOKEN}} and the
-  example rows with real, verified data before publishing. Never commit real
-  environment data back into this repo.
+  SANITIZED: every value below is a placeholder. Replace each single-level
+  {{TOKEN}} and the example rows with real, verified data, then publish via the
+  harness's artifact/publish mechanism (it supplies the doctype + theme wrapper).
+  Guidance for each field is in HTML comments, never inside the {{TOKEN}}, so a
+  find/replace of /\{\{[A-Z0-9_]+\}\}/ is mechanical. Never commit real data.
   Self-contained: no external assets. Theme-aware (light/dark).
 -->
 <title>{{VULN_SHORT_NAME}} Exposure</title>
@@ -76,22 +78,26 @@
     <div class="meta">
       <div>Prepared for <b>{{AUDIENCE}}</b></div>
       <div>From <b>{{TEAM}}</b></div>
-      <div>Updated <b>{{YYYY-MM-DD}}</b></div>
+      <div>Updated <b>{{DATE}}</b></div>
       <div>Classification <b>Internal</b></div>
     </div>
   </header>
 
-  <!-- Status band: left = current status, right = residual risk -->
   <div class="band">
-    <div><p class="k">Current status</p><p class="v"><span class="dot good"></span>{{STATUS e.g. Remediated (verified)}}</p></div>
-    <div><p class="k">Residual</p><p class="v"><span class="dot high"></span>{{RESIDUAL e.g. 1 host pending}}</p></div>
+    <!-- STATUS: current disposition, e.g. "Remediated (verified)". Pick dot good/high/crit. -->
+    <div><p class="k">Current status</p><p class="v"><span class="dot good"></span>{{STATUS}}</p></div>
+    <!-- RESIDUAL: what's left, e.g. "1 host pending". -->
+    <div><p class="k">Residual</p><p class="v"><span class="dot high"></span>{{RESIDUAL}}</p></div>
   </div>
 
   <div class="bluf">
     <h2>Bottom line</h2>
-    <p>{{One or two sentences: what the vulnerability is (<span class="mono">{{CVE}}</span>, severity), where it was found, and how it was caught. State whether this was authorized testing or a real adversary.}}</p>
-    <p><strong>{{Resolution / current state.}}</strong> {{What has been done and how it was verified, e.g. binary removed, RTR-confirmed on N hosts.}}</p>
-    <p><strong>Open items:</strong> {{what remains + any decision or authorization needed.}}</p>
+    <!-- BOTTOM_LINE: what the vuln is (CVE, severity), where found, how caught, authorized vs adversary. -->
+    <p>{{BOTTOM_LINE}}</p>
+    <!-- RESOLUTION: what was done and how it was verified. Lead with a bolded verdict. -->
+    <p><strong>{{RESOLUTION_HEADLINE}}</strong> {{RESOLUTION_DETAIL}}</p>
+    <!-- OPEN_ITEMS: what remains + any decision/authorization needed. -->
+    <p><strong>Open items:</strong> {{OPEN_ITEMS}}</p>
   </div>
 
   <div class="sec">Remediation status</div>
@@ -99,9 +105,9 @@
     <table>
       <thead><tr><th>Host</th><th>Exposure</th><th>Status</th><th>Verified by</th></tr></thead>
       <tbody>
-        <!-- one row per affected host; delete these examples -->
-        <tr><td class="mono">HOST-01</td><td>{{component}} {{version}} &rarr; {{CVE}}</td><td><span class="pill good">Remediated</span></td><td>{{live-response hash, YYYY-MM-DD}}</td></tr>
-        <tr><td class="mono">HOST-02</td><td>{{component}} {{version}} &rarr; {{CVE}}</td><td><span class="pill high">In progress</span></td><td>{{telemetry / pending}}</td></tr>
+        <!-- one row per affected host; delete these two examples -->
+        <tr><td class="mono">HOST-01</td><td>{{COMPONENT}} {{VERSION}} &rarr; {{CVE}}</td><td><span class="pill good">Remediated</span></td><td>{{HOW_VERIFIED}}</td></tr>
+        <tr><td class="mono">HOST-02</td><td>{{COMPONENT}} {{VERSION}} &rarr; {{CVE}}</td><td><span class="pill high">In progress</span></td><td>{{HOW_VERIFIED}}</td></tr>
       </tbody>
     </table>
   </div>
@@ -109,16 +115,19 @@
   <div class="sec">Actions</div>
   <div class="tbl">
     <table>
-      <thead><tr><th>Pri</th><th>Action</th><th>Owner</th><th>Status</th></tr></thead>
+      <thead><tr><th>Pri</th><th>Action</th><th>Owner</th><th>Ticket / status</th></tr></thead>
       <tbody>
-        <tr><td><span class="pill good">Done</span></td><td><b>{{Remediate affected hosts.}}</b> {{detail + how verified}}</td><td>{{owner}}</td><td>{{YYYY-MM-DD}}</td></tr>
-        <tr><td><span class="pill high">Open</span></td><td><b>{{Network / config hardening.}}</b> {{detail}}</td><td>{{owner}}</td><td>{{ETA}}</td></tr>
-        <tr><td><span class="pill high">Open</span></td><td><b>{{Close the scanner coverage gap.}}</b> {{detail}}</td><td>{{owner}}</td><td>{{ETA}}</td></tr>
+        <!-- Pri pill: good=Done, high=Open, crit=urgent. Include a ticket ref and, where relevant, a backout note. -->
+        <tr><td><span class="pill good">Done</span></td><td><b>{{ACTION_TITLE}}</b> {{ACTION_DETAIL}}</td><td>{{OWNER}}</td><td>{{TICKET_OR_DATE}}</td></tr>
+        <tr><td><span class="pill high">Open</span></td><td><b>{{ACTION_TITLE}}</b> {{ACTION_DETAIL}}</td><td>{{OWNER}}</td><td>{{TICKET_OR_ETA}}</td></tr>
       </tbody>
     </table>
   </div>
 
   <footer>
-    <b>Confidence &amp; caveats.</b> {{How the CVE identity and remediation are confirmed (which sources), what is inferred vs verified, scope caveats, and whether there is any adversary activity. Keep language neutral; reserve "incident"/"breach" for a formally invoked process.}}
+    <!-- CONFIDENCE_NOTE: how CVE identity + remediation are confirmed (which sources), verified vs inferred,
+         scope caveats, adversary activity yes/no. Keep language neutral; reserve "incident"/"breach" for a
+         formally invoked process. -->
+    <b>Confidence &amp; caveats.</b> {{CONFIDENCE_NOTE}}
   </footer>
 </div>

@@ -1,6 +1,6 @@
 ---
 name: respond-to-vuln
-description: Use when a newly discovered vulnerability or exploit alert needs to be run to ground and remediated across a fleet. Runs the loop end to end - identify the CVE, verify it on the affected hosts with layered evidence, scope the whole estate (catching vuln-scanner blind spots), package an executive brief plus an operational inventory, then run a verified check to closure. Triggers on an EDR/exploit detection, an autonomous-pentest finding, or a "we need to patch X everywhere" ask.
+description: Use when a newly discovered vulnerability or exploit alert needs to be run to ground and remediated across a fleet. Runs the loop end to end - identify the CVE, verify it on the affected hosts with layered evidence, scope the whole estate (catching vuln-scanner blind spots), package an executive brief plus an operational inventory, then run a verified check to closure. Reach for it (type /respond-to-vuln) when one of those lands - an EDR or exploit detection, an autonomous-pentest finding, or a "patch X everywhere" ask.
 disable-model-invocation: true
 ---
 
@@ -12,7 +12,7 @@ Run this loop for the vulnerability. Do the phases in order: each **produces** a
    - *Produces:* named CVE(s); fixed/patched build number; whether exploitation is authenticated or unauthenticated; the software + version + vector fingerprint.
    - *Into next:* the software/version/vector fingerprint to hunt on the host; the fixed build is held for the phase 4 gate.
 
-2. **Verify it is real, and whose it is.** Confirm on the affected host with the strongest evidence available, layered: endpoint telemetry (process tree, block/allow disposition, network/DNS callbacks) and on-disk truth (a read-only live-response file hash or version check). Separate authorized activity (a pentest) from an actual adversary. A single tool's silence is not proof.
+2. **Verify it is real, and whose it is.** Confirm on the affected host with the strongest evidence available, layered: endpoint telemetry (process tree, block/allow disposition, network/DNS callbacks) and on-disk truth (a read-only live-response file hash or version check). Separate authorized activity (a pentest) from an actual adversary. **If it is an actual adversary, stop here: hand off to incident response and preserve evidence before any remediation** - do not patch a host out from under an active investigation. A single tool's silence is not proof.
    - *Input:* the fingerprint from phase 1.
    - *Produces:* confirmed affected host(s), each tagged with confidence (installed / running / hash-verified); an authorized-vs-adversary determination.
    - *Into next:* the exact component/binary identity (name, path, hash) to search for fleet-wide.
@@ -60,7 +60,7 @@ The strongest single move for "is it really fixed" is a live-response hash or ve
 
 ## Cross-tool corroboration
 
-Where an alert names an exploit and the EDR shows a block, line the two up: same host, same command, same second. One source is suggestive; two agreeing sources are conclusive. A pentest's "no impact / no proven weakness" can simply mean the EDR blocked the confirming step, not that the host was invulnerable - read the pentest's action log alongside the EDR side, not its findings list alone.
+Where an alert names an exploit and the EDR shows a block, line the two up: same host, same command, same second. One source is suggestive; two agreeing sources are strongly corroborating. A pentest's "no impact / no proven weakness" can simply mean the EDR blocked the confirming step, not that the host was invulnerable - read the pentest's action log alongside the EDR side, not its findings list alone.
 
 ## Scanner blind spots
 
@@ -74,6 +74,10 @@ Words like "incident" and "breach" carry formal response and notification weight
 
 The brief answers "what happened, what do we do" for a decision-maker; the inventory answers "which host, which binary, what version, confirmed how" for the people doing the work. Build both from the same verified data and keep them current in place as the watch surfaces changes, rather than shipping a one-time snapshot.
 
+## Scope
+
+The loop owns identification, verification, and tracking to closure. The change itself (patch, upgrade, or removal), change-ticketing, maintenance windows, and rollback/backout stay with the remediation owner; capture the ticket reference and a backout note in the brief's actions, and never mark the fix done until it is independently verified.
+
 ## Reference templates
 
 `references/` holds sanitized starting points for the two phase-5 artifacts, with placeholder data only (no real hosts, CVEs, or organizations):
@@ -81,6 +85,6 @@ The brief answers "what happened, what do we do" for a decision-maker; the inven
 - `references/brief-template.html` - the executive brief (status band, bottom line, remediation-status table, prioritized actions).
 - `references/inventory-template.html` - the operational inventory (per-host table with click-to-expand running binaries, a change log, and validation gates).
 
-Copy one out, replace the `{{PLACEHOLDER}}` tokens and example rows with real verified data, and publish. Keep them generic: never commit real environment data back into this repo.
+Copy one out, replace the single-level `{{PLACEHOLDER}}` tokens and example rows with real verified data, and publish it via the harness's artifact/publish mechanism (which supplies the HTML doctype and theme wrapper the templates rely on). Keep them generic: never commit real environment data back into this repo.
 
 </supporting-info>
