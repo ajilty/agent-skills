@@ -27,7 +27,7 @@ plugins are self-contained. Git preserves the symlinks in the repo itself.
 
 | Category | Contents | Ships in |
 |----------|----------|----------|
-| `meta` | workflows about working itself (grill, retro) | playbooks |
+| `meta` | workflows about working itself (grill, retro, edge) | playbooks; edges links `edge` |
 | `office` | comms, calendar, planning workflows (day-prep) | playbooks |
 | `coding` | engineering workflows (assignment, tdd, review) | playbooks |
 | `security` | security workflows (threat-model) | playbooks |
