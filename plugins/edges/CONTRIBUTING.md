@@ -1,7 +1,7 @@
 # Contributing edges
 
 The single source of truth for authoring `working-with-<tool>` knowledge
-skills. The `/edge` skill follows this file at contribution time; human
+skills. The `/harvest` skill follows this file at contribution time; human
 contributors follow the same rules. If guidance here conflicts with anything
 else, fix this file.
 
