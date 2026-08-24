@@ -30,7 +30,7 @@ not here.
 Authoring rules (edge shape, size, redaction, validation, PR flow) live in
 [CONTRIBUTING.md](CONTRIBUTING.md) — the single source both lanes follow:
 
-- **In-session**: the user-invoked `/edge` skill (ships with this plugin)
+- **In-session**: the user-invoked `/harvest` skill (also `/edges:harvest`) (ships with this plugin)
   harvests the current session's tool-call learnings, confirms candidates, and
   submits the PR itself.
 - **By hand**: every skill ends with a report link — wrong, stale, or missing
