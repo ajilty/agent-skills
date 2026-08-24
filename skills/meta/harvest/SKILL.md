@@ -1,11 +1,11 @@
 ---
-name: edge
+name: harvest
 description: Harvest this session's tool-call learnings and submit new or improved working-with-<tool> edges as a PR to the edges library.
 disable-model-invocation: true
 argument-hint: "[tool] [: observation or direction, e.g. 'new skill' / 'fold into existing']"
 ---
 
-# Edge
+# Harvest
 
 Turn what this session learned the hard way into a contribution to the edges
 library (the `working-with-<tool>` sharp-edge skills of the `edges` plugin,
