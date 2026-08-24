@@ -27,9 +27,14 @@ not here.
 
 ## Improving these skills
 
-Every skill ends with a report link. Wrong, stale, or missing edges:
-[file an edge report](https://github.com/ajilty/agentic/issues/new?template=edge-report.yml).
-PRs welcome against `skills/knowledge/` — the plugin directories are symlink
-views, so edits land in the library, not here. The best report is the raw
-observation (verbatim error strings, response shapes), redacted of tenant
-specifics.
+Authoring rules (edge shape, size, redaction, validation, PR flow) live in
+[CONTRIBUTING.md](CONTRIBUTING.md) — the single source both lanes follow:
+
+- **In-session**: the user-invoked `/edge` skill (ships with this plugin)
+  harvests the current session's tool-call learnings, confirms candidates, and
+  submits the PR itself.
+- **By hand**: every skill ends with a report link — wrong, stale, or missing
+  edges: [file an edge report](https://github.com/ajilty/agentic/issues/new?template=edge-report.yml),
+  or PR against `skills/knowledge/` per CONTRIBUTING.md (the plugin
+  directories are symlink views). The best report is the raw observation
+  (verbatim error strings, response shapes), redacted of tenant specifics.
