@@ -15,6 +15,11 @@ library; edit and search there, not here.
 | `retro` | meta | persist learnings from a session |
 | `day-prep` | office | review open threads, comms, and calendar; plan today |
 | `assignment` | coding | grill the ask, run it as a full project (orchestrate when available), report as a decision-ready briefing (landed) |
+| `research` | coding | read-only investigation with confirmed-vs-inferred labeling (landed; also rides orchestrate dispatches) |
+| `plan` | coding | findings to spec with acceptance oracles and operator decisions (landed; also rides orchestrate dispatches) |
+| `brief` | coding | decision-ready artifact briefing ending in a copyable decisions memo (landed) |
+| `build` | coding | execute a plan: single writer, commit-is-artifact, sweep the defect class (landed; also rides orchestrate dispatches) |
+| `verify` | coding | adversarial fresh-context verification with live reproduction (landed; also rides orchestrate dispatches) |
 | `tdd` | coding | verify-first development loop |
 | `review` | coding | code review workflow |
 | `threat-model` | security | structured threat modeling |
