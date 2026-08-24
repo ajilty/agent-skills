@@ -1,0 +1,133 @@
+<!--
+  Executive brief template for the respond-to-vuln playbook (phase 5).
+  SANITIZED: every value below is a placeholder. Replace each single-level
+  {{TOKEN}} and the example rows with real, verified data, then publish via the
+  harness's artifact/publish mechanism (it supplies the doctype + theme wrapper).
+  Guidance for each field is in HTML comments, never inside the {{TOKEN}}, so a
+  find/replace of /\{\{[A-Z0-9_]+\}\}/ is mechanical. Never commit real data.
+  Self-contained: no external assets. Theme-aware (light/dark).
+-->
+<title>{{VULN_SHORT_NAME}} Exposure</title>
+<style>
+  :root{
+    --ground:#eef1f5; --surface:#fff; --surface-2:#f5f8fb;
+    --ink:#15181e; --ink-soft:#39414e; --muted:#697586; --line:#dce1ea;
+    --accent:#2f5d8a; --crit:#b3261e; --crit-bg:#fbeceb;
+    --high:#b0600a; --high-bg:#fbf1e5; --good:#1c7a5b; --good-bg:#e6f3ee;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --ground:#0e1218; --surface:#161b23; --surface-2:#1b212b;
+    --ink:#e8ecf3; --ink-soft:#c3cbd7; --muted:#8b98a9; --line:#28303c;
+    --accent:#6fa3d6; --crit:#f0796d; --crit-bg:#2a1513;
+    --high:#e0975a; --high-bg:#271c11; --good:#5cc39b; --good-bg:#112019;
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0e1218; --surface:#161b23; --surface-2:#1b212b;
+    --ink:#e8ecf3; --ink-soft:#c3cbd7; --muted:#8b98a9; --line:#28303c;
+    --accent:#6fa3d6; --crit:#f0796d; --crit-bg:#2a1513;
+    --high:#e0975a; --high-bg:#271c11; --good:#5cc39b; --good-bg:#112019;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.55}
+  .wrap{max-width:880px;margin:0 auto;padding:40px 26px 64px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;
+    align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:16px}
+  .eyebrow{font:600 11px/1 ui-monospace,monospace;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 8px}
+  h1{margin:0;font-size:2rem;letter-spacing:-.02em}
+  .meta{font:12px/1.8 ui-monospace,monospace;color:var(--muted);text-align:right}
+  .meta b{color:var(--ink-soft)}
+  .band{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:22px 0 26px;
+    background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .band>div{background:var(--surface);padding:14px 16px}
+  .band .k{font:600 10px/1 ui-monospace,monospace;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+  .band .v{margin:0;font-weight:600;display:flex;align-items:center;gap:8px}
+  .dot{width:9px;height:9px;border-radius:50%}
+  .dot.good{background:var(--good)} .dot.high{background:var(--high)} .dot.crit{background:var(--crit)}
+  .bluf{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--good);
+    border-radius:12px;padding:18px 20px;margin-bottom:26px}
+  .bluf h2{margin:0 0 10px} .bluf p{margin:0 0 10px;color:var(--ink-soft)} .bluf p:last-child{margin:0}
+  .bluf strong{color:var(--ink)}
+  .sec{font:600 11px/1 ui-monospace,monospace;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--accent);display:flex;align-items:center;gap:12px;margin:28px 0 14px}
+  .sec::after{content:"";flex:1;height:1px;background:var(--line)}
+  .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+  th{background:var(--surface-2);text-align:left;font:600 10px/1 ui-monospace,monospace;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:11px 13px;border-bottom:1px solid var(--line)}
+  td{padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-soft)}
+  tr:last-child td{border-bottom:none} tr{background:var(--surface)} td b{color:var(--ink)}
+  .pill{display:inline-block;font:600 10px/1.5 ui-monospace,monospace;text-transform:uppercase;
+    padding:2px 8px;border-radius:999px}
+  .pill.good{background:var(--good-bg);color:var(--good)}
+  .pill.high{background:var(--high-bg);color:var(--high)}
+  .pill.crit{background:var(--crit-bg);color:var(--crit)}
+  footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:12px;line-height:1.6}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">Security Exposure &amp; Remediation Brief</p>
+      <h1>{{VULN_SHORT_NAME}} Exposure</h1>
+    </div>
+    <div class="meta">
+      <div>Prepared for <b>{{AUDIENCE}}</b></div>
+      <div>From <b>{{TEAM}}</b></div>
+      <div>Updated <b>{{DATE}}</b></div>
+      <div>Classification <b>Internal</b></div>
+    </div>
+  </header>
+
+  <div class="band">
+    <!-- STATUS: current disposition, e.g. "Remediated (verified)". Pick dot good/high/crit. -->
+    <div><p class="k">Current status</p><p class="v"><span class="dot good"></span>{{STATUS}}</p></div>
+    <!-- RESIDUAL: what's left, e.g. "1 host pending". -->
+    <div><p class="k">Residual</p><p class="v"><span class="dot high"></span>{{RESIDUAL}}</p></div>
+  </div>
+
+  <div class="bluf">
+    <h2>Bottom line</h2>
+    <!-- BOTTOM_LINE: what the vuln is (CVE, severity), where found, how caught, authorized vs adversary. -->
+    <p>{{BOTTOM_LINE}}</p>
+    <!-- RESOLUTION: what was done and how it was verified. Lead with a bolded verdict. -->
+    <p><strong>{{RESOLUTION_HEADLINE}}</strong> {{RESOLUTION_DETAIL}}</p>
+    <!-- OPEN_ITEMS: what remains + any decision/authorization needed. -->
+    <p><strong>Open items:</strong> {{OPEN_ITEMS}}</p>
+  </div>
+
+  <div class="sec">Remediation status</div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Host</th><th>Exposure</th><th>Status</th><th>Verified by</th></tr></thead>
+      <tbody>
+        <!-- one row per affected host; delete these two examples -->
+        <tr><td class="mono">HOST-01</td><td>{{COMPONENT}} {{VERSION}} &rarr; {{CVE}}</td><td><span class="pill good">Remediated</span></td><td>{{HOW_VERIFIED}}</td></tr>
+        <tr><td class="mono">HOST-02</td><td>{{COMPONENT}} {{VERSION}} &rarr; {{CVE}}</td><td><span class="pill high">In progress</span></td><td>{{HOW_VERIFIED}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sec">Actions</div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Pri</th><th>Action</th><th>Owner</th><th>Ticket / status</th></tr></thead>
+      <tbody>
+        <!-- Pri pill: good=Done, high=Open, crit=urgent. Include a ticket ref and, where relevant, a backout note. -->
+        <tr><td><span class="pill good">Done</span></td><td><b>{{ACTION_TITLE}}</b> {{ACTION_DETAIL}}</td><td>{{OWNER}}</td><td>{{TICKET_OR_DATE}}</td></tr>
+        <tr><td><span class="pill high">Open</span></td><td><b>{{ACTION_TITLE}}</b> {{ACTION_DETAIL}}</td><td>{{OWNER}}</td><td>{{TICKET_OR_ETA}}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    <!-- CONFIDENCE_NOTE: how CVE identity + remediation are confirmed (which sources), verified vs inferred,
+         scope caveats, adversary activity yes/no. Keep language neutral; reserve "incident"/"breach" for a
+         formally invoked process. -->
+    <b>Confidence &amp; caveats.</b> {{CONFIDENCE_NOTE}}
+  </footer>
+</div>

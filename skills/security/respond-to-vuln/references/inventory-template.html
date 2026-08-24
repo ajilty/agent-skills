@@ -1,0 +1,181 @@
+<!--
+  Operational inventory template for the respond-to-vuln playbook (phase 5).
+  SANITIZED: every value below is a placeholder. Replace each single-level
+  {{TOKEN}} and the example rows with real, verified data, then publish via the
+  harness's artifact/publish mechanism (it supplies the doctype + theme wrapper).
+  Guidance lives in HTML comments, never inside a {{TOKEN}}, so find/replace of
+  /\{\{[A-Z0-9_]+\}\}/ is mechanical. Never commit real data.
+  Self-contained: no external assets. Theme-aware. Rows expand on click; each
+  row's first cell is a real <button> so keyboard/AT users can operate it.
+-->
+<title>{{PRODUCT}} Deployment Inventory</title>
+<style>
+  :root{
+    --ground:#eef1f5; --surface:#fff; --surface-2:#f5f8fb;
+    --ink:#15181e; --ink-soft:#39414e; --muted:#697586; --line:#dce1ea;
+    --accent:#2f5d8a; --crit:#b3261e; --crit-bg:#fbeceb; --crit-row:#fdf5f4;
+    --high:#b0600a; --high-bg:#fbf1e5; --good:#1c7a5b; --good-bg:#e6f3ee;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --ground:#0e1218; --surface:#161b23; --surface-2:#1b212b;
+    --ink:#e8ecf3; --ink-soft:#c3cbd7; --muted:#8b98a9; --line:#28303c;
+    --accent:#6fa3d6; --crit:#f0796d; --crit-bg:#2a1513; --crit-row:#1c1512;
+    --high:#e0975a; --high-bg:#271c11; --good:#5cc39b; --good-bg:#112019;
+  }}
+  :root[data-theme="dark"]{
+    --ground:#0e1218; --surface:#161b23; --surface-2:#1b212b;
+    --ink:#e8ecf3; --ink-soft:#c3cbd7; --muted:#8b98a9; --line:#28303c;
+    --accent:#6fa3d6; --crit:#f0796d; --crit-bg:#2a1513; --crit-row:#1c1512;
+    --high:#e0975a; --high-bg:#271c11; --good:#5cc39b; --good-bg:#112019;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5}
+  .wrap{max-width:1000px;margin:0 auto;padding:38px 22px 64px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  h1{margin:0;font-size:1.9rem;letter-spacing:-.02em}
+  .eyebrow{font:600 11px/1 ui-monospace,monospace;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 8px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin:22px 0 10px;
+    background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .stats>div{background:var(--surface);padding:15px}
+  .stats .n{font:600 1.6rem/1 ui-monospace,monospace} .stats .n.good{color:var(--good)} .stats .n.crit{color:var(--crit)}
+  .stats .l{font-size:11px;color:var(--muted);margin-top:6px}
+  .sec{font:600 11px/1 ui-monospace,monospace;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--accent);display:flex;align-items:center;gap:12px;margin:30px 0 12px}
+  .sec::after{content:"";flex:1;height:1px;background:var(--line)}
+  .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+  th{background:var(--surface-2);text-align:left;font:600 10px/1 ui-monospace,monospace;
+    letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:10px 13px;border-bottom:1px solid var(--line)}
+  tr.row>td{padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-soft)}
+  tr.row{background:var(--surface);cursor:pointer}
+  tr.row:hover{background:var(--surface-2)}
+  tr.row.crit{background:var(--crit-row)} tr.row.crit td:first-child{box-shadow:inset 3px 0 0 var(--crit)}
+  .chev{appearance:none;border:0;background:none;padding:0;margin:0;cursor:pointer;
+    color:var(--muted);font:inherit;line-height:1;display:inline-block;transition:transform .15s}
+  .chev[aria-expanded="true"]{transform:rotate(90deg)}
+  .chev:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+  @media (prefers-reduced-motion:reduce){.chev{transition:none}}
+  .host{font-family:ui-monospace,monospace;font-weight:600;color:var(--ink);white-space:nowrap}
+  .ip{display:block;font:400 11px/1 ui-monospace,monospace;color:var(--muted);margin-top:3px}
+  .pill{display:inline-block;font:600 10px/1.5 ui-monospace,monospace;text-transform:uppercase;padding:2px 7px;border-radius:999px}
+  .pill.good{background:var(--good-bg);color:var(--good)} .pill.high{background:var(--high-bg);color:var(--high)}
+  .pill.crit{background:var(--crit-bg);color:var(--crit)} .pill.muted{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+  tr.detail{display:none} tr.detail.show{display:table-row}
+  tr.detail>td{padding:0;border-bottom:1px solid var(--line);background:var(--surface-2)}
+  .di{padding:14px 16px 16px 30px} .di .dh{font:600 10px/1 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+  .bin{display:grid;gap:8px;font-size:12.5px}
+  .binrow{display:grid;grid-template-columns:16px 1fr;gap:8px}
+  .binrow .svc{color:var(--ink);font-weight:600}
+  .binrow .path{display:block;margin-top:2px;font-family:ui-monospace,monospace;font-size:11px;color:var(--muted);word-break:break-all}
+  .note{font-size:12px;color:var(--muted);margin:10px 0 0;line-height:1.5}
+  .cl{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .clr{display:grid;grid-template-columns:92px 1fr;border-bottom:1px solid var(--line);background:var(--surface)}
+  .clr:last-child{border-bottom:none} .clr.pending{background:var(--surface-2)}
+  .cld{font:600 12px/1.4 ui-monospace,monospace;color:var(--accent);padding:12px 14px;border-right:1px solid var(--line)}
+  .clb{padding:12px 14px;font-size:13px;color:var(--ink-soft)} .clb b{color:var(--ink)}
+  .gates{margin-top:14px;border:1px dashed var(--line);border-radius:10px;padding:14px 16px;background:var(--surface)}
+  .gates h4{margin:0 0 8px;font:600 11px/1 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  ul{margin:0;padding-left:18px;color:var(--ink-soft)} li{margin-bottom:6px} li b{color:var(--ink)}
+  .toolbar{display:flex;justify-content:flex-end;margin-bottom:10px}
+  .btn{font:600 11px/1 ui-monospace,monospace;text-transform:uppercase;color:var(--accent);
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  footer{margin-top:30px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.6}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">{{EDR}} &middot; Software Inventory</p>
+  <h1>{{PRODUCT}} Deployment Inventory</h1>
+
+  <div class="stats">
+    <div><div class="n">{{TOTAL_HOSTS}}</div><div class="l">Hosts with {{PRODUCT}}</div></div>
+    <div><div class="n">{{SERVER_COUNT}}</div><div class="l">Servers &amp; DCs</div></div>
+    <div><div class="n crit">{{VULN_COUNT}}</div><div class="l">On vulnerable builds</div></div>
+    <div><div class="n good">{{FIXED_COUNT}}</div><div class="l">Remediated / verified</div></div>
+  </div>
+
+  <div class="sec">Affected hosts</div>
+  <p class="note">Click a row (or its arrow) to expand its running binaries: full path + service, with the vulnerable one flagged. Discovery = how far each is confirmed: <b>Installed</b> (inventory) &middot; <b>Running</b> (process telemetry) &middot; <b>Hash</b> (live-response). RCE CVEs carry an <span class="pill crit">RCE</span> flag.</p>
+  <div class="toolbar"><button class="btn" id="toggleAll" type="button" aria-expanded="false">Expand all</button></div>
+  <div class="tbl">
+    <table><thead><tr>
+      <th style="width:20px"></th><th>Host (IP)</th><th>Type</th><th>Software: component (version)</th><th>Running</th><th>Discovery</th><th>Risk</th>
+    </tr></thead><tbody>
+
+      <!-- vulnerable example row; RCE flag shown because the CVE is an RCE. Delete these examples. -->
+      <tr class="row crit">
+        <td><button class="chev" type="button" aria-expanded="false" aria-controls="d1" aria-label="Toggle details for HOST-01">&#9656;</button></td>
+        <td><span class="host">HOST-01</span><span class="ip">10.0.0.10</span></td>
+        <td>Server</td><td>{{COMPONENT}} <span class="mono">{{OLD_VERSION}}</span></td>
+        <td><span class="pill crit">Hash</span></td><td class="mono">Installed &middot; Running &middot; Hash</td>
+        <td><span class="pill crit">{{CVE}}</span> <span class="pill crit">RCE</span></td>
+      </tr>
+      <tr class="detail" id="d1"><td colspan="7"><div class="di"><p class="dh">Running binaries</p><div class="bin">
+        <div class="binrow"><span>&#9888;</span><div><span class="svc">{{VULN_SERVICE}}</span> <span class="pill crit">{{OLD_VERSION}} &mdash; vulnerable</span><span class="path">C:\{{PATH}}\{{BINARY}}</span></div></div>
+        <div class="binrow"><span>&middot;</span><div><span class="svc">{{OTHER_SERVICE}}</span> <span class="pill good">{{VERSION}}</span><span class="path">C:\{{PATH}}\</span></div></div>
+      </div><!-- GATE: what "fixed" looks like for this host (hash changes / binary removed / build past {{FIXED_BUILD}}). -->
+      <p class="note"><b>Validation gate:</b> {{GATE}}</p></div></td></tr>
+
+      <!-- clean example row -->
+      <tr class="row">
+        <td><button class="chev" type="button" aria-expanded="false" aria-controls="d2" aria-label="Toggle details for HOST-02">&#9656;</button></td>
+        <td><span class="host">HOST-02</span><span class="ip">10.0.0.11</span></td>
+        <td>Server</td><td>{{COMPONENT}} <span class="mono">{{CURRENT_VERSION}}</span></td>
+        <td><span class="pill good">Yes</span></td><td class="mono">Installed &middot; Running</td>
+        <td><span class="pill good">patched</span></td>
+      </tr>
+      <tr class="detail" id="d2"><td colspan="7"><div class="di"><div class="bin">
+        <div class="binrow"><span>&middot;</span><div><span class="svc">{{SERVICE}}</span> <span class="pill good">{{CURRENT_VERSION}}</span><span class="path">C:\{{PATH}}\{{BINARY}}</span></div></div>
+      </div><p class="note">Current build; not vulnerable.</p></div></td></tr>
+
+    </tbody></table>
+  </div>
+
+  <div class="sec">Change log &mdash; observed environment changes</div>
+  <div class="cl">
+    <!-- one row per observed change; keep dates as they occur. -->
+    <div class="clr"><div class="cld">{{DATE}}</div><div class="clb"><b>{{EVENT}}</b> &mdash; {{WHAT_CHANGED_AND_HOW_OBSERVED}}. {{INTERPRETATION}}</div></div>
+    <div class="clr"><div class="cld">{{DATE}}</div><div class="clb"><b>{{REMEDIATION}}</b> &mdash; {{HOW_VERIFIED}}.</div></div>
+    <div class="clr pending"><div class="cld">&mdash; &mdash; &mdash;</div><div class="clb">{{OPEN_ITEM_TO_CONFIRM}}</div></div>
+  </div>
+  <div class="gates">
+    <h4>Validation gates &mdash; what "patched" looks like</h4>
+    <ul>
+      <li><b>{{HOST_OR_GROUP}}:</b> {{GATE_CONDITION}}.</li>
+      <li><b>Estate:</b> re-run this inventory; confirm no pre-fix build remains.</li>
+    </ul>
+  </div>
+
+  <footer>
+    <!-- METHOD_NOTE: what each source proves, tool limits (e.g. telemetry has no file-version field,
+         scanner coverage gaps), and which claims are verified vs inferred. -->
+    <b>Method &amp; confidence.</b> "Installed" = software inventory; "Running" = process telemetry; "Hash" = live-response file hash. {{METHOD_NOTE}}
+  </footer>
+</div>
+
+<script>
+  (function(){
+    function set(row, open){
+      var d = row.nextElementSibling;
+      var btn = row.querySelector('.chev');
+      row.classList.toggle('open', open);
+      if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (d && d.classList.contains('detail')) d.classList.toggle('show', open);
+    }
+    var rows = document.querySelectorAll('tr.row');
+    rows.forEach(function(row){
+      var btn = row.querySelector('.chev');
+      if (btn) btn.addEventListener('click', function(e){ e.stopPropagation(); set(row, btn.getAttribute('aria-expanded') !== 'true'); });
+      row.addEventListener('click', function(){ var b = row.querySelector('.chev'); set(row, !(b && b.getAttribute('aria-expanded') === 'true')); });
+    });
+    var all = document.getElementById('toggleAll'), open = false;
+    all.addEventListener('click', function(){
+      open = !open;
+      rows.forEach(function(row){ set(row, open); });
+      all.setAttribute('aria-expanded', open ? 'true' : 'false');
+      all.textContent = open ? 'Collapse all' : 'Expand all';
+    });
+  })();
+</script>
