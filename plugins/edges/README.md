@@ -23,6 +23,7 @@ not here.
 | `working-with-playwright` | Playwright headless capture in uv venvs |
 | `working-with-runlayer` | Runlayer MCP governance denies |
 | `working-with-slack-mcp` | Slack MCP search and reads |
+| `working-with-splunk-mcp` | Splunk MCP (session expiry, index picking, result shapes) |
 | `working-with-wiz-mcp` | Wiz MCP cloud/K8s hunting |
 
 ## Improving these skills
