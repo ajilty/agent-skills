@@ -23,3 +23,4 @@ library; edit and search there, not here.
 | `tdd` | coding | verify-first development loop |
 | `review` | coding | code review workflow |
 | `threat-model` | security | structured threat modeling |
+| `intel-to-impact` | security | any incoming security signal to a held disposition and funnel entry, with step-to-step interfaces (landed) |
