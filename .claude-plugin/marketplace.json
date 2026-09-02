@@ -17,7 +17,7 @@
     },
     {
       "name": "guards",
-      "description": "Constraints that guard against known issues. Currently: JSON/YAML syntax validation (including .md frontmatter) on every Edit/Write, with parse errors fed back for immediate self-correction.",
+      "description": "Hooks that guard against known failure modes: JSON/YAML syntax validation (incl. .md frontmatter) and check-only Markdown lint on every Edit/Write with findings fed back for same-turn self-correction, plus a PreToolUse gate that denies sweeping git staging (add -A/./-u, commit -a).",
       "source": "./plugins/guards",
       "author": {
         "name": "ajilty",

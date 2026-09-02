@@ -10,6 +10,11 @@ jobs:
           sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
           yq --version
+      - name: Install rumdl (guards markdown-lint tests skip without it)
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false   # no lockfile in this repo; the cache would never invalidate
+      - run: uv tool install rumdl && rumdl --version
       - name: Run every plugin suite (plugins/*/tests/run.sh)
         run: |
           set -e; found=0
